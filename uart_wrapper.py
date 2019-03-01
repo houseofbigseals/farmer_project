@@ -196,31 +196,109 @@ class UartWrapper:
             crc = (((crc << 8) & 0xff00) ^ tab[((crc >> 8) & 0xff) ^ byte])
         return crc & 0xffff
 
+    def simple_command(self,
+                       ACK: bytes = b'\x00',
+                       NACK: bytes = b'\x80',
+                       ctype: bytes = b'\x00',
+                       data: bytes = None,
+                       name: str = None
+                       ) -> Tuple[Optional[bytearray], str]:
+        # there is a simple command template
+        command = self.create_command(ctype=ctype, data=data)
+        ans, log = self.send_command(command, log_comment=name)
+        if ans:
+            answer = bytearray(ans)
+            if ACK in answer:
+                log += "There is ACK flag 0x{} in answer \n".format(ACK.hex())
+                log += "-------------------------------\n"
+            if NACK in answer:
+                log += "There is NACK flag 0x{} in answer \n".format(NACK.hex())
+                log += "Something went wrong in GIC \n"
+                log += "-------------------------------\n"
+            return ans, log
+        else:
+            log += "Something went wrong, we got no answer \n"
+            log += "-------------------------------\n"
+            return ans, log
+
     def PING_PONG(self):
         PING_PONG = bytearray(b'\x55\xCC\x02\x00\x00\xFC\xA2')
         pass
 
-    def GET_STATUS(self):
-        GET_STATUS = bytearray(b'\x55\xCC\x01\x01\x1F\x3E')
-        pass
+    def GET_STATUS(self) -> Tuple[Optional[bytearray], str]:
+        # GET_STATUS = bytearray(b'\x55\xCC\x01\x01\x1F\x3E')
+        # there we must parse data in answer
+        # but maybe later
+        return self.simple_command(
+                        ACK= b'\x01',
+                        NACK=b'\x81',
+                        ctype=b'\x01',
+                        data=None,
+                        name="GET_STATUS"
+                       )
 
-    def START(self):
-        START = bytearray(b'\x55\xCC\x01\x02\x7C\x0E')
+    def START(self) -> Tuple[Optional[bytearray], str]:
+        # START = bytearray(b'\x55\xCC\x01\x02\x7C\x0E')
+        return self.simple_command(
+                        ACK= b'\x02',
+                        NACK=b'\x82',
+                        ctype=b'\x02',
+                        data=None,
+                        name="START"
+                       )
 
-    def STOP(self):
-        STOP = bytearray(b'\x55\xCC\x01\x03\x5D\x1E')
+    def STOP(self) -> Tuple[Optional[bytearray], str]:
+        # STOP = bytearray(b'\x55\xCC\x01\x03\x5D\x1E')
+        return self.simple_command(
+                        ACK= b'\x03',
+                        NACK=b'\x83',
+                        ctype=b'\x02',
+                        data=None,
+                        name="START"
+                       )
 
-    def GET_PROFILE(self):
-        GET_PROFILE = bytearray(b'\x55\xCC\x02\x04\x04\xBC\x2E')
+    def GET_PROFILE(self, num: bytes = b'\x01') -> Tuple[Optional[bytearray], str]:
+        # GET_PROFILE = bytearray(b'\x55\xCC\x02\x04\x04\xBC\x2E')
+        # -> DATA – uint8_t[0...4]
+        # <- DATA – uProfile[1] – вернет требуемый профайл
+        return self.simple_command(
+                        ACK= b'\x04',
+                        NACK=b'\x84',
+                        ctype=b'\x04',
+                        data=num,
+                        name="GET_PROFILE"
+                       )
 
     def START_CONFIGURE(self):
-        START_CONFIGURE = bytearray(b'\x55\xCC\x01\x05\x9B\x7E')
+        # START_CONFIGURE = bytearray(b'\x55\xCC\x01\x05\x9B\x7E')
+        return self.simple_command(
+                        ACK= b'\x05',
+                        NACK=b'\x85',
+                        ctype=b'\x05',
+                        data=None,
+                        name="START_CONFIGURE"
+                       )
 
     def EXIT_WITHOUT_SAVING(self):
-        EXIT_WITHOUT_SAVING = bytearray(b'"\x55\xCC\x01\x06\xF8\x4E')
+        # EXIT_WITHOUT_SAVING = bytearray(b'"\x55\xCC\x01\x06\xF8\x4E')
+        return self.simple_command(
+                        ACK= b'\x06',
+                        NACK=b'\x86',
+                        ctype=b'\x06',
+                        data=None,
+                        name="EXIT_WITHOUT_SAVING"
+                       )
+
 
     def FINISH_CONFIGURE_WITH_SAVING(self):
-        FINISH_CONFIGURE_WITH_SAVING = bytearray(b'\x55\xCC\x01\x07\xD9\x5E')
+        # FINISH_CONFIGURE_WITH_SAVING = bytearray(b'\x55\xCC\x01\x07\xD9\x5E')
+        return self.simple_command(
+                        ACK= b'\x07',
+                        NACK=b'\x87',
+                        ctype=b'\x07',
+                        data=None,
+                        name="FINISH_CONFIGURE_WITH_SAVING"
+                       )
 
     def SET_PROFILE(self):
         # WRONG CRC !!
@@ -271,13 +349,15 @@ class UartWrapper:
 
 if __name__ == "__main__":
     a = UartWrapper()
-    start = (a.create_command(
-        length=None,
-        ctype=b'\x02',
-        data=None
-    ))
-
-    print(a.parse_command(start))
-    print(a.send_command(start)[0])
-    print(a.send_command(start)[1])
+    # start = (a.create_command(
+    #     length=None,
+    #     ctype=b'\x02',
+    #     data=None
+    # ))
+    #
+    # print(a.parse_command(start))
+    # print(a.send_command(start)[0])
+    # print(a.send_command(start)[1])
+    # print(a.START())
+    print(a.GET_STATUS()[1])
     #\x55\xCC\x01\x02\x7C\x0E
