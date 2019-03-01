@@ -1,6 +1,7 @@
 from typing import Tuple, Optional
 import serial
 import six
+from time import sleep
 
 # there must be uart wrapper object that realizes all
 # methods for communication with our GIC
@@ -252,9 +253,9 @@ class UartWrapper:
         return self.simple_command(
                         ACK= b'\x03',
                         NACK=b'\x83',
-                        ctype=b'\x02',
+                        ctype=b'\x03',
                         data=None,
-                        name="START"
+                        name="STOP"
                        )
 
     def GET_PROFILE(self, num: bytes = b'\x01') -> Tuple[Optional[bytearray], str]:
@@ -311,8 +312,21 @@ class UartWrapper:
     def SAVE_PROFILE_TO_EEPROM(self):
         SAVE_PROFILE_TO_EEPROM = bytearray(b'\x55\xCC\x02\x0A\x00\x00\x00')
 
-    def SET_CURRENT(self):
-        SET_CURRENT = bytearray(b'\x55\xCC\x04\x0B\x01\xE8\x03\x00\x00')
+    def SET_CURRENT(self, channel: int = 0, value: int = 200) -> Tuple[Optional[bytearray], str]:
+        # SET_CURRENT = bytearray(b'\x55\xCC\x04\x0B\x01\xE8\x03\x00\x00')
+        # SET_CURRENT_200_1 = bytearray(b'\x55\xCC\x04\x0B\x01\xC8\x00\xD8\x2E')
+        # SET_CURRENT_200_0 = bytearray(b'\x55\xCC\x04\x0B\x00\xC8\x00\xE8\x19')
+        # SET_CURRENT_50_1 = bytearray(b'\x55\xCC\x04\x0B\x01\x32\x00\xD2\xD2')
+        data = bytearray()
+        data.extend(int.to_bytes(channel, 1, byteorder='big'))
+        data.extend(int.to_bytes(value, 2, byteorder='little'))
+        return self.simple_command(
+                        ACK= b'\x0B',
+                        NACK=b'\x8B',
+                        ctype=b'\x0B',
+                        data=data,
+                        name="SET_CURRENT_{}_{}".format(channel, value)
+                       )
 
     def GET_CURRENT(self):
         GET_CURRENT = bytearray(b'\x55\xCC\x02\x0C\x00\x00\x00')
@@ -359,5 +373,13 @@ if __name__ == "__main__":
     # print(a.send_command(start)[0])
     # print(a.send_command(start)[1])
     # print(a.START())
-    print(a.GET_STATUS()[1])
+    # print(a.GET_STATUS()[1])
+    print(a.START_CONFIGURE()[1])
+    print(a.SET_CURRENT(0, 65)[1])
+    print(a.SET_CURRENT(1, 18)[1])
+    print(a.FINISH_CONFIGURE_WITH_SAVING()[1])
+    print(a.START()[1])
+    sleep(10)
+    print(a.STOP()[1])
+
     #\x55\xCC\x01\x02\x7C\x0E
