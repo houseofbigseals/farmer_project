@@ -1,4 +1,4 @@
-
+from typing import Tuple, Optional
 import serial
 import six
 
@@ -56,11 +56,11 @@ class UartWrapper:
     it works as c-style structure - collects everything about uart
     in a big bunch
 
-    #Кадр [COMMAND] может быть представлен следующим образом:
+    # Кадр [COMMAND] может быть представлен следующим образом:
     # command structure PREAMBLE DIRECTION LENGTH TYPE PAYLOAD CRC MSB CRC LSB
     # ------------------  \x55     \xCC      \x01 \x14           \x8B    \x7C
     #
-    #Кадр [RESPONSE] может быть представлен следующим образом:
+    # Кадр [RESPONSE] может быть представлен следующим образом:
     #     PREAMBLE DIRECTION LENGTH TYPE PAYLOAD CRC MSB CRC LSB
     #        0x55     0xAA    0x02  0x02   0x07   0x34     0x12
     #     SET_C b'\x55\xCC\x04\x0B\x01\x00\x00\x25\xB1')
@@ -69,16 +69,68 @@ class UartWrapper:
     def __init__(self,
                  devname: str = '/dev/ttyUSB0',
                  baudrate: int = 19200,
+                 timeout: float = 10
                  ):
         self.dev = devname
         self.baud = baudrate
-        # self log
+        self.timeout = timeout
 
-    def send_command(self):
-        pass
+    def send_command(self,
+                     com: bytearray,
+                     log_comment: str = None
+                     ) -> Tuple[Optional[bytearray], str]:
+        ans = None
+        logstring = "-------------------------------\n"
+        if(log_comment):
+            logstring += "Sending {}\n".format(log_comment)
+        else:
+            logstring += "We want to send this:\n"
+        logstring += self.parse_command(com)
+        try:
+            ser = serial.Serial(port=self.dev, baudrate=self.baud, timeout=self.timeout)
+            ser.write(com)
+        except Exception as e:
+            logstring += "Error happened while write: {}\n".format(e)
+            logstring += "-------------------------------\n"
+            return ans, logstring
 
-    def parse_command(self):
-        pass
+        try:
+            ans = ser.read(len(com))
+        except Exception as e:
+            logstring += "Error happened while read: {}\n".format(e)
+            logstring += "-------------------------------\n"
+            return ans, logstring
+
+        if(not ans or (len(ans) != len(com))):
+            logstring += "Broken answer from GIC: {}\n".format(ans)
+            logstring += "-------------------------------\n"
+        else:
+            logstring += "Succesfully got answer from GIC:\n"
+            logstring += self.parse_command(ans)
+        return ans, logstring
+
+
+    def parse_command(self, com: bytearray) -> str:
+        # parse content of command
+        data_length = com[2]
+        length = len(com)
+        parsed_output = ""
+        parsed_output += "-------------------------------\n"
+        parsed_output += "Parsed command {} \n".format(com.hex())
+        parsed_output += "{} - header byte \n".format(hex(com[0]))
+        parsed_output += "{} - destination byte\n".format(hex(com[1]))
+        parsed_output += "{} - length of command\n".format(hex(com[2]))
+        parsed_output += "{} - type of command\n".format(hex(com[3]))
+        if data_length > 1:
+            # parse content of command
+            for i in range(4, 4 + data_length - 1):
+                parsed_output += "{} - data byte\n".format(hex(com[i]))
+        else:
+            pass
+        parsed_output += "{} - last byte of CRC16 ccitt control sum\n".format(hex(com[length - 2]))
+        parsed_output += "{} - first byte of CRC16 ccitt control sum\n".format(hex(com[length - 1]))
+        parsed_output += "-------------------------------\n"
+        return parsed_output
 
     def create_command(self,
                        preamble: bytes = b'\x55',
@@ -86,11 +138,11 @@ class UartWrapper:
                        length: bytes = None,
                        ctype: bytes = b'\x01',
                        data: bytes = None
-                       ):
+                       ) -> bytearray:
         command = bytearray()
-        print("preamble ", preamble)
+        # print("preamble ", preamble)
         command.extend(preamble)
-        print("direction ", direction)
+        # print("direction ", direction)
         command.extend(direction)
         if(not length):
             # length of command is length of data + 1 byte of command_type
@@ -103,12 +155,12 @@ class UartWrapper:
                 command.extend(length)
         else:
             command.extend(length)
-        print("length ", length)
-        print("ctype ", ctype)
+        # print("length ", length)
+        # print("ctype ", ctype)
         command.extend(ctype)
         if(data):
             command.extend(data)
-        print("data ", data)
+        # print("data ", data)
         # crc should be calculated only for LENGTH | TYPE | DATA fields
         payload = bytearray()
         payload.extend(length)
@@ -116,10 +168,10 @@ class UartWrapper:
         if(data):
             payload.extend(data)
         crc_raw = self.crc16_ccitt(payload)
-        print("crc_raw ", hex(crc_raw))
+        # print("crc_raw ", hex(crc_raw))
         crc_bytes = crc_raw.to_bytes(2, byteorder='little')  # byteorder='little'
         # its important
-        print("crc_bytes ", crc_bytes)
+        # print("crc_bytes ", crc_bytes)
         command.extend(crc_bytes)
         return command
 
@@ -130,7 +182,7 @@ class UartWrapper:
     #     pass
     # for future if need be
 
-    def crc16_ccitt(self, data_, crc=0xffff):
+    def crc16_ccitt(self, data_, crc=0xffff) -> int:
         """Calculate the crc16 ccitt checksum of some data
         A starting crc value may be specified if desired.  The input data
         is expected to be a sequence of bytes (string) and the output
@@ -219,11 +271,13 @@ class UartWrapper:
 
 if __name__ == "__main__":
     a = UartWrapper()
-    print((a.create_command(
-        preamble=b'\x55',
-        direction=b'\xCC',
+    start = (a.create_command(
         length=None,
         ctype=b'\x02',
         data=None
-    )).hex())
+    ))
+
+    print(a.parse_command(start))
+    print(a.send_command(start)[0])
+    print(a.send_command(start)[1])
     #\x55\xCC\x01\x02\x7C\x0E
