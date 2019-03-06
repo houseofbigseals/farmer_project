@@ -375,11 +375,11 @@ if __name__ == "__main__":
     # print(a.START())
     # print(a.GET_STATUS()[1])
     print(a.START_CONFIGURE()[1])
-    print(a.SET_CURRENT(0, 65)[1])
-    print(a.SET_CURRENT(1, 18)[1])
+    print(a.SET_CURRENT(0, 10)[1])
+    print(a.SET_CURRENT(1, 200)[1])
     print(a.FINISH_CONFIGURE_WITH_SAVING()[1])
     print(a.START()[1])
-    sleep(10)
+    sleep(20)
     print(a.STOP()[1])
 
     #\x55\xCC\x01\x02\x7C\x0E
