@@ -99,6 +99,7 @@ class Ticket(object):
 
     @result.setter
     def result(self, res: Any = None):
+        # TODO: res might be unserializable so we need to check it
         self._result = res
         self._dict["result"] = self._result
         self._string = json.dumps(self._dict)

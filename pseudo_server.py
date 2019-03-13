@@ -164,7 +164,7 @@ async def main():
     # start server for 1 minut
     server = Server()
     await server.start()
-    await asyncio.sleep(60)
+    await asyncio.sleep(160)
     await server.stop()
 
 
