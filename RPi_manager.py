@@ -161,7 +161,7 @@ class Schedule:
     def get_tasks(self, time_: time.struct_time):
         pass
 
-    def add_command(self, command):
+    def add_commands(self, commands):
         pass
 
     def _read_config(self):
@@ -178,4 +178,8 @@ class RPiManager:
     And work with schedule object
     """
     def __init__(self):
+        # do some init things
+        # init units, test  connection with server and some other things
         pass
+
+    # async def
