@@ -2,7 +2,7 @@
 # RPi_master request. Also it must keep list of user commands
 # when user sends command to do in RPi, server puts it to list
 # and when server get RPi_master request, it send it to him.
-# All requests must be written to ./stupid_server_log.txt
+# All requests must be written to ./server_log.txt
 # The format must be
 # request : time : who : addr : port : decoded message
 # response : time : who : addr : port : decoded message
@@ -10,61 +10,13 @@
 
 import asyncio
 import json
-
-empty_message_dict = {
-    "type": "client",
-    "command":
-        {
-            "unit": "LED",
-            "task": "set_current",
-            "params": {"red": 100, "white": 100},
-            "priority": 3,
-            "secret_value": 1
-
-        }
-}
-
-
-"""
-
-messages formats:
-
-1. from client to server:
-message_dict = {
-    "type": "client",
-    "id" : client_id
-    "address" : worker_id
-    "command":
-        {
-            "unit": "LED",
-            "task": "set_current",
-            "params": {"red": 100, "white": 100},
-            "priority": 3,
-            "mode": "long"  
-
-        }
-}
-
-
-2. from server to client
-
-message_dict = {
-    "status_of_execution_or_error": "no_such_worker_error"
-}
-
-3. from 
-
-"""
-
-error_message_dict = {
-
-}
+from command import Command, Ticket, Message
 
 
 class ServerProtocol(asyncio.Protocol):
 
-    def __init__(self, commands_list):
-        self.commands = commands_list
+    def __init__(self, server: Server):
+        self.serv = server
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
@@ -73,50 +25,33 @@ class ServerProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         message = data.decode()
-        data_dict = json.loads(message)
-        print('Data received: {!r}'.format(message))
-        print('Commands in stack: {}'.format(len(self.commands)))
-
-        if data_dict["type"] == "worker":
-            if len(self.commands) != 0:
-                out_data = json.dumps(self.commands.pop())
-            else:
-                out_data = json.dumps(empty_message_dict)
-            print('Send: {!r}'.format(out_data))
-            self.transport.write(out_data.encode())
-        else:
-            out_data = json.dumps({"status": "we got that"})
-            self.commands.append(data_dict)
-            print('Send: {!r}'.format(out_data))
-            self.transport.write(out_data.encode())
-
+        self.server.handle_message(message)
         print('Close the client socket\n')
         self.transport.close()
-
-
-# class WorkersList:
-#     def __init__(self, id_):
-#         self.id = id_
-#
-# class ClientsList:
-#     def __init__(self, id_):
-#         self.id = id_
-#     def add(self, id_):
 
 
 class Server:
     """
     Server prototype
     Simple wrapper for asyncio.create_server
+    with parsing messages
+
+    Server answers
+    head: STATUS
+    body:
+    INVALID_HEADER_ERROR
+    INVALID_BODY_ERROR
+    OK
     """
-    def __init__(self, addr: str = '127.0.0.1', port: int = 8888):
-        self.workers = [] # just list with ids
-        self.clients = [] # just list with ids
-        self.commands_list = []
-        self.addr = addr
+    def __init__(self, host: str = '127.0.0.1', port: int = 8888):
+        # self.workers = [] # just list with ids
+        # self.clients = [] # just list with ids
+        self.tickets = []
+        self.host = host
         self.port = port
         self.is_started = False
         self.server = None
+        # self.protocol = ServerProtocol
         pass
 
     async def start(self):
@@ -135,34 +70,88 @@ class Server:
         print("Server stopped")
         self.server.close()
 
-    def create_commands_pack(self, worker_id):
-        out = list()
-        out.append(c for c in self.commands if c.id == worker_id)
+    async def serve_forever(self):
+        loop = asyncio.get_running_loop()
+        print("Server started")
+        self.is_started = True
+
+        server = await loop.create_server(
+            lambda: ServerProtocol(self),
+            self.host,
+            self.port)
+
+        async with server:
+            await server.serve_forever()
+
+    # def create_commands_pack(self, worker_id):
+    #     out = list()
+    #     out.append(c for c in self.commands if c.id == worker_id)
 
     def parse_message(self, message):
         data_dict = json.loads(message)
-        if data_dict["type"] == "worker":
-            new_id = data_dict["id"]
-            # TODO: check id for type
 
-            # add worker to list
-            if new_id not in self.workers:
-                self.workers.append(new_id)
-            # find commands for this worker
-            if len(self.commands) != 0:
-                return json.dumps(self.commands.pop())
-            else:
-                return json.dumps(empty_message_dict)
-
-        elif data_dict["type"] == "client":
-            pass
+    def handle_message(self, message : Message):
+        """
+        Must parse incoming message and return answer message to answer
+        :param message: Message
+        :return: Message
+        """
+        data_dict = json.loads(message)
+        header = message.header
+        # parse header
+        valid_heads = [
+            "ADD_TICKET",
+            "DELETE_TICKET",
+            "GET_TICKET_RESULT",
+            "SET_TICKET_RESULT",
+            "REQUEST_TICKETS",
+            "GET_SERVER_INFO"
+            ]
+        if header not in valid_heads:
+            return Message(header="STATUS", body="INVALID_HEADER_ERROR")
         else:
-            return
+            body = message.body
+            if header == "ADD_TICKET":
+                # there must be a Ticket in body
+                try:
+                    #new_tick = body.
+                    # TODO: how to create Ticket obj from raw dictionary
+                    self.add_ticket()
+                    return Message(header="STATUS", body="OK")
+                except Exception as e:
+                    return Message(header="STATUS", body="INVALID_BODY_ERROR:"+str(e))
+
+            if header == "DELETE_TICKET":
+                try:
+                    self.delete_ticket(body)
+                    return Message(header="STATUS", body="OK")
+                except Exception as e:
+                    return Message(header="STATUS", body="INVALID_BODY_ERROR:" + str(e))
+
+            if header == "GET_TICKET_RESULT":
+                try:
+                    self.get_ticket_result(body)
+                    return Message(header="STATUS", body="OK")
+                except Exception as e:
+                    return Message(header="STATUS", body="INVALID_BODY_ERROR:" + str(e))
+
+            if header == "SET_TICKET_RESULT":
+                try:
+                    self.set_ticket_result(body)
+                    return Message(header="STATUS", body="OK")
+                except Exception as e:
+                    return Message(header="STATUS", body="INVALID_BODY_ERROR:" + str(e))
+
+
+
+
 
 
 async def main():
     # start server for 1 minut
     server = Server()
+    loop = asyncio.get_event_loop()
+    loop.run_forever()
     await server.start()
     await asyncio.sleep(160)
     await server.stop()

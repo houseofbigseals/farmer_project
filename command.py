@@ -5,6 +5,50 @@ from typing import Dict, Any
 import json
 
 
+class Message(object):
+    """
+    Message to server from worker or client
+    Valid headers:
+    to server:
+    ADD_TICKET
+    DELETE_TICKET
+    GET_TICKET_RESULT
+    SET_TICKET_RESULT
+    REQUEST_TICKETS
+    GET_SERVER_INFO
+    from server:
+    STATUS
+    Valid bodies - any, server must handle and do validation, not we
+    """
+    def __init__(self,
+                 header: str = "GET_SERVER_INFO",
+                 body: Any = ""
+                 ):
+        self._header = header
+        self._body = body
+        self._dict = {
+            "header": self._header,
+            "body": self._body
+        }
+        self._string = json.dumps(self._dict)
+
+    @property
+    def header(self):
+        return self._header
+
+    @property
+    def body(self):
+        return self._body
+
+    @property
+    def string(self):
+        return self._string
+
+    @property
+    def mdict(self):
+        return self._dict
+
+
 class Command(object):
     """
     Command to worker
