@@ -18,6 +18,7 @@ class Message(object):
     GET_SERVER_INFO
     from server:
     STATUS
+    ERROR
     Valid bodies - any, server must handle and do validation, not we
     """
     def __init__(self,
@@ -54,20 +55,20 @@ class Command(object):
     Command to worker
     """
     def __init__(self,
-                 unit: str = "system",
-                 func: str = "get_info",
-                 args: Dict = None,
+                 cunit: str = "system",
+                 cfunc: str = "get_info",
+                 cargs: Dict = None,
                  ctype: str = "single"
                  ):
-        self._unit = unit
-        self._func = func
-        self._args = args if args is not None else {}
+        self._unit = cunit
+        self._func = cfunc
+        self._args = cargs if cargs is not None else {}
         self._ctype = ctype
         self._dict = {
-            "unit": self._unit,
-            "func": self._func,
-            "args": self._args,
-            "type": self._ctype
+            "cunit": self._unit,
+            "cfunc": self._func,
+            "cargs": self._args,
+            "ctype": self._ctype
         }
         self._string = json.dumps(self._dict)
 
@@ -103,26 +104,26 @@ class Ticket(object):
     def __init__(self,
                  tfrom: int,
                  tto: int,
-                 tid: UUID = None,
-                 tcommand: Command = None,
+                 tid: int = None,
+                 tcommand: dict = None,  # it must be a dict, that describes command such as Command.cdict
                  tresult: Any = None
                  ):
         self._from = tfrom
         self._to = tto
-        self._id = tid if tid is not None else uuid4()
+        self._id = tid if tid is not None else uuid4().int  # it must be a big integer
         self._command = tcommand
         self._result = tresult
         self._dict = {
-            "from": self._from,
-            "to": self._to,
-            "id": str(self._id),
-            "command": self._command.cdict,
-            "result": self._result
+            "tfrom": self._from,
+            "tto": self._to,
+            "tid": self._id,
+            "tcommand": self._command,
+            "tresult": self._result
         }
         self._string = json.dumps(self._dict)
 
     @property
-    def from_(self):
+    def tfrom(self):
         return self._from
 
     @property
@@ -158,11 +159,32 @@ class Ticket(object):
 
 
 if __name__ == "__main__":
-    c = Command()
-    print(c.unit)
-    T = Ticket(tfrom=1, tto=2, tcommand=c)
-    print(T.result)
-    T.result = 56
-    print(T.result)
-    print(c.string)
-    print(T.string)
+    command_kwargs = {
+        "cunit": "test_unit",
+        "cfunc": "test_func",
+        "cargs": {"a": 1, "b": 2,"c": 3},
+        "ctype": "test_type"
+    }
+    c = Command(**command_kwargs)
+    cd = c.cdict
+    ccc = Command(**cd)
+    print(ccc.unit)
+    print(ccc.cdict)
+    ticket_kwargs = {
+        "tfrom": 1000,
+        "tto": 100,
+        "tid": str(uuid4()),
+        "tcommand": command_kwargs,
+        "tresult": {"error": "BAD_ERROR"}
+    }
+    t = Ticket(**ticket_kwargs)
+    tt = Ticket(**t.tdict)
+    print(tt.command)
+    print(tt.result)
+    print(tt.id)
+    # T = Ticket(tfrom=1, tto=2, tcommand=c)
+    # print(T.result)
+    # T.result = 56
+    # print(T.result)
+    # print(c.string)
+    # print(T.string)

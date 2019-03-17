@@ -11,12 +11,16 @@
 import asyncio
 import json
 from command import Command, Ticket, Message
+from typing import Any
+
+# TODO: change all debug print`s to logging.DEBUG or smth like this
 
 
 class ServerProtocol(asyncio.Protocol):
 
-    def __init__(self, server: Server):
-        self.serv = server
+    def __init__(self, server: Any):
+        # TODO: how to fix that Any type hint and change to Server object?
+        self.server = server
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
@@ -25,23 +29,29 @@ class ServerProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         message = data.decode()
-        self.server.handle_message(message)
+        answer = json.dumps((self.server.handle_message(message)).mdict)
+        print('Send: {!r}'.format(answer))
+        self.transport.write(answer.encode())
         print('Close the client socket\n')
         self.transport.close()
 
 
-class Server:
+class Server(object):
     """
     Server prototype
     Simple wrapper for asyncio.create_server
     with parsing messages
 
     Server answers
-    head: STATUS
+    head:
+    SUCCESS
+    ERROR
     body:
     INVALID_HEADER_ERROR
-    INVALID_BODY_ERROR
+    INVALID_BODY_ERROR:error_str
+    UNKNOWN_ERROR:error_str
     OK
+    {server info dict}
     """
     def __init__(self, host: str = '127.0.0.1', port: int = 8888):
         # self.workers = [] # just list with ids
@@ -50,7 +60,7 @@ class Server:
         self.host = host
         self.port = port
         self.is_started = False
-        self.server = None
+        self.aioserver = None
         # self.protocol = ServerProtocol
         pass
 
@@ -64,39 +74,35 @@ class Server:
                 self.addr,
                 self.port
                 )
-            self.server = await coro
+            self.aioserver = await coro
 
     async def stop(self):
         print("Server stopped")
-        self.server.close()
+        self.aioserver.close()
 
     async def serve_forever(self):
         loop = asyncio.get_running_loop()
         print("Server started")
         self.is_started = True
 
-        server = await loop.create_server(
+        self.aioserver = await loop.create_server(
             lambda: ServerProtocol(self),
             self.host,
             self.port)
 
-        async with server:
-            await server.serve_forever()
+        async with self.aioserver:
+            await self.aioserver.serve_forever()
 
-    # def create_commands_pack(self, worker_id):
-    #     out = list()
-    #     out.append(c for c in self.commands if c.id == worker_id)
-
-    def parse_message(self, message):
-        data_dict = json.loads(message)
-
-    def handle_message(self, message : Message):
+    def handle_message(self, message_ : Any):
         """
-        Must parse incoming message and return answer message to answer
-        :param message: Message
+        Must parse incoming message and return answer message to send response
+        :param message_: Any (raw message dict)
         :return: Message
         """
-        data_dict = json.loads(message)
+        data_dict = json.loads(message_)
+        message = Message(**data_dict)
+        # print(data_dict)
+        # print(type(data_dict))
         header = message.header
         # parse header
         valid_heads = [
@@ -108,53 +114,161 @@ class Server:
             "GET_SERVER_INFO"
             ]
         if header not in valid_heads:
-            return Message(header="STATUS", body="INVALID_HEADER_ERROR")
+            return Message(header="ERROR", body="INVALID_HEADER_ERROR")
         else:
             body = message.body
             if header == "ADD_TICKET":
-                # there must be a Ticket in body
+                # there must be a dict describes a ticket in body
+                # like that:
+                # body = {
+                #   "tfrom": int,
+                #   "tto": int,
+                #   "tid": UUID = None,
+                #   "tcommand": dict = None,  # it must be a dict, that describes command
+                #   "tresult": Any = None
+                #   }
                 try:
-                    #new_tick = body.
-                    # TODO: how to create Ticket obj from raw dictionary
-                    self.add_ticket()
-                    return Message(header="STATUS", body="OK")
+                    new_tick = Ticket(**body)
+                    self.add_ticket(new_tick)
+                    return Message(header="SUCCESS", body="OK")
                 except Exception as e:
-                    return Message(header="STATUS", body="INVALID_BODY_ERROR:"+str(e))
+                    return Message(header="ERROR", body="INVALID_BODY_ERROR:" + str(e))
 
-            if header == "DELETE_TICKET":
+            elif header == "DELETE_TICKET":
+                # there must be a dict in body
+                # body = {
+                #           "id": int
+                #       }
                 try:
-                    self.delete_ticket(body)
-                    return Message(header="STATUS", body="OK")
+                    self.delete_ticket(body["id"])
+                    return Message(header="SUCCESS", body="OK")
                 except Exception as e:
-                    return Message(header="STATUS", body="INVALID_BODY_ERROR:" + str(e))
+                    return Message(header="ERROR", body="INVALID_BODY_ERROR:" + str(e))
 
-            if header == "GET_TICKET_RESULT":
+            elif header == "GET_TICKET_RESULT":
+                # there must be a dict in body
+                # body = {
+                #           "id": int
+                #       }
                 try:
-                    self.get_ticket_result(body)
-                    return Message(header="STATUS", body="OK")
+                    ans_body = self.get_ticket_result(body["id"])
+                    return Message(header="SUCCESS", body=ans_body)
                 except Exception as e:
-                    return Message(header="STATUS", body="INVALID_BODY_ERROR:" + str(e))
+                    return Message(header="ERROR", body="INVALID_BODY_ERROR:" + str(e))
 
-            if header == "SET_TICKET_RESULT":
+            elif header == "SET_TICKET_RESULT":
+                # there must be a dict in body
+                # body = {
+                #           "id": int,
+                #           "result": Any
+                #       }
                 try:
-                    self.set_ticket_result(body)
-                    return Message(header="STATUS", body="OK")
+                    self.set_ticket_result(body["id"], body["result"])
+                    return Message(header="SUCCESS", body="OK")
                 except Exception as e:
-                    return Message(header="STATUS", body="INVALID_BODY_ERROR:" + str(e))
+                    return Message(header="ERROR", body="INVALID_BODY_ERROR:" + str(e))
 
+            elif header == "REQUEST_TICKETS":
+                # there must be a dict in body
+                # body = {
+                #           "id": int,
+                #       }
+                try:
+                    worker_id = body["id"]
+                    tickets_list = self.find_tickets_for_worker(worker_id)
+                    return Message(header="SUCCESS", body=json.dumps(tickets_list))
+                except Exception as e:
+                    return Message(header="ERROR", body="INVALID_BODY_ERROR:" + str(e))
 
+            elif header == "GET_SERVER_INFO":
+                # there must be nothing in body
+                # body = {}
+                try:
+                    ans_body = self.server_info()
+                    return Message(header="SUCCESS", body=ans_body)
+                except Exception as e:
+                    return Message(header="ERROR", body="UNKNOWN_ERROR:" + str(e))
 
+            else:
+                return Message(header="ERROR", body="UNKNOWN_ERROR:" + "UNKNOWN")
 
+    def server_info(self):
+        # Send all interesting info from server as a str
+        print("Send info")
+        info = {"tickets_number": len(self.tickets)}
+        ans = json.dumps(info)
+        return ans
+
+    def add_ticket(self, tick: Ticket):
+        # add ticket from message to our tickets_list
+        print("Add ticket with id = {}".format(tick.id))
+        self.tickets.append(tick)
+
+    def delete_ticket(self, del_id: int):
+        # remove ticket if it in tickets_list, else raise exception
+        print("Trying to delete ticket with id = {}".format(del_id))
+        deleted = False
+        for t in self.tickets:
+            if t.id == del_id:
+                self.log_ticket(t)
+                print("Delete ticket with id = {}".format(t.id))
+                self.tickets.remove(t)
+                deleted = True
+        if not deleted:
+            print("There is no ticket with id={}".format(del_id))
+            raise ValueError("There is no ticket with id={}".format(del_id))
+
+    def log_ticket(self, tick: Ticket):
+        # add ticket to log
+        print("Log ticket with id = {}".format(tick.id))
+        # TODO: do real logging
+        pass
+
+    def get_ticket_result(self, tick_id: int):
+        # return result from ticket
+        print("Trying to get result of ticket with id = {}".format(tick_id))
+        found = False
+        for t in self.tickets:
+            if t.id == tick_id:
+                found = True
+                print("Got result of ticket with id = {}".format(tick_id))
+                return t.result
+        if not found:
+            print("There is no ticket with id={}".format(tick_id))
+            raise ValueError("There is no ticket with id={}".format(tick_id))
+
+    def set_ticket_result(self, tick_id: int, result: Any):
+        # set result to ticket
+        print("Trying to set result of ticket with id = {}".format(tick_id))
+        found = False
+        for t in self.tickets:
+            if t.id == tick_id:
+                found = True
+                print("Set result of ticket with id = {}".format(tick_id))
+                t.result = result
+        if not found:
+            print("There is no ticket with id={}".format(tick_id))
+            raise ValueError("There is no ticket with id={}".format(tick_id))
+
+    def find_tickets_for_worker(self, worker_id: int):
+        # find tickets, add them to list and then return that list
+        print("Trying to find tickets for worker with id = {}".format(worker_id))
+        tickets_list = []
+        for t in self.tickets:
+            if t.to == worker_id:
+                tickets_list.append(t.tdict)
+        return tickets_list
 
 
 async def main():
-    # start server for 1 minut
+    # start server for 1 minute
     server = Server()
     loop = asyncio.get_event_loop()
-    loop.run_forever()
-    await server.start()
-    await asyncio.sleep(160)
-    await server.stop()
+    await server.serve_forever()
+    # loop.run_forever()
+    # await server.start()
+    # await asyncio.sleep(160)
+    # await server.stop()
 
 
 if __name__ == '__main__':
