@@ -112,14 +112,15 @@
 import time
 import asyncio
 import aiohttp
-
+from LED_uart_wrapper import UartWrapper
+from dht11_wrapper import DHTWrapper
 
 class Unit:
     """
     Simple prototype for unit object
     """
     def __init__(self):
-        self.last_operation_status = None
+        # self.last_operation_status = None
         self.status = None
         pass
 
@@ -139,11 +140,31 @@ class Unit:
         """
         pass
 
-    def get_last_task_status(self) -> None:
-        """
-        Returns status of last operation
-        """
+    # def get_last_task_status(self) -> None:
+    #     """
+    #     Returns status of last operation
+    #     """
+    #     pass
+
+
+class LEDUnit(Unit):
+    pass
+
+
+class SystemUnit(Unit):
+
+    def __init__(self):
+        super(SystemUnit, self).__init__()
+        self._list_of_methods = ["get_info"]
         pass
+
+    async def _get_info(self):
+        return await asyncio.create_subprocess_shell("uname -a")
+
+    async def handle_command(self, command: str):
+        if command in self._list_of_methods:
+            if command == "get_info":
+                return await self._get_info()
 
 
 class Schedule:
@@ -164,6 +185,9 @@ class Schedule:
     def add_commands(self, commands):
         pass
 
+    def delete_commands(self, commands):
+        pass
+
     def _read_config(self):
         pass
 
@@ -171,7 +195,7 @@ class Schedule:
         pass
 
 
-class RPiManager:
+class Worker:
     """
     This is async manager for RPi
     It must communicate with local and remote servers
@@ -181,5 +205,7 @@ class RPiManager:
         # do some init things
         # init units, test  connection with server and some other things
         pass
+
+
 
     # async def
