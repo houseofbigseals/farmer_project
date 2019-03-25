@@ -112,8 +112,13 @@
 import time
 import asyncio
 import aiohttp
-from LED_uart_wrapper import UartWrapper
-from dht11_wrapper import DHTWrapper
+from led_uart_wrapper import UartWrapper
+from dht_wrapper import DHTWrapper
+from uuid import uuid4, UUID
+from typing import Any
+from pseudo_client import command_get_server_info, command_request_ticket\
+    , command_set_ticket_result
+
 
 class Unit:
     """
@@ -152,7 +157,10 @@ class LEDUnit(Unit):
 
 
 class SystemUnit(Unit):
-
+    """
+    Unit for all needs, that are not related with real stand objects like valves
+    pumps and leds
+    """
     def __init__(self):
         super(SystemUnit, self).__init__()
         self._list_of_methods = ["get_info"]
@@ -201,11 +209,12 @@ class Worker:
     It must communicate with local and remote servers
     And work with schedule object
     """
-    def __init__(self):
+    def __init__(self, wid=uuid4().int):
         # do some init things
         # init units, test  connection with server and some other things
-        pass
-
-
+        self._id = wid
+        self.system_unit = SystemUnit()
+        self.led_unit = LEDUnit()
+        self.schedule = Schedule()
 
     # async def
