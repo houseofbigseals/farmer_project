@@ -111,11 +111,14 @@
 
 import time
 import asyncio
-import aiohttp
+import json
 from led_uart_wrapper import UartWrapper
 from dht_wrapper import DHTWrapper
 from uuid import uuid4, UUID
 from typing import Any
+from contextlib import suppress
+from command import Message, Command, Ticket
+from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro
 from pseudo_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
 
@@ -158,7 +161,7 @@ class LEDUnit(Unit):
 
 class SystemUnit(Unit):
     """
-    Unit for all needs, that are not related with real stand objects like valves
+    Unit for all needs, that are not related with real fitostand objects like valves
     pumps and leds
     """
     def __init__(self):
@@ -209,12 +212,90 @@ class Worker:
     It must communicate with local and remote servers
     And work with schedule object
     """
-    def __init__(self, wid=uuid4().int):
+    def __init__(self, wid: int = uuid4().int, host: str = '127.0.0.1', port : int = 8888):
         # do some init things
         # init units, test  connection with server and some other things
         self._id = wid
-        self.system_unit = SystemUnit()
-        self.led_unit = LEDUnit()
-        self.schedule = Schedule()
+        self._host = host
+        self._port = port
+        self._system_unit = SystemUnit()
+        self._led_unit = LEDUnit()
+        self._schedule = Schedule()
+        self._main_loop_task = None
+        self._tasks = []  # list with objects from tasks.py module
+        self._tickets = []  # list with Ticket objects (or not?)
+        self._tickets_lock = asyncio.Lock()
 
-    # async def
+    async def start(self):
+        self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
+        schedule_task = PeriodicCoro(self.check_schedule, 5)
+        request_task = PeriodicCoro(self.check_server, 5)
+        await schedule_task.start()
+        await request_task.start()
+
+    async def stop(self):
+        self._main_loop_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await self._main_loop_task
+
+    async def _run_main_loop(self):
+
+        while True:
+            # do main things in loop
+            #
+            # read self._tickets and if there no "in_work" or some data
+            # create new task for correct unit and put str "in_work" to result
+            await asyncio.sleep(0.5)
+            async with self._tickets_lock:
+                for t in self._tickets:
+                    # find newly added tickets
+                    if not t.result:
+                        try:
+                            com = Command(**t.command)
+                            self.parse_command(com)
+                        except Exception as e:
+                            # TODO: continue from here
+                            pass
+                pass
+
+    def check_schedule(self):
+        """
+        do read schedule
+        and then put tasks to self.tickets[] (with lock)
+        :return:
+        """
+        # TODO: do real schedule reading
+        pass
+
+    async def check_server(self):
+        """
+        do send request to server, parse answer and put tasks to self.tickets
+        (with lock just in case)
+        :return:
+        """
+        # send request to server
+        res = None
+        try:
+            res = await command_request_ticket(
+                worker_id=self._id,
+                host=self._host,
+                port=self._port
+            )
+        except Exception as e:
+            # TODO: what we have to do with this type errors? How to handle
+            print("Error while sending request to server: {}".format(e))
+
+        if res:
+            # parse answer
+            answer = Message(**json.loads(res))
+            dicts_list = json.loads(answer.body)
+            # TODO: remove useless print and do something useful
+            print(answer.header)
+            tickets_list = [Ticket(**t_dict) for t_dict in dicts_list]
+            # TODO: check what will happen if answer contains empty list
+            # add tickes from answer to list
+            async with self._tickets_lock:
+                for t in tickets_list:
+                    # TODO: remove useless print and do something useful
+                    print(t.id, t.to, t.tfrom)
+                    self._tickets.append(t)

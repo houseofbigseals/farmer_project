@@ -187,7 +187,6 @@ async def command_get_ticket_result(
     return answer
 
 
-
 async def command_set_ticket_result(
         ticket_id: int,
         result: Any,
@@ -199,11 +198,37 @@ async def command_set_ticket_result(
     answer = Message(**json.loads(res))
     return answer
 
+
+class PeriodicCoro:
+    def __init__(self, coro, time):
+        self.coro = coro
+        self.time = time
+        self.is_started = False
+        self._task = None
+        self._coro_task = None
+
+    async def start(self):
+        if not self.is_started:
+            self.is_started = True
+            # Start task to call func periodically:
+            # self._task = asyncio.ensure_future(self._run())
+            self._coro_task = asyncio.ensure_future(self.coro)
+
+    async def stop(self):
+        if self.is_started:
+            self.is_started = False
+            # Stop task and await it stopped:
+            self._task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._task
+
+
 async def main():
     com = Command()
     ans = await command_get_server_info()
     print(ans.header)
     print(ans.body)
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
