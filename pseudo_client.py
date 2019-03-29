@@ -56,7 +56,7 @@ async def send_command_to_server(
     :param data: Any
     :return: result : Any
     """
-    loop = asyncio.get_running_loop()
+    loop = asyncio.get_event_loop()
     on_con_lost = loop.create_future()
     message_str = json.dumps(message.mdict)
     result = [None]

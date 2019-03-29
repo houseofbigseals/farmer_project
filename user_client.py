@@ -34,7 +34,7 @@ async def user_main():
 
 
 async def user_main2():
-    ans = await command_get_server_info()
+    ans = await command_get_server_info(host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
@@ -51,7 +51,7 @@ async def user_main2():
         tcommand=com.cdict,
         tresult=None
     )
-    ans = await command_add_ticket(tick)
+    ans = await command_add_ticket(tick, host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
 

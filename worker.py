@@ -558,7 +558,8 @@ class Worker:
 
 async def main():
     # example uuid wid=155167253286217647024261323245457212920
-    worker = Worker(wid=155167253286217647024261323245457212920)
+    # server host 83.220.174.247:8888
+    worker = Worker(wid=155167253286217647024261323245457212920, host="83.220.174.247", port=8888)
     await worker.start()
 
 if __name__ == "__main__":
