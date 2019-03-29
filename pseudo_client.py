@@ -155,11 +155,11 @@ async def command_add_ticket(
 
 
 async def command_delete_ticket(
-        tick: Ticket,
+        ticket_id: int,
         host: str = '127.0.0.1',
         port: int = 8888
 ):
-    message = Message(header="DELETE_TICKET", body={"id": tick.tdict["tid"]})
+    message = Message(header="DELETE_TICKET", body={"id": ticket_id})
     res = await send_command_to_server(host=host, port=port, message=message)
     answer = Message(**json.loads(res))
     return answer

@@ -121,7 +121,7 @@ from command import Message, Command, Ticket
 from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from pseudo_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
-from colorama import Fore, init
+from colorama import Back, init
 
 
 class Unit(object):
@@ -271,19 +271,28 @@ class SystemUnit(Unit):
         self._list_of_methods = ["get_info"]
 
     async def _get_info(self, tick: Ticket):
-        res = await asyncio.create_subprocess_shell("uname -a")
-        tick.result = res
+        print(Back.CYAN+ "SystemUnit.SystemUnit.get_info_task started!")
+        proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
+
+        def strip(x):
+            return x.strip()
+        stdout, stderr = await proc.communicate()
+        content = stdout.decode().strip()
+        tick.result = content
+        print(Back.CYAN+"SystemUnit.SystemUnit.get_info_task done!")
 
     async def handle_ticket(self, tick: Ticket):
-        print("SystemUnit.handle_ticket started!")
+        print(Back.CYAN+"SystemUnit.handle_ticket started!")
         command = Command(**tick.command)
         if command.func in self._list_of_methods:
+            print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
             if command.func == "get_info":
-                new_single_coro = SingleCoro(self._get_info, tick, name="SystemUnit.get_info_task")
+                new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
+                print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
         else:
             raise ValueError("SystemUnitError: No such command - {}".format(command.func))
-        print("SystemUnit.handle_ticket done!")
+        print(Back.CYAN+"SystemUnit.handle_ticket done!")
 
 
 class Schedule:
@@ -370,11 +379,11 @@ class Worker:
     async def _run_main_loop(self):
         # TODO: mb here must be nothing, and we should put all things to another PeriodicCoro?
         while True:
-            print(Fore.RED+"{} at work !".format("Worker._run_main_loop_task"))
-            print(Fore.RED+"Worker._run_main_loop_task started!")
+            print(Back.RED+"{} at work !".format("Worker._run_main_loop_task"))
+            print(Back.RED+"Worker._run_main_loop_task started!")
             # do main things in loop
             await asyncio.sleep(1)  # ???
-            print(Fore.RED+"Worker._run_main_loop_task is awaiting _new_tickets_lock!")
+            print(Back.RED+"Worker._run_main_loop_task is awaiting _new_tickets_lock!")
             # create tasks for new tickets
             async with self._new_tickets_lock:
                 for t in self._new_tickets:
@@ -386,13 +395,13 @@ class Worker:
                         t.result = {"Error": e}
                         self._new_tickets.remove(t)
                         # TODO: check if it really works
-                        print(Fore.RED+"Worker._run_main_loop_task is awaiting _done_tickets_lock!")
+                        print(Back.RED+"Worker._run_main_loop_task is awaiting _done_tickets_lock!")
                         async with self._done_tickets_lock:
                             self._done_tickets.append(t)
-                        print(Fore.RED+"Error {} while handling command in ticket {}".format(e, t.id))
+                        print(Back.RED+"Error {} while handling command in ticket {}".format(e, t.id))
 
             # start newly added tasks and remove done tasks
-            print(Fore.RED+"Worker._run_main_loop_task is awaiting _tasks_lock!")
+            print(Back.RED+"Worker._run_main_loop_task is awaiting _tasks_lock!")
             async with self._tasks_lock:
                 for nt in self._tasks:
                     if not nt.is_started:
@@ -403,10 +412,11 @@ class Worker:
                             self._tasks.remove(nt)
 
             # check _at_work_tickets and if they have result - push them to _done_tickets
-            print(Fore.RED+"Worker._run_main_loop_task is awaiting _at_work_tickets_lock!")
+            print(Back.RED+"Worker._run_main_loop_task is awaiting _at_work_tickets_lock!")
             async with self._at_work_tickets_lock:
                 for t in self._at_work_tickets:
                     if t.result != {"Error": "NotDoneReallyError"}:
+                        self._at_work_tickets.remove(t)
                         async with self._done_tickets_lock:
                             self._done_tickets.append(t)
 
@@ -414,7 +424,7 @@ class Worker:
         # parse command and create task objects for them
         # and put ticket to self._at_work_tickets list
         new_task = None
-        print(Fore.GREEN+"parse_ticket started!")
+        print(Back.GREEN+"parse_ticket started!")
         com = Command(**tick.command)
         if com.unit not in self._units:
             raise ValueError("No such unit {}".format(com.unit))
@@ -438,16 +448,16 @@ class Worker:
             new_task = await self._temp_sensor_unit.handle_ticket(tick)
 
         if new_task:
-            print(Fore.GREEN+"parse_ticket is awaiting _tasks_lock!")
+            print(Back.GREEN+"parse_ticket is awaiting _tasks_lock!")
             async with self._tasks_lock:
                 self._tasks.append(new_task)
-            print(Fore.GREEN+"parse_ticket is awaiting _at_work_tickets_lock!")
+            print(Back.GREEN+"parse_ticket is awaiting _at_work_tickets_lock!")
             async with self._at_work_tickets_lock:
                 self._at_work_tickets.append(tick)
-            print(Fore.GREEN+"parse_ticket is not awaiting _new_tickets_lock!")
+            print(Back.GREEN+"parse_ticket is not awaiting _new_tickets_lock!")
             # async with self._new_tickets_lock:
             self._new_tickets.remove(tick)
-        print(Fore.GREEN+"parse_ticket done!")
+        print(Back.GREEN+"parse_ticket done!")
 
     async def send_results(self):
         """
@@ -456,6 +466,8 @@ class Worker:
         :return:
         """
         # TODO: mb we have to send only N of available tickets, not all?
+        print(Back.MAGENTA + "send_results started")
+        print(Back.MAGENTA + "send_results is awaiting _done_tickets_lock")
         async with self._done_tickets_lock:
             for dt in self._done_tickets:
                 # send request to server
@@ -467,22 +479,28 @@ class Worker:
                         host=self._host,
                         port=self._port
                     )
+                    print(Back.MAGENTA + "send_results sending results for server")
                 except Exception as e:
                     # TODO: what we have to do with this type errors? How to handle
-                    print("Error while sending request to server: {}".format(e))
+                    print(Back.MAGENTA + "Error while sending request to server: {}".format(e))
 
                 if res:
                     # parse answer
                     answer = res # it is already Message object
                     if answer.header == "SUCCESS":
+                        print(Back.MAGENTA + "send_results parsing answer")
+                        print("Answer header is: ", answer.header)
                         # its ok, remove ticket and archive it
                         await self.archive_ticket(dt)
+                        print(Back.MAGENTA + "send_results removing sent ticket")
                         self._done_tickets.remove(dt)
                 else:
                     # something went wrong in server side
                     # try to send this result again after
                     # so do nothing (or not?)
+                    print(Back.MAGENTA + "send_results not removing ticket")
                     pass
+        print(Back.MAGENTA + "send_results done")
 
     async def archive_ticket(self, ticket: Ticket):
         """
@@ -508,7 +526,7 @@ class Worker:
         :return:
         """
         # send request to server
-        print(Fore.BLUE+"check_server started!")
+        print(Back.BLUE+"check_server started!")
         res = None
         try:
             res = await command_request_ticket(
@@ -516,13 +534,13 @@ class Worker:
                 host=self._host,
                 port=self._port
             )
-            print(Fore.BLUE+"check_server send reqv!")
+            print(Back.BLUE+"check_server send reqv!")
         except Exception as e:
             # TODO: what we have to do with this type errors? How to handle
-            print(Fore.BLUE+"Error while sending request to server: {}".format(e))
+            print(Back.BLUE+"Error while sending request to server: {}".format(e))
 
         if res:
-            print(Fore.BLUE+"check_server parsing answer!")
+            print(Back.BLUE+"check_server parsing answer!")
             # parse answer
             answer = res # its already Message object
             dicts_list = json.loads(answer.body)
@@ -530,13 +548,13 @@ class Worker:
             print(answer.header)
             tickets_list = [Ticket(**t_dict) for t_dict in dicts_list]
             # add tickets from answer to list
-            print(Fore.BLUE+"check_server waiting for _new_tickets_lock!")
+            print(Back.BLUE+"check_server waiting for _new_tickets_lock!")
             async with self._new_tickets_lock:
                 for t in tickets_list:
                     # TODO: remove useless print and do something useful
                     print(t.id, t.to, t.tfrom)
                     self._new_tickets.append(t)
-            print(Fore.BLUE+"check_server done!")
+            print(Back.BLUE+"check_server done!")
 
 async def main():
     # example uuid wid=155167253286217647024261323245457212920
