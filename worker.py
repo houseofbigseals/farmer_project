@@ -113,17 +113,18 @@ import time
 import asyncio
 import json
 from led_uart_wrapper import UartWrapper
-from dht_wrapper import DHTWrapper
+# from dht_wrapper import DHTWrapper  # it works only on raspberry
 from uuid import uuid4, UUID
 from typing import Any
 from contextlib import suppress
 from command import Message, Command, Ticket
-from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro
+from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from pseudo_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
+from colorama import Fore, init
 
 
-class Unit:
+class Unit(object):
     """
     Simple prototype for unit object
     """
@@ -155,27 +156,134 @@ class Unit:
     #     pass
 
 
-class LEDUnit(Unit):
-    pass
-
-
-class SystemUnit(Unit):
+class LedUnit(Unit):
     """
-    Unit for all needs, that are not related with real fitostand objects like valves
-    pumps and leds
+    Unit for control led through Impulse Current Generator methods wrapping
     """
     def __init__(self):
-        super(SystemUnit, self).__init__()
+        super(LedUnit, self).__init__()
         self._list_of_methods = ["get_info"]
         pass
 
     async def _get_info(self):
         return await asyncio.create_subprocess_shell("uname -a")
 
-    async def handle_command(self, command: str):
+    async def handle_ticket(self, tick: Ticket):
+        command = Command(**tick.command)
         if command in self._list_of_methods:
             if command == "get_info":
                 return await self._get_info()
+        else:
+            raise ValueError("LedUnitError: No such command - {}".format(command.func))
+
+
+class CO2SensorUnit(Unit):
+    """
+    Unit for CO2Sensor methods wrapping
+    """
+    def __init__(self):
+        super(CO2SensorUnit, self).__init__()
+        self._list_of_methods = ["get_info"]
+        pass
+
+    async def _get_info(self):
+        return await asyncio.create_subprocess_shell("uname -a")
+
+    async def handle_ticket(self, tick: Ticket):
+        command = Command(**tick.command)
+        if command in self._list_of_methods:
+            if command == "get_info":
+                return await self._get_info()
+        else:
+            raise ValueError("CO2SensorUnitError: No such command - {}".format(command.func))
+
+
+class VentilationUnit(Unit):
+    """
+    Unit for correct gpio calls wrapping
+    """
+    def __init__(self):
+        super(VentilationUnit, self).__init__()
+        self._list_of_methods = ["get_info"]
+        pass
+
+    async def _get_info(self):
+        return await asyncio.create_subprocess_shell("uname -a")
+
+    async def handle_ticket(self, tick: Ticket):
+        command = Command(**tick.command)
+        if command in self._list_of_methods:
+            if command == "get_info":
+                return await self._get_info()
+        else:
+            raise ValueError("VentilationUnitError: No such command - {}".format(command.func))
+
+
+class WeightUnit(Unit):
+    """
+    Unit for wrapping weight sensor (HX711 ?) methods
+    """
+    def __init__(self):
+        super(WeightUnit, self).__init__()
+        self._list_of_methods = ["get_info"]
+        pass
+
+    async def _get_info(self):
+        return await asyncio.create_subprocess_shell("uname -a")
+
+    async def handle_ticket(self, tick: Ticket):
+        command = Command(**tick.command)
+        if command in self._list_of_methods:
+            if command == "get_info":
+                return await self._get_info()
+        else:
+            raise ValueError("WeightUnitError: No such command - {}".format(command.func))
+
+
+class TempSensorUnit(Unit):
+    """
+    Unit for wrapping temp sensor methods - dht11 for now
+    """
+    def __init__(self):
+        super(TempSensorUnit, self).__init__()
+        self._list_of_methods = ["get_info"]
+        pass
+
+    async def _get_info(self):
+        return await asyncio.create_subprocess_shell("uname -a")
+
+    async def handle_ticket(self, tick: Ticket):
+        command = Command(**tick.command)
+        if command.func in self._list_of_methods:
+            if command.func == "get_info":
+                return await self._get_info()
+        else:
+            raise ValueError("TempSensorUnitError: No such command - {}".format(command.func))
+
+
+class SystemUnit(Unit):
+    """
+    Unit for all needs, that are not related with real fitostand objects like valves
+    pumps, leds and other
+    """
+    def __init__(self):
+        super(SystemUnit, self).__init__()
+        self._list_of_methods = ["get_info"]
+
+    async def _get_info(self, tick: Ticket):
+        res = await asyncio.create_subprocess_shell("uname -a")
+        tick.result = res
+
+    async def handle_ticket(self, tick: Ticket):
+        print("SystemUnit.handle_ticket started!")
+        command = Command(**tick.command)
+        if command.func in self._list_of_methods:
+            if command.func == "get_info":
+                new_single_coro = SingleCoro(self._get_info, tick, name="SystemUnit.get_info_task")
+                return new_single_coro
+        else:
+            raise ValueError("SystemUnitError: No such command - {}".format(command.func))
+        print("SystemUnit.handle_ticket done!")
 
 
 class Schedule:
@@ -212,26 +320,47 @@ class Worker:
     It must communicate with local and remote servers
     And work with schedule object
     """
-    def __init__(self, wid: int = uuid4().int, host: str = '127.0.0.1', port : int = 8888):
+    def __init__(self, wid: int = uuid4().int, host: str = '127.0.0.1', port: int = 8888):
         # do some init things
         # init units, test  connection with server and some other things
         self._id = wid
         self._host = host
         self._port = port
-        self._system_unit = SystemUnit()
-        self._led_unit = LEDUnit()
         self._schedule = Schedule()
         self._main_loop_task = None
         self._tasks = []  # list with objects from tasks.py module
-        self._tickets = []  # list with Ticket objects (or not?)
-        self._tickets_lock = asyncio.Lock()
+        self._tasks_lock = asyncio.Lock()
+        self._new_tickets = []  # list with Ticket objects (or not?)
+        self._new_tickets_lock = asyncio.Lock()
+        self._at_work_tickets = [] # list with Ticket objects, those in work at some task
+        self._at_work_tickets_lock = asyncio.Lock()
+        self._done_tickets = [] # list with Ticket objects, those already done
+        self._done_tickets_lock = asyncio.Lock()
+        # append units
+        self._units = [
+            "system_unit",
+            "led_unit",
+            "ventilation_unit",
+            "weight_unit",
+            "co2_sensor_unit",
+            "temp_sensor_unit"
+        ]
+        self._system_unit = SystemUnit()
+        self._led_unit = LedUnit()
+        self._ventilation_unit = VentilationUnit()
+        self._co2_sensor_unit = CO2SensorUnit()
+        self._weight_unit = WeightUnit()
+        self._temp_sensor_unit = TempSensorUnit()
 
     async def start(self):
+        # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
-        schedule_task = PeriodicCoro(self.check_schedule, 5)
-        request_task = PeriodicCoro(self.check_server, 5)
+        schedule_task = PeriodicCoro(self.check_schedule, 5, name="schedule_task")
+        request_task = PeriodicCoro(self.check_server, 5, name="request_task")
+        send_results_task = PeriodicCoro(self.send_results, 5, name="send_results_task")
         await schedule_task.start()
         await request_task.start()
+        await send_results_task.start()
 
     async def stop(self):
         self._main_loop_task.cancel()
@@ -239,26 +368,131 @@ class Worker:
             await self._main_loop_task
 
     async def _run_main_loop(self):
-
+        # TODO: mb here must be nothing, and we should put all things to another PeriodicCoro?
         while True:
+            print(Fore.RED+"{} at work !".format("Worker._run_main_loop_task"))
+            print(Fore.RED+"Worker._run_main_loop_task started!")
             # do main things in loop
-            #
-            # read self._tickets and if there no "in_work" or some data
-            # create new task for correct unit and put str "in_work" to result
-            await asyncio.sleep(0.5)
-            async with self._tickets_lock:
-                for t in self._tickets:
-                    # find newly added tickets
-                    if not t.result:
-                        try:
-                            com = Command(**t.command)
-                            self.parse_command(com)
-                        except Exception as e:
-                            # TODO: continue from here
-                            pass
-                pass
+            await asyncio.sleep(1)  # ???
+            print(Fore.RED+"Worker._run_main_loop_task is awaiting _new_tickets_lock!")
+            # create tasks for new tickets
+            async with self._new_tickets_lock:
+                for t in self._new_tickets:
+                    # for some case put NOTDONEERROR to every new ticket
+                    t.result = {"Error": "NotDoneReallyError"}
+                    try:
+                        await self.parse_ticket(t)
+                    except Exception as e:
+                        t.result = {"Error": e}
+                        self._new_tickets.remove(t)
+                        # TODO: check if it really works
+                        print(Fore.RED+"Worker._run_main_loop_task is awaiting _done_tickets_lock!")
+                        async with self._done_tickets_lock:
+                            self._done_tickets.append(t)
+                        print(Fore.RED+"Error {} while handling command in ticket {}".format(e, t.id))
 
-    def check_schedule(self):
+            # start newly added tasks and remove done tasks
+            print(Fore.RED+"Worker._run_main_loop_task is awaiting _tasks_lock!")
+            async with self._tasks_lock:
+                for nt in self._tasks:
+                    if not nt.is_started:
+                        await nt.start()
+                    if isinstance(nt, (SingleTask, LongSingleTask, SingleCoro)):
+                        if nt.done:
+                            # do we need any logging for done tasks?
+                            self._tasks.remove(nt)
+
+            # check _at_work_tickets and if they have result - push them to _done_tickets
+            print(Fore.RED+"Worker._run_main_loop_task is awaiting _at_work_tickets_lock!")
+            async with self._at_work_tickets_lock:
+                for t in self._at_work_tickets:
+                    if t.result != {"Error": "NotDoneReallyError"}:
+                        async with self._done_tickets_lock:
+                            self._done_tickets.append(t)
+
+    async def parse_ticket(self, tick: Ticket):
+        # parse command and create task objects for them
+        # and put ticket to self._at_work_tickets list
+        new_task = None
+        print(Fore.GREEN+"parse_ticket started!")
+        com = Command(**tick.command)
+        if com.unit not in self._units:
+            raise ValueError("No such unit {}".format(com.unit))
+
+        elif com.unit == "system_unit":
+            new_task = await self._system_unit.handle_ticket(tick)
+
+        elif com.unit == "led_unit":
+            new_task = await self._led_unit.handle_ticket(tick)
+
+        elif com.unit == "ventilation_unit":
+            new_task = await self._ventilation_unit.handle_ticket(tick)
+
+        elif com.unit == "weight_unit":
+            new_task = await self._weight_unit.handle_ticket(tick)
+
+        elif com.unit == "co2_sensor_unit":
+            new_task = await self._co2_sensor_unit.handle_ticket(tick)
+
+        elif com.unit == "temp_sensor_unit":
+            new_task = await self._temp_sensor_unit.handle_ticket(tick)
+
+        if new_task:
+            print(Fore.GREEN+"parse_ticket is awaiting _tasks_lock!")
+            async with self._tasks_lock:
+                self._tasks.append(new_task)
+            print(Fore.GREEN+"parse_ticket is awaiting _at_work_tickets_lock!")
+            async with self._at_work_tickets_lock:
+                self._at_work_tickets.append(tick)
+            print(Fore.GREEN+"parse_ticket is not awaiting _new_tickets_lock!")
+            # async with self._new_tickets_lock:
+            self._new_tickets.remove(tick)
+        print(Fore.GREEN+"parse_ticket done!")
+
+    async def send_results(self):
+        """
+        read _done_tickets and send their data to server
+        then remove them to archive
+        :return:
+        """
+        # TODO: mb we have to send only N of available tickets, not all?
+        async with self._done_tickets_lock:
+            for dt in self._done_tickets:
+                # send request to server
+                res = None
+                try:
+                    res = await command_set_ticket_result(
+                        ticket_id=dt.id,
+                        result=dt.result,
+                        host=self._host,
+                        port=self._port
+                    )
+                except Exception as e:
+                    # TODO: what we have to do with this type errors? How to handle
+                    print("Error while sending request to server: {}".format(e))
+
+                if res:
+                    # parse answer
+                    answer = res # it is already Message object
+                    if answer.header == "SUCCESS":
+                        # its ok, remove ticket and archive it
+                        await self.archive_ticket(dt)
+                        self._done_tickets.remove(dt)
+                else:
+                    # something went wrong in server side
+                    # try to send this result again after
+                    # so do nothing (or not?)
+                    pass
+
+    async def archive_ticket(self, ticket: Ticket):
+        """
+        Put ticket to some log
+        :return:
+        """
+        # TODO: do real logging
+        pass
+
+    async def check_schedule(self):
         """
         do read schedule
         and then put tasks to self.tickets[] (with lock)
@@ -274,6 +508,7 @@ class Worker:
         :return:
         """
         # send request to server
+        print(Fore.BLUE+"check_server started!")
         res = None
         try:
             res = await command_request_ticket(
@@ -281,21 +516,36 @@ class Worker:
                 host=self._host,
                 port=self._port
             )
+            print(Fore.BLUE+"check_server send reqv!")
         except Exception as e:
             # TODO: what we have to do with this type errors? How to handle
-            print("Error while sending request to server: {}".format(e))
+            print(Fore.BLUE+"Error while sending request to server: {}".format(e))
 
         if res:
+            print(Fore.BLUE+"check_server parsing answer!")
             # parse answer
-            answer = Message(**json.loads(res))
+            answer = res # its already Message object
             dicts_list = json.loads(answer.body)
             # TODO: remove useless print and do something useful
             print(answer.header)
             tickets_list = [Ticket(**t_dict) for t_dict in dicts_list]
-            # TODO: check what will happen if answer contains empty list
-            # add tickes from answer to list
-            async with self._tickets_lock:
+            # add tickets from answer to list
+            print(Fore.BLUE+"check_server waiting for _new_tickets_lock!")
+            async with self._new_tickets_lock:
                 for t in tickets_list:
                     # TODO: remove useless print and do something useful
                     print(t.id, t.to, t.tfrom)
-                    self._tickets.append(t)
+                    self._new_tickets.append(t)
+            print(Fore.BLUE+"check_server done!")
+
+async def main():
+    # example uuid wid=155167253286217647024261323245457212920
+    worker = Worker(wid=155167253286217647024261323245457212920)
+    await worker.start()
+
+if __name__ == "__main__":
+    init(autoreset=True)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    loop.run_forever()
+    # BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET

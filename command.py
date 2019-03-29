@@ -55,7 +55,7 @@ class Command(object):
     Command to worker
     """
     def __init__(self,
-                 cunit: str = "system",
+                 cunit: str = "system_unit",
                  cfunc: str = "get_info",
                  cargs: Dict = None,
                  ctype: str = "single"
@@ -146,7 +146,7 @@ class Ticket(object):
     def result(self, res: Any = None):
         # TODO: res might be unserializable so we need to check it
         self._result = res
-        self._dict["result"] = self._result
+        self._dict["tresult"] = self._result
         self._string = json.dumps(self._dict)
 
     @property

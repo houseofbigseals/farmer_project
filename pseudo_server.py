@@ -195,7 +195,10 @@ class Server(object):
     def server_info(self):
         # Send all interesting info from server as a str
         print("Send info")
-        info = {"tickets_number": len(self.tickets)}
+        info = {
+            "tickets_number": len(self.tickets),
+            "tickets_ids": [t.id for t in self.tickets]
+            }
         ans = json.dumps(info)
         return ans
 
@@ -253,9 +256,13 @@ class Server(object):
     def find_tickets_for_worker(self, worker_id: int):
         # find tickets, add them to list and then return that list
         print("Trying to find tickets for worker with id = {}".format(worker_id))
+        # TODO: check if ticket was already sent !!!
+        # dirty move for now:
+        # if ticket at work - put "at_work" string to result and check it
         tickets_list = []
         for t in self.tickets:
-            if t.to == worker_id:
+            if t.to == worker_id and not t.result:
+                t.result = "at_work"
                 tickets_list.append(t.tdict)
         return tickets_list
 
