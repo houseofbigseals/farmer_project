@@ -30,7 +30,7 @@ class ClientProtocol(asyncio.Protocol):
     async def handle_incoming(self, data):
         self.result = data
         # TODO: fix that ugly crutch
-        self.placeholder[0] = data
+        self.placeholder[0] = data.decode()
         print('Data received: {!r}'.format(data.decode()))
         return self.result
 
