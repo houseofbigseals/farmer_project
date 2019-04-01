@@ -50,12 +50,12 @@ async def start_check():
         )
     elif 'arm' in system_info[4]:
         logger.info("Run raspberry compatible version")
-        # try:
-        #     # TODO: fix that crutch
-        await rpi_main()
-        # except Exception as e:
-        #     print(e)
-        #     logger.error(e)
+        try:
+            # TODO: fix that crutch
+            await rpi_main()
+        except Exception as e:
+            print(e)
+            logger.error(e)
 
 
 if __name__ == "__main__":
