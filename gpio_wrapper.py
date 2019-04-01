@@ -48,3 +48,7 @@ class GPIOWrapper(object):
 
     def __del__(self):
         GPIO.cleanup()
+
+if __name__ == "__main__":
+    g = GPIOWrapper()
+    g.write()

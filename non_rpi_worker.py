@@ -163,19 +163,109 @@ class LedUnit(Unit):
     """
     Unit for control led through Impulse Current Generator methods wrapping
     """
-    def __init__(self):
-        super(LedUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
+    def __init__(
+            self,
+            devname: str = '/dev/ttyUSB0',
+            baudrate: int = 19200,
+            timeout: int = 10
+    ):
 
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
+        super(LedUnit, self).__init__()
+        self._list_of_methods = [
+            "get_info",
+            "start",
+            "stop",
+            "set_current"
+        ]
+        self.devname=devname
+        self.baudrate=baudrate
+        self.timeout=timeout
+        self.uart_wrapper = UartWrapper(
+            devname=self.devname,
+            baudrate=self.baudrate,
+            timeout=self.timeout
+        )
+        self._started = False
+        self._red = 10
+        self._white = 10
+        self.logger = logging.getLogger("Worker.RpiWorker.Led_wrapper")
+
+    async def _get_info(self, tick: Ticket):
+        self.logger.info(
+            "Info. Unit {}, red current = {}, white current = {}".format(
+                "started" if self._started else "stopped", self._red, self._white)
+        )
+        res = self.uart_wrapper.GET_STATUS()[1]
+        tick.result = res
+        self.logger.debug(res)
+
+    async def _start(self, tick: Ticket):
+        self._started = True
+        self.logger.info("Started")
+        res = self.uart_wrapper.START()[1]
+        tick.result = res
+        self.logger.debug(res)
+
+    async def _stop(self, tick: Ticket):
+        self._started = False
+        self.logger.info("Stopped")
+        res = self.uart_wrapper.STOP()[1]
+        tick.result = res
+        self.logger.debug(res)
+
+
+    async def _set_current(self, tick: Ticket, red: int = 10, white: int = 10):
+        self._red = red
+        self._white = white
+        # TODO: handle incorrect current values such as
+        self.logger.info("Trying to set red current to {}, white - to {}".format(red, white))
+        res = ""
+        res += self.uart_wrapper.STOP()[1]
+        res += self.uart_wrapper.START_CONFIGURE()[1]
+        res += self.uart_wrapper.SET_CURRENT(0, red)[1]
+        res += self.uart_wrapper.SET_CURRENT(1, white)[1]
+        res += self.uart_wrapper.FINISH_CONFIGURE_WITH_SAVING()[1]
+        res += self.uart_wrapper.START()[1]
+        self.logger.debug(res)
+        tick.result = res
+        self._started = True
 
     async def handle_ticket(self, tick: Ticket):
-        command = Command(**tick.command)
+        com = Command(**tick.command)
+        command = com.func
         if command in self._list_of_methods:
             if command == "get_info":
-                return await self._get_info()
+                new_single_coro = SingleCoro(
+                    self._get_info,
+                    "SystemUnit.get_info_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command == "start":
+                new_single_coro = SingleCoro(
+                    self._start,
+                    "SystemUnit.get_info_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command == "stop":
+                new_single_coro = SingleCoro(
+                    self._stop, "SystemUnit.get_info_task", tick)
+                return new_single_coro
+
+            elif command == "set_current":
+                red = com.args["red"]
+                white = com.args["white"]
+                new_single_coro = SingleCoro(
+                    self._set_current,
+                    "SystemUnit.get_info_task",
+                    red=red,
+                    white=white,
+                    tick=tick
+                )
+                return new_single_coro
         else:
             raise ValueError("LedUnitError: No such command - {}".format(command.func))
 

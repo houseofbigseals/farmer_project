@@ -17,7 +17,7 @@ async def user_main():
     tasks_list = []
     # example uuid for worker =155167253286217647024261323245457212920
     # 155167253286217647024261323245457212926
-    ans = await command_get_server_info()
+    ans = await command_get_server_info(host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
@@ -25,13 +25,13 @@ async def user_main():
     tasks_list = json.loads(ans.body)["tickets_ids"]
 
     for tid in tasks_list:
-        res = await command_get_ticket_result(tid)
+        res = await command_get_ticket_result(tid, host="83.220.174.247", port=8888)
         print(res.header)
         print(res.body)
-        if res.body and "Linux" in res.body:
-            ans = await command_delete_ticket(tid)
-            print(ans.header)
-            print(ans.body)
+        # if res.body and "Linux" in res.body:
+        #     ans = await command_delete_ticket(tid)
+        # print(ans.header)
+        # print(ans.body)
 
 
 async def user_main2():
@@ -39,9 +39,15 @@ async def user_main2():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
+    # com = Command(
+    #     cunit="led_unit",
+    #     cfunc="set_current",
+    #     cargs={"red":10, "white":100},
+    #     ctype="single"
+    # )
     com = Command(
-        cunit="system_unit",
-        cfunc="get_info",
+        cunit="led_unit",
+        cfunc="stop",
         cargs=None,
         ctype="single"
     )
@@ -70,4 +76,4 @@ async def user_main3(n=10000):
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(user_main3())
+    loop.run_until_complete(user_main2())

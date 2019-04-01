@@ -12,6 +12,7 @@ from time import sleep
 #
 # ./pycrc.py --model=ccitt --generate table
 
+
 CRC16_CCITT_TAB = \
     [
         0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -51,8 +52,8 @@ CRC16_CCITT_TAB = \
 
 class UartWrapper:
     """
-    taht class realizes all commands from GIS documentation
-    as its own methods
+    taht class realizes all commands from IGC (Impulse Current Generator)
+    documentation as its own methods
     must generate CRC and should be able to parse all commands
     it works as c-style structure - collects everything about uart
     in a big bunch
@@ -109,7 +110,6 @@ class UartWrapper:
             logstring += "Succesfully got answer from GIC:\n"
             logstring += self.parse_command(ans)
         return ans, logstring
-
 
     def parse_command(self, com: bytearray) -> str:
         # parse content of command
