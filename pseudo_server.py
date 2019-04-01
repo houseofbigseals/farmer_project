@@ -81,7 +81,7 @@ class Server(object):
         self.aioserver.close()
 
     async def serve_forever(self):
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         print("Server started")
         self.is_started = True
 
@@ -90,10 +90,10 @@ class Server(object):
             self.host,
             self.port)
 
-        async with self.aioserver:
-            await self.aioserver.serve_forever()
+        # async with self.aioserver:
+        # await self.aioserver.
 
-    def handle_message(self, message_ : Any):
+    def handle_message(self, message_: Any):
         """
         Must parse incoming message and return answer message to send response
         :param message_: Any (raw message dict)
@@ -267,10 +267,10 @@ class Server(object):
         return tickets_list
 
 
-async def main():
+async def server_main():
     # start server for 1 minute
     server = Server()
-    loop = asyncio.get_event_loop()
+
     await server.serve_forever()
     # loop.run_forever()
     # await server.start()
@@ -279,4 +279,6 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(server_main())
+    loop.run_forever()

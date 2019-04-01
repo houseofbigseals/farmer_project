@@ -9,6 +9,7 @@ from command import Message, Command, Ticket
 from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro
 import asyncio
 import json
+import time
 
 
 async def user_main():
@@ -55,6 +56,18 @@ async def user_main2():
     print(ans.header)
     print(ans.body)
 
+
+async def user_main3(n=10000):
+    start_time = time.time()
+    tasks_list = []
+    # example uuid for worker =155167253286217647024261323245457212920
+    # 155167253286217647024261323245457212926
+    for i in range(0, n):
+        # ans = await command_get_server_info(host="83.220.174.247", port=8888)
+        ans = await command_get_server_info()
+    end_time = time.time()
+    print("we did {} requests, it spent {} sec".format(n, end_time-start_time))
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(user_main2())
+    loop.run_until_complete(user_main3())

@@ -63,6 +63,7 @@ async def send_command_to_server(
     transport, protocol = await loop.create_connection(
         lambda: ClientProtocol(on_con_lost, result),
         host, port)
+    #, local_addr = ("localhost39000", 39000)
     # Wait until the protocol signals that the connection
     # is lost and close the transport.
     try:

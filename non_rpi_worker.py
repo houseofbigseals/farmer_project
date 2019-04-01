@@ -556,15 +556,17 @@ class Worker:
                     self._new_tickets.append(t)
             print(Back.BLUE+"check_server done!")
 
-async def main():
+
+async def non_rpi_main():
     # example uuid wid=155167253286217647024261323245457212920
     # server host 83.220.174.247:8888
     worker = Worker(wid=155167253286217647024261323245457212920, host="83.220.174.247", port=8888)
     await worker.start()
 
 if __name__ == "__main__":
+
     init(autoreset=True)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.run_until_complete(non_rpi_main())
     loop.run_forever()
     # BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET
