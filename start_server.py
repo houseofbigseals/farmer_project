@@ -14,8 +14,8 @@ async def main():
                     "to server to get and set tickets",
         epilog="Do not forget to print &, to start process in the background."
     )
-    parser.add_argument('-H', '--host', type=str, required=True, help='host ipv4 such as 127.0.0.1')
-    parser.add_argument('-P', '--port', type=int, required=True, help='port number such as 8888')
+    parser.add_argument('-H', '--host', type=str, default="83.220.174.247", help='host ipv4 such as 127.0.0.1')
+    parser.add_argument('-P', '--port', type=int, default=8888, help='port number such as 8888')
     ns = parser.parse_args()
 
     server = Server(
