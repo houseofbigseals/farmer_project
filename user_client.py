@@ -1,7 +1,7 @@
 # simple wrapper for user client
 
 
-from pseudo_client import command_get_server_info\
+from raw_client import command_get_server_info\
     , command_set_ticket_result, command_get_ticket_result, command_add_ticket\
     , command_delete_ticket
 

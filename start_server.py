@@ -2,8 +2,9 @@
 # wrapper for correct server starting
 
 import asyncio
-from pseudo_server import Server
+from raw_server import Server
 import argparse
+import logging
 
 
 async def main():
@@ -16,12 +17,28 @@ async def main():
     )
     parser.add_argument('-H', '--host', type=str, default="83.220.174.247", help='host ipv4 such as 127.0.0.1')
     parser.add_argument('-P', '--port', type=int, default=8888, help='port number such as 8888')
+    parser.add_argument('-D', '--debug', action='store_true', help='set debug output to server.log')
     ns = parser.parse_args()
+    # create logger
+    logger = logging.getLogger("Server")
+    if ns.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    # create the logging file handler
+    fh = logging.FileHandler("server.log")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    # add handler to logger object
+    logger.addHandler(fh)
+
 
     server = Server(
         host=ns.host,
         port=ns.port
     )
+    logger.info("Server started\n=============================================================")
     await server.serve_forever()
 
 

@@ -119,9 +119,12 @@ from typing import Any
 from contextlib import suppress
 from command import Message, Command, Ticket
 from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from pseudo_client import command_get_server_info, command_request_ticket\
+from raw_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
 from colorama import Back, init
+import logging
+
+logger = logging.getLogger("Worker.NonRpiWorker")
 
 
 class Unit(object):
@@ -273,9 +276,6 @@ class SystemUnit(Unit):
     async def _get_info(self, tick: Ticket):
         print(Back.CYAN+ "SystemUnit.SystemUnit.get_info_task started!")
         proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
-
-        def strip(x):
-            return x.strip()
         stdout, stderr = await proc.communicate()
         content = stdout.decode().strip()
         tick.result = content

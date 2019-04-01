@@ -1,19 +1,16 @@
 # This a simple server that just answer one command to every
-# RPi_master request. Also it must keep list of user commands
+# worker request. Also it must keep list of user commands
 # when user sends command to do in RPi, server puts it to list
-# and when server get RPi_master request, it send it to him.
-# All requests must be written to ./server_log.txt
-# The format must be
-# request : time : who : addr : port : decoded message
-# response : time : who : addr : port : decoded message
+# and when server get worker request, it send it to him.
 
 
 import asyncio
 import json
 from command import Command, Ticket, Message
 from typing import Any
+import logging
 
-# TODO: change all debug print`s to logging.DEBUG or smth like this
+logger = logging.getLogger("Server.RawServer")
 
 
 class ServerProtocol(asyncio.Protocol):
@@ -24,15 +21,15 @@ class ServerProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(peername))
+        logger.debug('Connection from {}'.format(peername))
         self.transport = transport
 
     def data_received(self, data):
         message = data.decode()
         answer = json.dumps((self.server.handle_message(message)).mdict)
-        print('Send: {!r}'.format(answer))
+        logger.debug('Send: {!r}'.format(answer))
         self.transport.write(answer.encode())
-        print('Close the client socket\n')
+        logger.debug('Close the client socket\n')
         self.transport.close()
 
 
@@ -66,7 +63,7 @@ class Server(object):
 
     async def start(self):
         if not self.is_started:
-            print("Server started")
+            logger.debug("Server started")
             self.is_started = True
             loop = asyncio.get_event_loop()
             coro = loop.create_server(
@@ -77,12 +74,12 @@ class Server(object):
             self.aioserver = await coro
 
     async def stop(self):
-        print("Server stopped")
+        logger.debug("Server stopped")
         self.aioserver.close()
 
     async def serve_forever(self):
         loop = asyncio.get_event_loop()
-        print("Server started")
+        logger.debug("Server started")
         self.is_started = True
 
         self.aioserver = await loop.create_server(
@@ -194,7 +191,7 @@ class Server(object):
 
     def server_info(self):
         # Send all interesting info from server as a str
-        print("Send info")
+        logger.debug("Send info")
         info = {
             "tickets_number": len(self.tickets),
             "tickets_ids": [t.id for t in self.tickets]
@@ -204,58 +201,58 @@ class Server(object):
 
     def add_ticket(self, tick: Ticket):
         # add ticket from message to our tickets_list
-        print("Add ticket with id = {}".format(tick.id))
+        logger.debug("Add ticket with id = {}".format(tick.id))
         self.tickets.append(tick)
 
     def delete_ticket(self, del_id: int):
         # remove ticket if it in tickets_list, else raise exception
-        print("Trying to delete ticket with id = {}".format(del_id))
+        logger.debug("Trying to delete ticket with id = {}".format(del_id))
         deleted = False
         for t in self.tickets:
             if t.id == del_id:
                 self.log_ticket(t)
-                print("Delete ticket with id = {}".format(t.id))
+                logger.debug("Delete ticket with id = {}".format(t.id))
                 self.tickets.remove(t)
                 deleted = True
         if not deleted:
-            print("There is no ticket with id={}".format(del_id))
+            logger.debug("There is no ticket with id={}".format(del_id))
             raise ValueError("There is no ticket with id={}".format(del_id))
 
     def log_ticket(self, tick: Ticket):
         # add ticket to log
-        print("Log ticket with id = {}".format(tick.id))
+        logger.debug("Log ticket with id = {}".format(tick.id))
         # TODO: do real logging
         pass
 
     def get_ticket_result(self, tick_id: int):
         # return result from ticket
-        print("Trying to get result of ticket with id = {}".format(tick_id))
+        logger.debug("Trying to get result of ticket with id = {}".format(tick_id))
         found = False
         for t in self.tickets:
             if t.id == tick_id:
                 found = True
-                print("Got result of ticket with id = {}".format(tick_id))
+                logger.debug("Got result of ticket with id = {}".format(tick_id))
                 return t.result
         if not found:
-            print("There is no ticket with id={}".format(tick_id))
+            logger.debug("There is no ticket with id={}".format(tick_id))
             raise ValueError("There is no ticket with id={}".format(tick_id))
 
     def set_ticket_result(self, tick_id: int, result: Any):
         # set result to ticket
-        print("Trying to set result of ticket with id = {}".format(tick_id))
+        logger.debug("Trying to set result of ticket with id = {}".format(tick_id))
         found = False
         for t in self.tickets:
             if t.id == tick_id:
                 found = True
-                print("Set result of ticket with id = {}".format(tick_id))
+                logger.debug("Set result of ticket with id = {}".format(tick_id))
                 t.result = result
         if not found:
-            print("There is no ticket with id={}".format(tick_id))
+            logger.debug("There is no ticket with id={}".format(tick_id))
             raise ValueError("There is no ticket with id={}".format(tick_id))
 
     def find_tickets_for_worker(self, worker_id: int):
         # find tickets, add them to list and then return that list
-        print("Trying to find tickets for worker with id = {}".format(worker_id))
+        logger.debug("Trying to find tickets for worker with id = {}".format(worker_id))
         # TODO: check if ticket was already sent !!!
         # dirty move for now:
         # if ticket at work - put "at_work" string to result and check it
