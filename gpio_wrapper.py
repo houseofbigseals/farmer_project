@@ -86,3 +86,5 @@ if __name__ == "__main__":
         g.write(ns.pin, True)
     else:
         g.write(ns.pin, False)
+    while True:
+        sleep(1)
