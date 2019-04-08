@@ -4,7 +4,7 @@
 
 from platform import uname
 from non_rpi_worker import non_rpi_main
-from rpi_worker import rpi_main
+from worker import rpi_main
 import asyncio
 import argparse
 import logging

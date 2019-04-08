@@ -117,8 +117,6 @@ import time
 import asyncio
 import json
 from led_uart_wrapper import UartWrapper
-from dht_wrapper import DHTWrapper  # it works only on raspberry
-from gpio_wrapper import GPIOWrapper
 from uuid import uuid4, UUID
 from typing import Any
 from contextlib import suppress
@@ -127,9 +125,20 @@ from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, Single
 from raw_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
 from colorama import Back, init
+from sba5_wrapper import SBAWrapper
 import logging
 
-logger = logging.getLogger("Worker.RpiWorker")
+logger = logging.getLogger("Worker._Worker")
+platf = None
+try:
+    from dht_wrapper import DHTWrapper  # it works only on raspberry
+    from gpio_wrapper import GPIOWrapper
+    platf = "RPi"
+except ImportError:
+    print("Looks like we are not on RPi")
+    platf = "PC"
+
+
 
 
 class Unit(object):
@@ -170,7 +179,7 @@ class LedUnit(Unit):
     """
     def __init__(
             self,
-            devname: str = '/dev/ttyAMA0', # in rpi - ttyAMA0, in ubunty ttyUSB0
+            devname: str = '/dev/ttyUSB0', # in rpi and ubunty ttyUSB0
             baudrate: int = 19200,
             timeout: int = 10
     ):
@@ -222,7 +231,7 @@ class LedUnit(Unit):
     async def _set_current(self, tick: Ticket, red: int = 10, white: int = 10):
         self._red = red
         self._white = white
-        # TODO: handle incorrect current values such as
+        # TODO: handle incorrect current values such as (10000, 0) or smth
         self.logger.info("Trying to set red current to {}, white - to {}".format(red, white))
         res = ""
         res += self.uart_wrapper.STOP()[1]
@@ -279,29 +288,50 @@ class CO2SensorUnit(Unit):
     """
     Unit for CO2Sensor methods wrapping
     """
-    def __init__(self):
+    def __init__(
+            self,
+            devname: str = '/dev/ttyUSB0',
+            baudrate: int = 19200,
+            timeout: float = 10
+    ):
         super(CO2SensorUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
+        self.sensor = SBAWrapper(
+            devname=devname,
+            baudrate=baudrate,
+            timeout=timeout
+        )
+        self._list_of_methods = [
+            "get_info",
+            "get_data",
+            "save_data"
+        ]
 
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
+    async def _get_info(self, tick: Ticket):
+        # return await asyncio.create_subprocess_shell("uname -a")
+        ans = await self.sensor.send_command_char("V")
+        
 
     async def handle_ticket(self, tick: Ticket):
         command = Command(**tick.command)
         if command in self._list_of_methods:
             if command == "get_info":
-                return await self._get_info()
+                if command == "get_info":
+                    new_single_coro = SingleCoro(
+                        self._get_info,
+                        "CO2SensorUnit.get_info_task",
+                        tick
+                    )
+                    return new_single_coro
         else:
             raise ValueError("CO2SensorUnitError: No such command - {}".format(command.func))
 
 
-class VentilationUnit(Unit):
+class GpioUnit(Unit):
     """
     Unit for correct gpio calls wrapping
     """
     def __init__(self):
-        super(VentilationUnit, self).__init__()
+        super(GpioUnit, self).__init__()
         self._list_of_methods = ["get_info"]
         pass
 
@@ -314,7 +344,7 @@ class VentilationUnit(Unit):
             if command == "get_info":
                 return await self._get_info()
         else:
-            raise ValueError("VentilationUnitError: No such command - {}".format(command.func))
+            raise ValueError("GpioUnitError: No such command - {}".format(command.func))
 
 
 class WeightUnit(Unit):
@@ -424,10 +454,10 @@ class Worker:
     It must communicate with local and remote servers
     And work with schedule object
     """
-    def __init__(self, wid: int = uuid4().int, host: str = '127.0.0.1', port: int = 8888):
+    def __init__(self, wid: int = None, host: str = '127.0.0.1', port: int = 8888):
         # do some init things
         # init units, test  connection with server and some other things
-        self._id = wid
+        self._id = wid if wid is not None else uuid4().int
         self._host = host
         self._port = port
         self._schedule = Schedule()
@@ -444,14 +474,14 @@ class Worker:
         self._units = [
             "system_unit",
             "led_unit",
-            "ventilation_unit",
+            "gpio_unit",
             "weight_unit",
             "co2_sensor_unit",
             "temp_sensor_unit"
         ]
         self._system_unit = SystemUnit()
         self._led_unit = LedUnit()
-        self._ventilation_unit = VentilationUnit()
+        self._gpio_unit = GpioUnit()
         self._co2_sensor_unit = CO2SensorUnit()
         self._weight_unit = WeightUnit()
         self._temp_sensor_unit = TempSensorUnit()
@@ -530,8 +560,8 @@ class Worker:
         elif com.unit == "led_unit":
             new_task = await self._led_unit.handle_ticket(tick)
 
-        elif com.unit == "ventilation_unit":
-            new_task = await self._ventilation_unit.handle_ticket(tick)
+        elif com.unit == "gpio_unit":
+            new_task = await self._gpio_unit.handle_ticket(tick)
 
         elif com.unit == "weight_unit":
             new_task = await self._weight_unit.handle_ticket(tick)

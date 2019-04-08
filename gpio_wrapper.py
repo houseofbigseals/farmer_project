@@ -9,7 +9,7 @@
 
 from typing import Any, Optional
 from RPi import GPIO
-
+from time import sleep
 
 class GPIOWrapper(object):
     """
@@ -51,4 +51,21 @@ class GPIOWrapper(object):
 
 if __name__ == "__main__":
     g = GPIOWrapper()
-    g.write()
+    pins = {
+        "ch1": 2,
+        "ch2": 3,
+        "ch3": 4,
+        "ch4": 17,
+        "ch5": 27,
+        "ch6": 13,
+        "ch7": 19,
+        "ch8": 26,
+    }
+    while(True):
+        for i in pins.values():
+            g.set_mode(i, "output")
+            g.write(i, False)
+        sleep(2)
+        for i in pins.values():
+            g.write(i, True)
+        sleep(2)
