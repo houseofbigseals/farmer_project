@@ -73,23 +73,24 @@ def all_test():
         sleep(2)
 
 def one_test():
-    parser = argparse.ArgumentParser(
-        description="Gpio test",
-        epilog="UIUIUIUIUIUIUIUI"
-    )
-    parser.add_argument('-M', '--mode', type=str, default="1", help='1 - on, 0 - off')
-    parser.add_argument('-P', '--pin', type=int, default=13, help='rpi pin')
-    ns = parser.parse_args()
-    print(ns.pin)
-    print(ns.mode)
+    # parser = argparse.ArgumentParser(
+    #     description="Gpio test",
+    #     epilog="UIUIUIUIUIUIUIUI"
+    # )
+    # parser.add_argument('-M', '--mode', type=str, default="1", help='1 - on, 0 - off')
+    # parser.add_argument('-P', '--pin', type=int, default=13, help='rpi pin')
+    # ns = parser.parse_args()
+    # print(ns.pin)
+    # print(ns.mode)
+    # pin = ns.pin
+    pin = 2
     g = GPIOWrapper()
-    g.set_mode(ns.pin, "output")
-    if ns.mode:
-        g.write(ns.pin, True)
-    else:
-        g.write(ns.pin, False)
+    g.set_mode(pin, "output")
     while True:
-        sleep(1)
+        g.write(pin, True)
+        sleep(2)
+        g.write(pin, False)
+        sleep(2)
 
 if __name__ == "__main__":
-    all_test()
+    one_test()
