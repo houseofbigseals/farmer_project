@@ -112,8 +112,10 @@ def send_command(c):
     print(ans)
     ans = (ser.readline()).decode('utf-8')
     print(ans)
+    while True:
+        ans = (ser.readline()).decode('utf-8')
+        print(ans)
 
 
 if __name__=="__main__":
-    send_command(b'V')
-    read()
+    send_command(b'V\r\n')
