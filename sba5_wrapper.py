@@ -91,7 +91,7 @@ class SBAWrapper(object):
             print("SBAWrapper error while read: {}".format(e))
 
 
-if __name__=="__main__":
+def read():
     ser = serial.Serial(
         port='/dev/ttyUSB0',
         baudrate=19200,
@@ -100,3 +100,20 @@ if __name__=="__main__":
     while True:
         ans = (ser.readline()).decode('utf-8')
         print(ans)
+
+def send_command(c):
+    ser = serial.Serial(
+        port='/dev/ttyUSB0',
+        baudrate=19200,
+        timeout=10
+    )
+    ser.write(c)
+    ans = (ser.readline()).decode('utf-8')
+    print(ans)
+    ans = (ser.readline()).decode('utf-8')
+    print(ans)
+
+    
+if __name__=="__main__":
+    send_command("V")
+    read()
