@@ -113,7 +113,7 @@ def send_command(c):
     ans = (ser.readline()).decode('utf-8')
     print(ans)
 
-    
+
 if __name__=="__main__":
-    send_command("V")
+    send_command(b'V')
     read()

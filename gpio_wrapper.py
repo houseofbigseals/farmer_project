@@ -61,9 +61,10 @@ if __name__ == "__main__":
         "ch7": 19,
         "ch8": 26,
     }
+    for i in pins.values():
+        g.set_mode(i, "output")
     while(True):
         for i in pins.values():
-            g.set_mode(i, "output")
             g.write(i, False)
         sleep(2)
         for i in pins.values():
