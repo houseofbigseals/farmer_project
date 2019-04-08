@@ -10,6 +10,7 @@
 from typing import Any, Optional
 from RPi import GPIO
 from time import sleep
+import argparse
 
 class GPIOWrapper(object):
     """
@@ -49,7 +50,7 @@ class GPIOWrapper(object):
     def __del__(self):
         GPIO.cleanup()
 
-if __name__ == "__main__":
+def all_test():
     g = GPIOWrapper()
     pins = {
         "ch1": 2,
@@ -70,3 +71,18 @@ if __name__ == "__main__":
         for i in pins.values():
             g.write(i, True)
         sleep(2)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Gpio test",
+        epilog="UIUIUIUIUIUIUIUI"
+    )
+    parser.add_argument('-M', '--mode', type=str, default="1", help='1 - on, 0 - off')
+    parser.add_argument('-P', '--pin', type=int, default=13, help='rpi pin')
+    ns = parser.parse_args()
+    g = GPIOWrapper()
+    g.set_mode(ns.pin, "output")
+    if ns.mode:
+        g.write(ns.pin, True)
+    else:
+        g.write(ns.pin, False)
