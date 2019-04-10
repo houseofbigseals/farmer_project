@@ -55,8 +55,8 @@ class DHTWrapper:
     """
     Simple wrapper class for our tasks
     """
-
-    def __init__(self, pin: int = 8, DHTTYPE: int = 11):
+    # TODO: we should do retries, because dht can return None instead data sometimes
+    def __init__(self, pin: int = 14, DHTTYPE: int = 11):
         self.pin = pin
         self.DHTTYPE = DHTTYPE
 
@@ -66,7 +66,9 @@ class DHTWrapper:
         humidity = None
         temperature = None
         try:
-            humidity, temperature = Adafruit_DHT.read(self.DHTTYPE, self.pin)
+            humidity, temperature = Adafruit_DHT.read_retry(
+                sensor=self.DHTTYPE, pin=self.pin, retries=15, delay_seconds=0.2
+            )
         except Exception as e:
             log = "We got error {} \n when read DHT{} from pin {} \n"\
                 .format(e, self.DHTTYPE, self.pin)
@@ -80,4 +82,3 @@ if __name__=="__main__":
     d = DHTWrapper()
     data = d.get_data()
     print(data[0], data[1], data[2])
-    
