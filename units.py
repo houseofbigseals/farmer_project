@@ -540,7 +540,8 @@ class SystemUnit(Unit):
         print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task done!")
 
     async def _create_tunnel(self, tick: Ticket):
-        cmd = 'autossh -M 10984 -N -f -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i /home/pi/.ssh/id_rsa.pub -R 6666:localhost:22 slonik@83.220.174.247 &'
+        cmd = 'autossh -M 10984 -N -f -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i /home/pi/.ssh/id_rsa -R 6666:localhost:22 slonik@83.220.174.247 &'
+
         print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task started!")
         proc = await asyncio.create_subprocess_shell(
             cmd,
