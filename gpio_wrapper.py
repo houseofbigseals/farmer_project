@@ -12,6 +12,7 @@ from RPi import GPIO
 from time import sleep
 import argparse
 
+
 class GPIOWrapper(object):
     """
     Simple gpio wrapper wit three functions:
@@ -36,19 +37,23 @@ class GPIOWrapper(object):
         try:
             return GPIO.input(pin)
         except Exception as e:
-            print("There is GPIO error: {}".format(e))
+            return "There is GPIO error: {}".format(e)
 
-    def write(self, pin: int, state: bool) -> None:
+    def write(self, pin: int, state: bool) -> str:
+        res = "Trying to set state {} to pin {} ".format(pin, str(state))
         try:
             GPIO.output(pin, state)
+            res += "OK"
         except Exception as e:
-            print("There is GPIO error: {}".format(e))
+            res += "\nThere is GPIO error: {}".format(e)
+        return res
 
-    def info(self) -> Any:
+    def info(self) -> str:
         return str(GPIO.RPI_INFO) + "\n" + str(GPIO.VERSION) + "\n"
 
     def __del__(self):
         GPIO.cleanup()
+
 
 def all_test():
     g = GPIOWrapper()
@@ -71,6 +76,7 @@ def all_test():
         for i in pins.values():
             g.write(i, True)
         sleep(2)
+
 
 def one_test():
     # parser = argparse.ArgumentParser(

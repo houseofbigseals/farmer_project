@@ -2,9 +2,7 @@
 # file to find correct version of worker - for rpi or for x86_64
 # you should start worker from here
 
-from platform import uname
-from non_rpi_worker import non_rpi_main
-from worker import rpi_main
+from worker import main
 import asyncio
 import argparse
 import logging
@@ -37,25 +35,31 @@ async def start_check():
     # add handler to logger object
     logger.addHandler(fh)
 
-    system_info = uname()
-    if system_info[0] != 'Linux':
-        logger.info("The program should be run on Linux system strictly")
-    elif 'arm' not in system_info[4]:
-        logger.info("The program should be run on raspberry platform")
-        logger.info("Run x86_64 compatible version")
-        await non_rpi_main(
-            host=ns.host,
-            port=ns.port,
-            wid=ns.id
-        )
-    elif 'arm' in system_info[4]:
-        logger.info("Run raspberry compatible version")
-        try:
-            # TODO: fix that crutch
-            await rpi_main()
-        except Exception as e:
-            print(e)
-            logger.error(e)
+    # system_info = uname()
+    # if system_info[0] != 'Linux':
+    #     logger.info("The program should be run on Linux system strictly")
+    # elif 'arm' not in system_info[4]:
+    #     logger.info("The program should be run on raspberry platform")
+    #     logger.info("Run x86_64 compatible version")
+    #     await non_rpi_main(
+    #         host=ns.host,
+    #         port=ns.port,
+    #         wid=ns.id
+    #     )
+    # elif 'arm' in system_info[4]:
+    #     logger.info("Run raspberry compatible version")
+    #     try:
+    #         # TODO: fix that crutch
+    #         await rpi_main()
+    #     except Exception as e:
+    #         print(e)
+    #         logger.error(e)
+    await main(
+        host=ns.host,
+        port=ns.port,
+        wid=ns.id
+    )
+
 
 
 if __name__ == "__main__":

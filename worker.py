@@ -1,7 +1,3 @@
-
-# full version of worker to start on rpi-platform
-
-
 # This is async manager for RPi, that should do following things:
 #
 # Receive data:
@@ -72,9 +68,7 @@
 # List of units with their tasks
 #
 # All units have following methods:
-# - get_last_task_status - result of last done operation
 # - get_list_of_methods - send list of all available methods for this unit
-# - get_unit_status - there might be some info about current unit state
 # All units can override this methods according with their essence
 #
 # 1. system_unit
@@ -113,10 +107,11 @@
 #
 #
 
+# TODO: fix description and move it to readme from here
+
 import time
 import asyncio
 import json
-from led_uart_wrapper import UartWrapper
 from uuid import uuid4, UUID
 from typing import Any
 from contextlib import suppress
@@ -125,299 +120,19 @@ from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, Single
 from raw_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
 from colorama import Back, init
-from sba5_wrapper import SBAWrapper
+from units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit
 import logging
 
+
 logger = logging.getLogger("Worker._Worker")
-platf = None
-try:
-    from dht_wrapper import DHTWrapper  # it works only on raspberry
-    from gpio_wrapper import GPIOWrapper
-    platf = "RPi"
-except ImportError:
-    print("Looks like we are not on RPi")
-    platf = "PC"
-
-
-
-
-class Unit(object):
-    """
-    Simple prototype for unit object
-    """
-    def __init__(self):
-        # self.last_operation_status = None
-        self.status = None
-        pass
-
-    def get_unit_status(self) -> None:
-        """
-        There must be that logic:
-        firstly check how it is
-        and then return state, as example OK or SOME_ERROR
-        """
-        pass
-
-    def get_list_of_methods(self) -> None:
-        """
-        We have to return a list of public methods
-        Do not use dir() or hasattr(module_name, "attr_name") or inspect.getmembers
-        Only hand-written list of safe public methods to use remotely
-        """
-        pass
-
-    # def get_last_task_status(self) -> None:
-    #     """
-    #     Returns status of last operation
-    #     """
-    #     pass
-
-
-class LedUnit(Unit):
-    """
-    Unit for control led through Impulse Current Generator methods wrapping
-    """
-    def __init__(
-            self,
-            devname: str = '/dev/ttyUSB0', # in rpi and ubunty ttyUSB0
-            baudrate: int = 19200,
-            timeout: int = 10
-    ):
-
-        super(LedUnit, self).__init__()
-        self._list_of_methods = [
-            "get_info",
-            "start",
-            "stop",
-            "set_current"
-        ]
-        self.devname=devname
-        self.baudrate=baudrate
-        self.timeout=timeout
-        self.uart_wrapper = UartWrapper(
-            devname=self.devname,
-            baudrate=self.baudrate,
-            timeout=self.timeout
-        )
-        self._started = False
-        self._red = 10
-        self._white = 10
-        self.logger = logging.getLogger("Worker.RpiWorker.Led_wrapper")
-
-    async def _get_info(self, tick: Ticket):
-        self.logger.info(
-            "Info. Unit {}, red current = {}, white current = {}".format(
-                "started" if self._started else "stopped", self._red, self._white)
-        )
-        res = self.uart_wrapper.GET_STATUS()[1]
-        tick.result = res
-        self.logger.debug(res)
-
-    async def _start(self, tick: Ticket):
-        self._started = True
-        self.logger.info("Started")
-        res = self.uart_wrapper.START()[1]
-        tick.result = res
-        self.logger.debug(res)
-
-    async def _stop(self, tick: Ticket):
-        self._started = False
-        self.logger.info("Stopped")
-        res = self.uart_wrapper.STOP()[1]
-        tick.result = res
-        self.logger.debug(res)
-
-
-    async def _set_current(self, tick: Ticket, red: int = 10, white: int = 10):
-        self._red = red
-        self._white = white
-        # TODO: handle incorrect current values such as (10000, 0) or smth
-        self.logger.info("Trying to set red current to {}, white - to {}".format(red, white))
-        res = ""
-        res += self.uart_wrapper.STOP()[1]
-        res += self.uart_wrapper.START_CONFIGURE()[1]
-        res += self.uart_wrapper.SET_CURRENT(0, red)[1]
-        res += self.uart_wrapper.SET_CURRENT(1, white)[1]
-        res += self.uart_wrapper.FINISH_CONFIGURE_WITH_SAVING()[1]
-        res += self.uart_wrapper.START()[1]
-        self.logger.debug(res)
-        tick.result = res
-        self._started = True
-
-    async def handle_ticket(self, tick: Ticket):
-        com = Command(**tick.command)
-        command = com.func
-        if command in self._list_of_methods:
-            if command == "get_info":
-                new_single_coro = SingleCoro(
-                    self._get_info,
-                    "SystemUnit.get_info_task",
-                    tick
-                )
-                return new_single_coro
-
-            elif command == "start":
-                new_single_coro = SingleCoro(
-                    self._start,
-                    "SystemUnit.get_info_task",
-                    tick
-                )
-                return new_single_coro
-
-            elif command == "stop":
-                new_single_coro = SingleCoro(
-                    self._stop, "SystemUnit.get_info_task", tick)
-                return new_single_coro
-
-            elif command == "set_current":
-                red = com.args["red"]
-                white = com.args["white"]
-                new_single_coro = SingleCoro(
-                    self._set_current,
-                    "SystemUnit.get_info_task",
-                    red=red,
-                    white=white,
-                    tick=tick
-                )
-                return new_single_coro
-        else:
-            raise ValueError("LedUnitError: No such command - {}".format(command.func))
-
-
-class CO2SensorUnit(Unit):
-    """
-    Unit for CO2Sensor methods wrapping
-    """
-    def __init__(
-            self,
-            devname: str = '/dev/ttyUSB0',
-            baudrate: int = 19200,
-            timeout: float = 10
-    ):
-        super(CO2SensorUnit, self).__init__()
-        self.sensor = SBAWrapper(
-            devname=devname,
-            baudrate=baudrate,
-            timeout=timeout
-        )
-        self._list_of_methods = [
-            "get_info",
-            "get_data",
-            "save_data"
-        ]
-
-    async def _get_info(self, tick: Ticket):
-        # return await asyncio.create_subprocess_shell("uname -a")
-        ans = await self.sensor.send_command_char("V")
-        
-
-    async def handle_ticket(self, tick: Ticket):
-        command = Command(**tick.command)
-        if command in self._list_of_methods:
-            if command == "get_info":
-                if command == "get_info":
-                    new_single_coro = SingleCoro(
-                        self._get_info,
-                        "CO2SensorUnit.get_info_task",
-                        tick
-                    )
-                    return new_single_coro
-        else:
-            raise ValueError("CO2SensorUnitError: No such command - {}".format(command.func))
-
-
-class GpioUnit(Unit):
-    """
-    Unit for correct gpio calls wrapping
-    """
-    def __init__(self):
-        super(GpioUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
-
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
-
-    async def handle_ticket(self, tick: Ticket):
-        command = Command(**tick.command)
-        if command in self._list_of_methods:
-            if command == "get_info":
-                return await self._get_info()
-        else:
-            raise ValueError("GpioUnitError: No such command - {}".format(command.func))
-
-
-class WeightUnit(Unit):
-    """
-    Unit for wrapping weight sensor (HX711 ?) methods
-    """
-    def __init__(self):
-        super(WeightUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
-
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
-
-    async def handle_ticket(self, tick: Ticket):
-        command = Command(**tick.command)
-        if command in self._list_of_methods:
-            if command == "get_info":
-                return await self._get_info()
-        else:
-            raise ValueError("WeightUnitError: No such command - {}".format(command.func))
-
-
-class TempSensorUnit(Unit):
-    """
-    Unit for wrapping temp sensor methods - dht11 for now
-    """
-    def __init__(self):
-        super(TempSensorUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
-
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
-
-    async def handle_ticket(self, tick: Ticket):
-        command = Command(**tick.command)
-        if command.func in self._list_of_methods:
-            if command.func == "get_info":
-                return await self._get_info()
-        else:
-            raise ValueError("TempSensorUnitError: No such command - {}".format(command.func))
-
-
-class SystemUnit(Unit):
-    """
-    Unit for all needs, that are not related with real fitostand objects like valves
-    pumps, leds and other
-    """
-    def __init__(self):
-        super(SystemUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-
-    async def _get_info(self, tick: Ticket):
-        print(Back.CYAN+ "SystemUnit.SystemUnit.get_info_task started!")
-        proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        content = stdout.decode().strip()
-        tick.result = content
-        print(Back.CYAN+"SystemUnit.SystemUnit.get_info_task done!")
-
-    async def handle_ticket(self, tick: Ticket):
-        print(Back.CYAN+"SystemUnit.handle_ticket started!")
-        command = Command(**tick.command)
-        if command.func in self._list_of_methods:
-            print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
-            if command.func == "get_info":
-                new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
-                print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
-                return new_single_coro
-        else:
-            raise ValueError("SystemUnitError: No such command - {}".format(command.func))
-        print(Back.CYAN+"SystemUnit.handle_ticket done!")
+# platf = None
+# try:
+#     from dht_wrapper import DHTWrapper  # it works only on raspberry
+#     from gpio_wrapper import GPIOWrapper
+#     platf = "RPi"
+# except ImportError:
+#     print("Looks like we are not on RPi")
+#     platf = "PC"
 
 
 class Schedule:
@@ -479,6 +194,7 @@ class Worker:
             "co2_sensor_unit",
             "temp_sensor_unit"
         ]
+        # create units
         self._system_unit = SystemUnit()
         self._led_unit = LedUnit()
         self._gpio_unit = GpioUnit()
@@ -701,7 +417,7 @@ if __name__ == "__main__":
     # BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET
 
 
-async def rpi_main(
+async def main(
         wid=155167253286217647024261323245457212920,
         host="83.220.174.247",
         port=8888

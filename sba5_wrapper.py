@@ -19,38 +19,10 @@ class SBAWrapper(object):
         self.dev = devname
         self.baud = baudrate
         self.timeout = timeout
-        self.ser = serial.Serial(
-            devname=self.dev,
-            baudrate = self.baud,
-            timeout=self.timeout
-        )
 
-    async def send_command_char(self, command: str):
+    async def send_command(self, command: str):
         """
-        It must be one character command, such as "V" - version
-        :param command:
-        :return:
-        """
-        """
-        To initiate a command, the USB port or RS232 port sends an ASCII character or string.
-        A single character command is acted on immediately when the character is received.
-        """
-        try:
-            await self.ser.write(command)
-        except Exception as e:
-            print("SBAWrapper error while send command: {}".format(e))
-        # then try to read answer
-        # it must be two messages, ended with \r\n
-        try:
-            ans = await (self.ser.readline()).decode('utf-8')
-            return ans
-        except Exception as e:
-            print("SBAWrapper error while read answer from command: {}".format(e))
-
-
-    async def send_command_string(self, command: str):
-        """
-        Command must ends with \n\r !
+        Command must ends with \r\n !
         Its important
         :param command:
         :return:
@@ -68,24 +40,38 @@ class SBAWrapper(object):
         echoing back to all the ports the Command String and “OK”, each terminated with a <CR> 
         and<linefeed>.
         """
-        # TODO: checks if \n\r will works or \r\n,  i dont know
+        # \r\n
         try:
-            await self.ser.write(command)
+            ser = serial.Serial(
+                port=self.dev,
+                baudrate=self.baud,
+                timeout=self.timeout
+            )
+            await ser.write(command)
         except Exception as e:
             print("SBAWrapper error while send command: {}".format(e))
         # then try to read answer
         # it must be two messages, ended with \r\n
         try:
-            echo = await (self.ser.readline()).decode('utf-8')
-            status = await (self.ser.readline()).decode('utf-8')
-            return status
+            ser = serial.Serial(
+                port=self.dev,
+                baudrate=self.baud,
+                timeout=self.timeout
+            )
+            echo = (ser.readline()).decode('utf-8')
+            status = (ser.readline()).decode('utf-8')
+            return echo+status
         except Exception as e:
             print("SBAWrapper error while read answer from command: {}".format(e))
 
     async def get_periodic_data(self):
-        # TODO: check if it really works
         try:
-            ans = await (self.ser.readline()).decode('utf-8')
+            ser = serial.Serial(
+                port=self.dev,
+                baudrate=self.baud,
+                timeout=self.timeout
+            )
+            ans = (ser.readline()).decode('utf-8')
             return ans
         except Exception as e:
             print("SBAWrapper error while read: {}".format(e))
@@ -118,4 +104,4 @@ def send_command(c):
 
 
 if __name__=="__main__":
-    send_command(b'V\r\n')
+    send_command(b'\r\n')
