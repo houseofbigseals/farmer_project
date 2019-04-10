@@ -374,7 +374,7 @@ class Worker:
         """
         # TODO: do real schedule reading
         t = time.localtime()
-        if t.tm_min % 30 == 0:
+        if t.tm_min % 30 == 0 and t.tm_sec == 0:
             remake_coro = SingleCoro(
                 self.remake,
                 "recalibration_task",
