@@ -94,8 +94,8 @@ async def test_co2():
     # )
     com = Command(
         cunit="co2_sensor_unit",
-        cfunc="get_info",
-        cargs=None,
+        cfunc="do_command",
+        cargs={"com": "!\r\n"},
         ctype="single"
     )
     # com = Command(

@@ -47,7 +47,8 @@ class SBAWrapper(object):
                 baudrate=self.baud,
                 timeout=self.timeout
             )
-            await ser.write(command)
+            bcom = command.encode('utf-8')
+            await ser.write(bcom)
         except Exception as e:
             print("SBAWrapper error while send command: {}".format(e))
         # then try to read answer
@@ -104,4 +105,4 @@ def send_command(c):
 
 
 if __name__=="__main__":
-    send_command(b'\r\n')
+    send_command('!\r\n')
