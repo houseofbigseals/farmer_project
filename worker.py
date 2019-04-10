@@ -374,19 +374,17 @@ class Worker:
         # TODO: do real schedule reading
         t = time.localtime()
         if t.tm_min % 30 == 0:
-            await self.measure_task.stop()
             remake_coro = SingleCoro(
                 self.remake,
                 "recalibration_task",
                 red=10,
                 white=10
             )
-            res = await remake_coro.start()
-            logger.debug(res)
-            await self.measure_task.start()
+            await remake_coro.start()
 
     async def remake(self, red: int, white : int):
         logger.info("Airflow and calibration started")
+        await self.measure_task.stop()
         res = ""
         # res += await self._led_unit._set_current(red=red, white=white) # add later
         res += await self._gpio_unit._start_ventilation()
@@ -396,6 +394,8 @@ class Worker:
         res += await self._gpio_unit._stop_calibration()
         await asyncio.sleep(600)
         res += await self._gpio_unit._stop_ventilation()
+        logger.debug(res)
+        await self.measure_task.start()
         return res
 
     async def measure(self):
