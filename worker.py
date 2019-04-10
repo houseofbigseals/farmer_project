@@ -338,8 +338,10 @@ class Worker:
                 else:
                     # something went wrong in server side
                     # try to send this result again after
-                    # so do nothing (or not?)
-                    print(Back.MAGENTA + "send_results not removing ticket")
+                    #
+                    # for now we will remove tickets whatever
+                    self._done_tickets.remove(dt)
+                    print(Back.MAGENTA + "send_results removing ticket whatever")
                     pass
         print(Back.MAGENTA + "send_results done")
 
@@ -348,7 +350,7 @@ class Worker:
         Put ticket to some log
         :return:
         """
-        # TODO: do real logging
+        # TODO: do real archiving
         pass
 
     async def check_schedule(self):

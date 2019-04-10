@@ -40,10 +40,10 @@ class GPIOWrapper(object):
             return "There is GPIO error: {}".format(e)
 
     def write(self, pin: int, state: bool) -> str:
-        res = "Trying to set state {} to pin {} ".format(pin, str(state))
+        res = "Trying to set pin {} to state {} \n".format(pin, str(state))
         try:
             GPIO.output(pin, state)
-            res += "OK"
+            res += "OK \n"
         except Exception as e:
             res += "\nThere is GPIO error: {}".format(e)
         return res

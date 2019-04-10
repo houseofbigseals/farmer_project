@@ -285,7 +285,17 @@ class GpioUnit(Unit):
         super(GpioUnit, self).__init__(name="GpioUnit")
         self.logger = logging.getLogger("Worker.Units.Gpio")
         self.logger.info("Gpio init")
-        # map of pins connected to channels and ther states
+        # pins and devices, connected to them
+        # 2 - pump1
+        # 3 - valve1
+        # 4 - pump2
+        # 17 - valve2
+        # 27 - pump3
+        # 13 - valve3
+        # 19 - 12VDC coolers
+        # 26 - none for now
+
+        # map of pins connected to channels and their states
         self.pins = {
             2: True,
             3: True,
@@ -299,7 +309,7 @@ class GpioUnit(Unit):
         # dirty
         self.vent_pins = [2, 3, 4, 17]
         self.cooler_pin = [19]
-        self.calibration_pins = [13]  # and 27 ?
+        self.calibration_pins = [13]
         # platform-dependent unit, so we need to check
         if platf != "RPi":
             self.logger.info("We are not on RPi, so this unit will be only a stub")
@@ -516,7 +526,10 @@ class SystemUnit(Unit):
 
     def __init__(self):
         super(SystemUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
+        self._list_of_methods = [
+            "get_info",
+            "create_tunnel"
+        ]
 
     async def _get_info(self, tick: Ticket):
         print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task started!")
@@ -526,13 +539,38 @@ class SystemUnit(Unit):
         tick.result = content
         print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task done!")
 
+    async def _create_tunnel(self, tick: Ticket):
+        cmd = 'autossh -M 10984 -N -f -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i /home/pi/.ssh/id_rsa.pub -R 6666:localhost:22 slonik@83.220.174.247 &'
+        print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task started!")
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+        if stdout:
+            content = '[stdout]\n{}'.format(stdout.decode()).strip()
+        if stderr:
+            content = '[stderr]\n{}'.format(stderr.decode()).strip()
+        # content = stdout.decode().strip()
+        tick.result = content
+        print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task done!")
+
     async def handle_ticket(self, tick: Ticket):
         print(Back.CYAN + "SystemUnit.handle_ticket started!")
         command = Command(**tick.command)
+
         if command.func in self._list_of_methods:
             print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
             if command.func == "get_info":
                 new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
+                print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
+                return new_single_coro
+            
+        elif command.func in self._list_of_methods:
+            print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
+            if command.func == "create_tunnel":
+                new_single_coro = SingleCoro(self._create_tunnel, "SystemUnit.create_tunnel_task", tick)
                 print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
         else:

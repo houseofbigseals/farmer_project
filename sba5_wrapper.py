@@ -107,7 +107,7 @@ def send_command(c):
 
 async def main():
     s = SBAWrapper()
-    res = await s.send_command('!\r\n')
+    res = await s.send_command('?\r\n')
     print(res)
 
 if __name__=="__main__":
