@@ -114,7 +114,7 @@ async def test_co2():
     ans = await command_add_ticket(tick, host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
-    time.sleep(30)
+    time.sleep(10)
     ans = await command_get_ticket_result(tick.id, host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
@@ -182,4 +182,6 @@ async def test_tunnel():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(test_tunnel())
+    # loop.run_until_complete(test_tunnel())
+    # loop.run_until_complete(test_gpio())
+    loop.run_until_complete(test_co2())

@@ -335,13 +335,17 @@ class Worker:
                         await self.archive_ticket(dt)
                         print(Back.MAGENTA + "send_results removing sent ticket")
                         self._done_tickets.remove(dt)
+                    else:
+                        # something went wrong in server side
+                        # for now we will remove tickets whatever
+                        # self._done_tickets.remove(dt)
+                        print(Back.MAGENTA + answer.header+answer.body)
+                        self._done_tickets.remove(dt)
+                        print(Back.MAGENTA + "send_results removing ticket whatever")
                 else:
                     # something went wrong in server side
                     # try to send this result again after
-                    #
-                    # for now we will remove tickets whatever
-                    self._done_tickets.remove(dt)
-                    print(Back.MAGENTA + "send_results removing ticket whatever")
+                    print(Back.MAGENTA + "send_results not removing ticket")
                     pass
         print(Back.MAGENTA + "send_results done")
 
