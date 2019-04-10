@@ -394,7 +394,7 @@ class Worker:
         # res += await self._gpio_unit._start_ventilation() # for time
         res += await self._gpio_unit._start_calibration()
         res += await self._co2_sensor_unit._do_calibration()
-        await asyncio.sleep(30)
+        await asyncio.sleep(60)
         res += await self._gpio_unit._stop_calibration()
         # await asyncio.sleep(600)
         # res += await self._gpio_unit._stop_ventilation()
