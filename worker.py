@@ -340,8 +340,8 @@ class Worker:
                     # try to send this result again after
                     #
                     # for now we will remove tickets whatever
-                    self._done_tickets.remove(dt)
-                    print(Back.MAGENTA + "send_results removing ticket whatever")
+                    # self._done_tickets.remove(dt)
+                    print(Back.MAGENTA + "send_results not removing ticket whatever")
                     pass
         print(Back.MAGENTA + "send_results done")
 

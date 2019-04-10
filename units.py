@@ -548,11 +548,11 @@ class SystemUnit(Unit):
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await proc.communicate()
-        if stdout:
-            content = '[stdout]\n{}'.format(stdout.decode()).strip()
-        if stderr:
-            content = '[stderr]\n{}'.format(stderr.decode()).strip()
-        # content = stdout.decode().strip()
+        # if stdout:
+        #     content = '[stdout]\n{}'.format(stdout.decode()).strip()
+        # if stderr:
+        #     content = '[stderr]\n{}'.format(stderr.decode()).strip()
+        content = stdout.decode().strip()
         tick.result = content
         print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task done!")
 
