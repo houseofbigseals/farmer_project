@@ -188,6 +188,7 @@ class Worker:
         self._done_tickets_lock = asyncio.Lock()
         self._datafile = "data.csv"
         self._datafile_lock = asyncio.Lock()
+        self._calibration_lock = asyncio.Lock()
         # append units
         self._units = [
             "system_unit",
@@ -373,17 +374,19 @@ class Worker:
         :return:
         """
         # TODO: do real schedule reading
-        t = time.localtime()
-        if t.tm_min % 30 == 0 and t.tm_sec == 0:
-            remake_coro = SingleCoro(
-                self.remake,
-                "recalibration_task",
-                red=10,
-                white=10
-            )
-            await remake_coro.start()
+        if not self._calibration_lock.locked():
+            t = time.localtime()
+            if t.tm_min % 30 == 0:
+                remake_coro = SingleCoro(
+                    self.remake,
+                    "recalibration_task",
+                    red=10,
+                    white=10
+                )
+                await remake_coro.start()
 
     async def remake(self, red: int, white : int):
+        await self._calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         await self.measure_task.stop()
         res = ""
@@ -397,6 +400,7 @@ class Worker:
         # res += await self._gpio_unit._stop_ventilation()
         logger.debug(res)
         await self.measure_task.start()
+        await self._calibration_lock.release()
         return res
 
     async def measure(self):
