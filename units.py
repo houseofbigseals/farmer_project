@@ -566,10 +566,7 @@ class SystemUnit(Unit):
                 new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
                 print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
-            
-        elif command.func in self._list_of_methods:
-            print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
-            if command.func == "create_tunnel":
+            elif command.func == "create_tunnel":
                 new_single_coro = SingleCoro(self._create_tunnel, "SystemUnit.create_tunnel_task", tick)
                 print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
