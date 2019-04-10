@@ -227,7 +227,7 @@ class CO2SensorUnit(Unit):
 
     async def _get_info(self, tick: Ticket = None):
         ans = await self.sensor.send_command("?\r\n")
-        self.logger.info("Getting info from SBA5")
+        self.logger.debug("Getting info from SBA5")
         if tick:
             tick.result = ans
         else:
@@ -243,7 +243,7 @@ class CO2SensorUnit(Unit):
 
     async def _do_measurement(self, tick: Ticket = None):
         ans = await self.sensor.send_command("M\r\n")
-        self.logger.info("Getting info from SBA5")
+        # self.logger.debug("Do measure SBA5")
         if tick:
             tick.result = ans
         else:
