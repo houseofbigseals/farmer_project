@@ -179,7 +179,7 @@ class CO2SensorUnit(Unit):
             self,
             devname: str = '/dev/ttyUSB0',
             baudrate: int = 19200,
-            timeout: float = 10
+            timeout: float = 0.1
     ):
         super(CO2SensorUnit, self).__init__(name="CO2SensorUnit")
         self.sensor = SBAWrapper(

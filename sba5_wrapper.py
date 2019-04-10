@@ -15,7 +15,7 @@ class SBAWrapper(object):
             self,
             devname: str = '/dev/ttyUSB0',
             baudrate: int = 19200,
-            timeout: float = 10
+            timeout: float = 0.1
     ):
         self.dev = devname
         self.baud = baudrate
@@ -107,7 +107,7 @@ def send_command(c):
 
 async def main():
     s = SBAWrapper()
-    res = await s.send_command('?\r\n')
+    res = await s.send_command('M\r\n')
     print(res)
 
 if __name__=="__main__":

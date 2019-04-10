@@ -56,7 +56,7 @@ class DHTWrapper:
     Simple wrapper class for our tasks
     """
 
-    def __init__(self, pin: int = 4, DHTTYPE: int = 11):
+    def __init__(self, pin: int = 8, DHTTYPE: int = 11):
         self.pin = pin
         self.DHTTYPE = DHTTYPE
 
@@ -76,3 +76,8 @@ class DHTWrapper:
             log += "We successfully got humidity and temperature from sensor"
         return humidity, temperature, log
 
+if __name__=="__main__":
+    d = DHTWrapper()
+    data = d.get_data()
+    print(data[0], data[1], data[2])
+    

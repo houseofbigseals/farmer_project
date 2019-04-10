@@ -114,10 +114,15 @@ async def test_co2():
     ans = await command_add_ticket(tick, host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
-    time.sleep(10)
-    ans = await command_get_ticket_result(tick.id, host="83.220.174.247", port=8888)
-    print(ans.header)
-    print(ans.body)
+
+    while True:
+        ans = await command_get_ticket_result(tick.id, host="83.220.174.247", port=8888)
+        print(ans.header)
+        print(ans.body)
+        if not ans.body or ans.body == "at_work":
+            time.sleep(5)
+        else:
+            break
     ans = await command_delete_ticket(tick.id, host="83.220.174.247", port=8888)
     print(ans.header)
     print(ans.body)
