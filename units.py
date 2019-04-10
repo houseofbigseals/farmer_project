@@ -190,7 +190,8 @@ class CO2SensorUnit(Unit):
         self._list_of_methods = [
             "get_info",
             "do_calibration",
-            "do_measurement"
+            "do_measurement",
+            "do_command"
         ]
         self.logger = logging.getLogger("Worker.Units.CO2Sensor")
         self.logger.info("First part of CO2Sensor init")
@@ -233,6 +234,11 @@ class CO2SensorUnit(Unit):
         self.logger.info("Getting info from SBA5")
         tick.result = ans
 
+    async def _do_command(self, tick: Ticket, com: str):
+        ans = await self.sensor.send_command(com)
+        self.logger.info("send {} command to SBA5".format(com))
+        tick.result = ans
+
     async def handle_ticket(self, tick: Ticket):
         com = Command(**tick.command)
         command = com.func
@@ -256,6 +262,14 @@ class CO2SensorUnit(Unit):
                     self._get_info,
                     "CO2SensorUnit.get_info_task",
                     tick
+                )
+                return new_single_coro
+            elif command == "do_command":
+                new_single_coro = SingleCoro(
+                    self._do_command,
+                    "CO2SensorUnit.do_command_task",
+                    tick=tick,
+                    com=com.args["com"]
                 )
                 return new_single_coro
         else:
