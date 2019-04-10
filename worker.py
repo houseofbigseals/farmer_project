@@ -213,11 +213,11 @@ class Worker:
         schedule_task = PeriodicCoro(self.check_schedule, 5, name="schedule_task")
         request_task = PeriodicCoro(self.check_server, 5, name="request_task")
         send_results_task = PeriodicCoro(self.send_results, 5, name="send_results_task")
-        measure_task = PeriodicCoro(self.measure, 3, name="measure_task")
+        self.measure_task = PeriodicCoro(self.measure, 3, name="measure_task")
         await schedule_task.start()
         await request_task.start()
         await send_results_task.start()
-        await measure_task.start()
+        await self.measure_task.start()
 
     async def stop(self):
         self._main_loop_task.cancel()
@@ -368,10 +368,35 @@ class Worker:
         """
         do read schedule
         and then put tasks to self.tickets[] (with lock)
+        hehe, nope
         :return:
         """
         # TODO: do real schedule reading
-        pass
+        t = time.localtime()
+        if t.tm_min % 30 == 0:
+            await self.measure_task.stop()
+            remake_coro = SingleCoro(
+                self.remake,
+                "recalibration_task",
+                red=10,
+                white=10
+            )
+            res = await remake_coro.start()
+            logger.debug(res)
+            await self.measure_task.start()
+
+    async def remake(self, red: int, white : int):
+        logger.info("Airflow and calibration started")
+        res = ""
+        # res += await self._led_unit._set_current(red=red, white=white) # add later
+        res += await self._gpio_unit._start_ventilation()
+        res += await self._gpio_unit._start_calibration()
+        res += await self._co2_sensor_unit._do_calibration()
+        await asyncio.sleep(30)
+        res += await self._gpio_unit._stop_calibration()
+        await asyncio.sleep(600)
+        res += await self._gpio_unit._stop_ventilation()
+        return res
 
     async def measure(self):
         """

@@ -103,7 +103,7 @@ class LedUnit(Unit):
         tick.result = res
         self.logger.debug(res)
 
-    async def _set_current(self, tick: Ticket, red: int = 10, white: int = 10):
+    async def _set_current(self, tick: Ticket = None, red: int = 10, white: int = 10):
         self._red = red
         self._white = white
         # TODO: handle incorrect current values such as (10000, 0) or smth
@@ -116,8 +116,11 @@ class LedUnit(Unit):
         res += self.uart_wrapper.FINISH_CONFIGURE_WITH_SAVING()[1]
         res += self.uart_wrapper.START()[1]
         self.logger.debug(res)
-        tick.result = res
         self._started = True
+        if tick:
+            tick.result = res
+        else:
+            return res
 
     async def handle_ticket(self, tick: Ticket):
         com = Command(**tick.command)
@@ -222,15 +225,21 @@ class CO2SensorUnit(Unit):
         ans = await self.sensor.send_command("P1\r\n")
         self.logger.info("Command P1, answer: {}".format(ans))
 
-    async def _get_info(self, tick: Ticket):
+    async def _get_info(self, tick: Ticket = None):
         ans = await self.sensor.send_command("?\r\n")
         self.logger.info("Getting info from SBA5")
-        tick.result = ans
+        if tick:
+            tick.result = ans
+        else:
+            return ans
 
-    async def _do_calibration(self, tick: Ticket):
+    async def _do_calibration(self, tick: Ticket = None):
         ans = await self.sensor.send_command("Z\r\n")
         self.logger.info("Starting calibration of SBA5")
-        tick.result = ans
+        if tick:
+            tick.result = ans
+        else:
+            return ans
 
     async def _do_measurement(self, tick: Ticket = None):
         ans = await self.sensor.send_command("M\r\n")
@@ -347,7 +356,7 @@ class GpioUnit(Unit):
         self.logger.debug(res)
         tick.result = res
 
-    async def _start_ventilation(self, tick: Ticket):
+    async def _start_ventilation(self, tick: Ticket = None):
         self.logger.info("Gpio start_ventilation")
         res = ""
         for i in self.vent_pins:
@@ -355,51 +364,70 @@ class GpioUnit(Unit):
             # false - because our relay is low level trigger
             self.pins[i] = False
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _stop_ventilation(self, tick: Ticket):
+    async def _stop_ventilation(self, tick: Ticket= None):
         self.logger.info("Gpio stop_ventilation")
+        res = ""
         for i in self.vent_pins:
             res = self.gpio.write(i, True)
             self.pins[i] = True
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _start_calibration(self, tick: Ticket):
+    async def _start_calibration(self, tick: Ticket = None):
         self.logger.info("Gpio start_calibration")
         for i in self.calibration_pins:
             res = self.gpio.write(i, False)
             # false - because our relay is low level trigger
             self.pins[i] = False
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _stop_calibration(self, tick: Ticket):
+    async def _stop_calibration(self, tick: Ticket = None):
         self.logger.info("Gpio stop_calibration")
         for i in self.calibration_pins:
             res = self.gpio.write(i, True)
             # false - because our relay is low level trigger
             self.pins[i] = True
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _start_coolers(self, tick: Ticket):
+    async def _start_coolers(self, tick: Ticket = None):
         self.logger.info("Gpio start coolers")
         for i in self.cooler_pin:
             res = self.gpio.write(i, False)
             # false - because our relay is low level trigger
             self.pins[i] = False
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _stop_coolers(self, tick: Ticket):
+    async def _stop_coolers(self, tick: Ticket = None):
         self.logger.info("Gpio stop coolers")
         for i in self.cooler_pin:
             res = self.gpio.write(i, True)
             # false - because our relay is low level trigger
             self.pins[i] = True
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
     async def _set_pin(self, tick: Ticket, pin: int, state: bool):
         self.logger.info("Gpio manually set pin")
