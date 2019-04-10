@@ -400,7 +400,7 @@ class Worker:
         # res += await self._gpio_unit._stop_ventilation()
         logger.debug(res)
         await self.measure_task.start()
-        await self._calibration_lock.release()
+        self._calibration_lock.release()
         return res
 
     async def measure(self):
