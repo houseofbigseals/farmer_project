@@ -206,8 +206,9 @@ class Worker:
         self._temp_sensor_unit = TempSensorUnit()
 
     async def start(self):
+        logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         # do async init for some units
-        await self._co2_sensor_unit.init()
+        await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
         schedule_task = PeriodicCoro(self.check_schedule, 5, name="schedule_task")
@@ -387,13 +388,13 @@ class Worker:
         await self.measure_task.stop()
         res = ""
         # res += await self._led_unit._set_current(red=red, white=white) # add later
-        res += await self._gpio_unit._start_ventilation()
+        # res += await self._gpio_unit._start_ventilation() # for time
         res += await self._gpio_unit._start_calibration()
         res += await self._co2_sensor_unit._do_calibration()
         await asyncio.sleep(30)
         res += await self._gpio_unit._stop_calibration()
-        await asyncio.sleep(600)
-        res += await self._gpio_unit._stop_ventilation()
+        # await asyncio.sleep(600)
+        # res += await self._gpio_unit._stop_ventilation()
         logger.debug(res)
         await self.measure_task.start()
         return res

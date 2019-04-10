@@ -207,8 +207,8 @@ class CO2SensorUnit(Unit):
         # async part of init
         # we have to send some commands before start regular work of unit
         self.logger.info("Second part of CO2Sensor init")
-        ans = await self.sensor.send_command("?\r\n")
-        self.logger.info("Command ?, answer: {}".format(ans))
+        # ans = await self.sensor.send_command("?\r\n")
+        # self.logger.info("Command ?, answer: {}".format(ans))
         # if not "OK" in ans:
         #     self.logger.info("CO2SensorError: {}".format(ans))
         #     return "CO2SensorError: {}".format(ans)
