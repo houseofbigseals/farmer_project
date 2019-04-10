@@ -120,7 +120,7 @@ async def test_co2():
         print(ans.header)
         print(ans.body)
         if not ans.body or ans.body == "at_work":
-            time.sleep(5)
+            time.sleep(1)
         else:
             break
     ans = await command_delete_ticket(tick.id, host="83.220.174.247", port=8888)

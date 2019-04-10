@@ -51,6 +51,7 @@ import Adafruit_DHT
 #         platform = get_platform()
 # return platform.read(sensor, pin)
 
+
 class DHTWrapper:
     """
     Simple wrapper class for our tasks

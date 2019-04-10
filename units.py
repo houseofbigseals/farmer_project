@@ -77,6 +77,9 @@ class LedUnit(Unit):
         self._white = 10
         self.logger = logging.getLogger("Worker.Units.Led_wrapper")
 
+    async def get_short_info(self):
+        return self._red, self._white
+
     async def _get_info(self, tick: Ticket):
         self.logger.info(
             "Info. Unit {}, red current = {}, white current = {}".format(
@@ -229,10 +232,13 @@ class CO2SensorUnit(Unit):
         self.logger.info("Starting calibration of SBA5")
         tick.result = ans
 
-    async def _do_measurement(self, tick: Ticket):
+    async def _do_measurement(self, tick: Ticket = None):
         ans = await self.sensor.send_command("M\r\n")
         self.logger.info("Getting info from SBA5")
-        tick.result = ans
+        if tick:
+            tick.result = ans
+        else:
+            return ans
 
     async def _do_command(self, tick: Ticket, com: str):
         ans = await self.sensor.send_command(com)

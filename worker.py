@@ -112,6 +112,7 @@
 import time
 import asyncio
 import json
+import csv
 from uuid import uuid4, UUID
 from typing import Any
 from contextlib import suppress
@@ -185,6 +186,8 @@ class Worker:
         self._at_work_tickets_lock = asyncio.Lock()
         self._done_tickets = [] # list with Ticket objects, those already done
         self._done_tickets_lock = asyncio.Lock()
+        self._datafile = "data.csv"
+        self._datafile_lock = asyncio.Lock()
         # append units
         self._units = [
             "system_unit",
@@ -203,14 +206,18 @@ class Worker:
         self._temp_sensor_unit = TempSensorUnit()
 
     async def start(self):
+        # do async init for some units
+        await self._co2_sensor_unit.init()
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
         schedule_task = PeriodicCoro(self.check_schedule, 5, name="schedule_task")
         request_task = PeriodicCoro(self.check_server, 5, name="request_task")
         send_results_task = PeriodicCoro(self.send_results, 5, name="send_results_task")
+        measure_task = PeriodicCoro(self.measure, 3, name="measure_task")
         await schedule_task.start()
         await request_task.start()
         await send_results_task.start()
+        await measure_task.start()
 
     async def stop(self):
         self._main_loop_task.cancel()
@@ -365,6 +372,40 @@ class Worker:
         """
         # TODO: do real schedule reading
         pass
+
+    async def measure(self):
+        """
+        Get info from all sensors and write it to file
+        :return:
+        """
+        # TODO: try to do this function with tickets and handle mechanism
+        date_ = time.strftime("%x", time.localtime())
+        time_ = time.strftime("%X", time.localtime())
+        ired, iwhite = await self._led_unit.get_short_info()
+        temp, hum = 0, 0
+        # TODO: add temp unit!
+        # temp, hum = await self._temp_sensor_unit.get_data()
+        # TODO: fix crutch with access to protected members
+        co2 = await self._co2_sensor_unit._do_measurement()
+        #weight = await self._weight_unit.get_data()
+        weight = 0
+        fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid", "CO2","weight"]
+
+        data = {
+            "date": date_,
+            "time": time_,
+            "Ired": ired,
+            "Iwhite": iwhite,
+            "temp": temp,
+            "humid": hum,
+            "CO2": co2,
+            "weight": weight
+        }
+        async with self._datafile_lock:
+            with open(self._datafile, "a", newline='') as out_file:
+                writer = csv.DictWriter(out_file, delimiter=',', fieldnames=fieldnames)
+                # writer.writeheader()
+                writer.writerow(data)
 
     async def check_server(self):
         """
