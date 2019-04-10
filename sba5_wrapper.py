@@ -4,6 +4,7 @@
 
 
 import serial
+import asyncio
 # TODO: add logging, its important
 
 class SBAWrapper(object):
@@ -48,7 +49,7 @@ class SBAWrapper(object):
                 timeout=self.timeout
             )
             bcom = command.encode('utf-8')
-            await ser.write(bcom)
+            ser.write(bcom)
         except Exception as e:
             print("SBAWrapper error while send command: {}".format(e))
         # then try to read answer
@@ -104,5 +105,11 @@ def send_command(c):
         print(ans)
 
 
+async def main():
+    s = SBAWrapper()
+    res = await s.send_command('!\r\n')
+    print(res)
+
 if __name__=="__main__":
-    send_command('!\r\n')
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
