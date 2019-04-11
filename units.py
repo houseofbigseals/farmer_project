@@ -429,12 +429,15 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _set_pin(self, tick: Ticket, pin: int, state: bool):
+    async def _set_pin(self, pin: int, state: bool, tick: Ticket = None):
         self.logger.info("Gpio manually set pin")
         res = self.gpio.write(pin, state)
         self.pins[pin] = state
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
     async def handle_ticket(self, tick: Ticket):
         if platf != "RPi":

@@ -200,9 +200,11 @@ class Worker:
         ]
         # create units
         self._system_unit = SystemUnit()
-        self._led_unit = LedUnit()
+        self._led_unit = LedUnit(
+            devname="/dev/ttyUSB1"
+        )
         self._gpio_unit = GpioUnit()
-        self._co2_sensor_unit = CO2SensorUnit()
+        self._co2_sensor_unit = CO2SensorUnit(devname="/dev/ttyUSB1")
         self._weight_unit = WeightUnit()
         self._temp_sensor_unit = TempSensorUnit()
 
@@ -215,7 +217,7 @@ class Worker:
         schedule_task = PeriodicCoro(self.check_schedule, 5, name="schedule_task")
         request_task = PeriodicCoro(self.check_server, 5, name="request_task")
         send_results_task = PeriodicCoro(self.send_results, 5, name="send_results_task")
-        self.measure_task = PeriodicCoro(self.measure, 3, name="measure_task")
+        self.measure_task = PeriodicCoro(self.measure, 2, name="measure_task")
         await schedule_task.start()
         await request_task.start()
         await send_results_task.start()
@@ -376,7 +378,7 @@ class Worker:
         # TODO: do real schedule reading
         if not self._calibration_lock.locked():
             t = time.localtime()
-            if t.tm_min % 30 == 0:
+            if t.tm_min % 20 == 0:
                 remake_coro = SingleCoro(
                     self.remake,
                     "recalibration_task",
@@ -390,15 +392,15 @@ class Worker:
         logger.info("Airflow and calibration started")
         await self.measure_task.stop()
         res = ""
-        # res += await self._led_unit._set_current(red=red, white=white) # add later
-        # res += await self._gpio_unit._start_ventilation() # for time
+        res += await self._led_unit._set_current(red=red, white=white) # add later
+        res += await self._gpio_unit._start_ventilation() # for time
         res += await self._gpio_unit._start_calibration()
         res += await self._co2_sensor_unit._do_calibration()
         await asyncio.sleep(60)
         res += await self._gpio_unit._stop_calibration()
-        # await asyncio.sleep(600)
-        # res += await self._gpio_unit._stop_ventilation()
-        logger.debug(res)
+        await asyncio.sleep(540)
+        res += await self._gpio_unit._stop_ventilation()
+        logger.debug("Result of calibration coro : " + res)
         await self.measure_task.start()
         self._calibration_lock.release()
         return res
