@@ -204,7 +204,7 @@ class Worker:
             devname="/dev/ttyUSB1"
         )
         self._gpio_unit = GpioUnit()
-        self._co2_sensor_unit = CO2SensorUnit(devname="/dev/ttyUSB1")
+        self._co2_sensor_unit = CO2SensorUnit(devname="/dev/ttyUSB0")
         self._weight_unit = WeightUnit()
         self._temp_sensor_unit = TempSensorUnit()
 
@@ -419,7 +419,9 @@ class Worker:
         # temp, hum = await self._temp_sensor_unit.get_data()
         # TODO: fix crutch with access to protected members
         co2_raw = await self._co2_sensor_unit._do_measurement()
+        # print(co2_raw)
         co2 = co2_raw.split(' ')[3]
+
         #weight = await self._weight_unit.get_data()
         weight = 0
         fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid", "CO2","weight"]
