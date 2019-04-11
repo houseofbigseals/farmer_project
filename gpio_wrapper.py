@@ -89,7 +89,7 @@ def one_test():
     # print(ns.pin)
     # print(ns.mode)
     # pin = ns.pin
-    pin = 2
+    pin = 13
     g = GPIOWrapper()
     g.set_mode(pin, "output")
     while True:
@@ -99,4 +99,4 @@ def one_test():
         sleep(2)
 
 if __name__ == "__main__":
-    one_test()
+    all_test()

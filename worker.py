@@ -419,7 +419,7 @@ class Worker:
         # temp, hum = await self._temp_sensor_unit.get_data()
         # TODO: fix crutch with access to protected members
         co2_raw = await self._co2_sensor_unit._do_measurement()
-        co2 = (co2_raw.split(' '))[3]
+        co2 = co2_raw.split(' ')[3]
         #weight = await self._weight_unit.get_data()
         weight = 0
         fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid", "CO2","weight"]
