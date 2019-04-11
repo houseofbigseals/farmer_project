@@ -80,30 +80,39 @@ class LedUnit(Unit):
     async def get_short_info(self):
         return self._red, self._white
 
-    async def _get_info(self, tick: Ticket):
+    async def get_info(self, tick: Ticket = None):
         self.logger.info(
             "Info. Unit {}, red current = {}, white current = {}".format(
                 "started" if self._started else "stopped", self._red, self._white)
         )
         res = self.uart_wrapper.GET_STATUS()[1]
-        tick.result = res
         self.logger.debug(res)
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _start(self, tick: Ticket):
+    async def start(self, tick: Ticket = None):
         self._started = True
         self.logger.info("Started")
         res = self.uart_wrapper.START()[1]
-        tick.result = res
         self.logger.debug(res)
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _stop(self, tick: Ticket):
+    async def stop(self, tick: Ticket = None):
         self._started = False
         self.logger.info("Stopped")
         res = self.uart_wrapper.STOP()[1]
-        tick.result = res
         self.logger.debug(res)
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _set_current(self, tick: Ticket = None, red: int = 10, white: int = 10):
+    async def set_current(self, tick: Ticket = None, red: int = 10, white: int = 10):
         self._red = red
         self._white = white
         # TODO: handle incorrect current values such as (10000, 0) or smth
@@ -128,7 +137,7 @@ class LedUnit(Unit):
         if command in self._list_of_methods:
             if command == "get_info":
                 new_single_coro = SingleCoro(
-                    self._get_info,
+                    self.get_info,
                     "SystemUnit.get_info_task",
                     tick
                 )
@@ -136,7 +145,7 @@ class LedUnit(Unit):
 
             elif command == "start":
                 new_single_coro = SingleCoro(
-                    self._start,
+                    self.start,
                     "SystemUnit.get_info_task",
                     tick
                 )
@@ -144,14 +153,14 @@ class LedUnit(Unit):
 
             elif command == "stop":
                 new_single_coro = SingleCoro(
-                    self._stop, "SystemUnit.get_info_task", tick)
+                    self.stop, "SystemUnit.get_info_task", tick)
                 return new_single_coro
 
             elif command == "set_current":
                 red = com.args["red"]
                 white = com.args["white"]
                 new_single_coro = SingleCoro(
-                    self._set_current,
+                    self.set_current,
                     "SystemUnit.get_info_task",
                     red=red,
                     white=white,
@@ -225,7 +234,7 @@ class CO2SensorUnit(Unit):
         ans = await self.sensor.send_command("P1\r\n")
         self.logger.info("Command P1, answer: {}".format(ans))
 
-    async def _get_info(self, tick: Ticket = None):
+    async def get_info(self, tick: Ticket = None):
         ans = await self.sensor.send_command("?\r\n")
         self.logger.debug("Getting info from SBA5")
         if tick:
@@ -233,7 +242,7 @@ class CO2SensorUnit(Unit):
         else:
             return ans
 
-    async def _do_calibration(self, tick: Ticket = None):
+    async def do_calibration(self, tick: Ticket = None):
         ans = await self.sensor.send_command("Z\r\n")
         self.logger.info("Starting calibration of SBA5")
         if tick:
@@ -241,7 +250,7 @@ class CO2SensorUnit(Unit):
         else:
             return ans
 
-    async def _do_measurement(self, tick: Ticket = None):
+    async def do_measurement(self, tick: Ticket = None):
         ans = await self.sensor.send_command("M\r\n")
         # self.logger.debug("Do measure SBA5")
         if tick:
@@ -249,7 +258,7 @@ class CO2SensorUnit(Unit):
         else:
             return ans
 
-    async def _do_command(self, tick: Ticket, com: str):
+    async def do_command(self, tick: Ticket, com: str):
         ans = await self.sensor.send_command(com)
         self.logger.info("send {} command to SBA5".format(com))
         tick.result = ans
@@ -260,28 +269,28 @@ class CO2SensorUnit(Unit):
         if command in self._list_of_methods:
             if command == "get_info":
                 new_single_coro = SingleCoro(
-                    self._get_info,
+                    self.get_info,
                     "CO2SensorUnit.get_info_task",
                     tick
                 )
                 return new_single_coro
             elif command == "do_calibration":
                 new_single_coro = SingleCoro(
-                    self._do_calibration,
+                    self.do_calibration,
                     "CO2SensorUnit.get_info_task",
                     tick
                 )
                 return new_single_coro
             elif command == "do_measurement":
                 new_single_coro = SingleCoro(
-                    self._get_info,
-                    "CO2SensorUnit.get_info_task",
+                    self.do_measurement,
+                    "CO2SensorUnit.do_measurement_task",
                     tick
                 )
                 return new_single_coro
             elif command == "do_command":
                 new_single_coro = SingleCoro(
-                    self._do_command,
+                    self.do_command,
                     "CO2SensorUnit.do_command_task",
                     tick=tick,
                     com=com.args["com"]
@@ -327,7 +336,7 @@ class GpioUnit(Unit):
         self.calibration_pins = [13]
         # platform-dependent unit, so we need to check
         if platf != "RPi":
-            self.logger.info("We are not on RPi, so this unit will be only a stub")
+            self.logger.error("We are not on RPi, so this unit will be only a stub")
             # self._list_of_methods = []
         else:
             self.gpio = GPIOWrapper()
@@ -347,16 +356,29 @@ class GpioUnit(Unit):
                 # set initial value to True, to shut down relays
                 self.gpio.write(i, True)
 
-    async def _get_info(self, tick: Ticket):
+    async def get_info(self, tick: Ticket = None):
         self.logger.info("Gpio get_info")
         res = "Version : " + self.gpio.info()
         res += "\nState of outputs: "
         for i in self.pins.keys():
             res += "\n Gpio pin {} is {}".format(i, self.pins[i])
         self.logger.debug(res)
-        tick.result = res
+        if tick:
+            tick.result = res
+        else:
+            return res
 
-    async def _start_ventilation(self, tick: Ticket = None):
+    async def stop(self, tick: Ticket = None):
+        self.logger.info("Gpio stop")
+        self.gpio.deleter()
+        res = "Gpio cleaned up"
+        self.logger.debug(res)
+        if tick:
+            tick.result = res
+        else:
+            return res
+
+    async def start_ventilation(self, tick: Ticket = None):
         self.logger.info("Gpio start_ventilation")
         res = ""
         for i in self.vent_pins:
@@ -369,7 +391,7 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _stop_ventilation(self, tick: Ticket= None):
+    async def stop_ventilation(self, tick: Ticket= None):
         self.logger.info("Gpio stop_ventilation")
         res = ""
         for i in self.vent_pins:
@@ -381,7 +403,7 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _start_calibration(self, tick: Ticket = None):
+    async def start_calibration(self, tick: Ticket = None):
         self.logger.info("Gpio start_calibration")
         for i in self.calibration_pins:
             res = self.gpio.write(i, False)
@@ -393,7 +415,7 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _stop_calibration(self, tick: Ticket = None):
+    async def stop_calibration(self, tick: Ticket = None):
         self.logger.info("Gpio stop_calibration")
         for i in self.calibration_pins:
             res = self.gpio.write(i, True)
@@ -405,7 +427,7 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _start_coolers(self, tick: Ticket = None):
+    async def start_coolers(self, tick: Ticket = None):
         self.logger.info("Gpio start coolers")
         for i in self.cooler_pin:
             res = self.gpio.write(i, False)
@@ -417,7 +439,7 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _stop_coolers(self, tick: Ticket = None):
+    async def stop_coolers(self, tick: Ticket = None):
         self.logger.info("Gpio stop coolers")
         for i in self.cooler_pin:
             res = self.gpio.write(i, True)
@@ -429,7 +451,7 @@ class GpioUnit(Unit):
         else:
             return res
 
-    async def _set_pin(self, pin: int, state: bool, tick: Ticket = None):
+    async def set_pin(self, pin: int, state: bool, tick: Ticket = None):
         self.logger.info("Gpio manually set pin")
         res = self.gpio.write(pin, state)
         self.pins[pin] = state
@@ -449,49 +471,49 @@ class GpioUnit(Unit):
             if command in self._list_of_methods:
                 if command == "get_info":
                     new_single_coro = SingleCoro(
-                        self._get_info,
+                        self.get_info,
                         "GpioUnit.get_info_task",
                         tick
                     )
                     return new_single_coro
                 elif command == "start_ventilation":
                     new_single_coro = SingleCoro(
-                        self._start_ventilation,
+                        self.start_ventilation,
                         "GpioUnit.start_ventilation_task",
                         tick
                     )
                     return new_single_coro
                 elif command == "stop_ventilation":
                     new_single_coro = SingleCoro(
-                        self._stop_ventilation,
+                        self.stop_ventilation,
                         "GpioUnit.stop_ventilation_task",
                         tick
                     )
                     return new_single_coro
                 elif command == "start_calibration":
                     new_single_coro = SingleCoro(
-                        self._start_calibration,
+                        self.start_calibration,
                         "GpioUnit.start_calibration_task",
                         tick
                     )
                     return new_single_coro
                 elif command == "stop_calibration":
                     new_single_coro = SingleCoro(
-                        self._stop_calibration,
+                        self.stop_calibration,
                         "GpioUnit.stop_calibration_task",
                         tick
                     )
                     return new_single_coro
                 elif command == "start_coolers":
                     new_single_coro = SingleCoro(
-                        self._start_coolers,
+                        self.start_coolers,
                         "GpioUnit.start_coolers_task",
                         tick
                     )
                     return new_single_coro
                 elif command == "stop_coolers":
                     new_single_coro = SingleCoro(
-                        self._stop_coolers,
+                        self.stop_coolers,
                         "GpioUnit.stop_coolers_task",
                         tick
                     )
@@ -500,7 +522,7 @@ class GpioUnit(Unit):
                     pin = com.args["pin"]
                     state = com.args["state"]
                     new_single_coro = SingleCoro(
-                        self._set_pin,
+                        self.set_pin,
                         "GpioUnit.start_coolers_task",
                         tick=tick,
                         pin=pin,
@@ -538,21 +560,55 @@ class TempSensorUnit(Unit):
     Unit for wrapping temp sensor methods - dht11 for now
     """
 
-    def __init__(self):
-        super(TempSensorUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
+    def __init__(self, pin: int = 14, dhttype: int = 11 ):
+        super(TempSensorUnit, self).__init__(name="TempSensorUnit")
+        self.logger = logging.getLogger("Worker.Units.Gpio")
+        self.logger.info("Gpio init")
+        # platform-dependent unit, so we need to check
+        if platf != "RPi":
+            self.logger.error("We are not on RPi, so this unit will be only a stub")
+        else:
+            self._list_of_methods = [
+                "get_info",
+                "get_data"
+            ]
+            self.pin = pin
+            self.dhttype = dhttype
+            self.sensor = DHTWrapper(pin=self.pin, DHTTYPE=self.dhttype)
 
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
+    async def get_data(self, tick: Ticket = None):
+        self.logger.info("Dht get data function")
+        if platf != "RPi":
+            self.logger.error("We are not on RPi, so this unit will be only a stub")
+        else:
+            h, t, log = self.sensor.get_data()
+            self.logger.debug((h, t, log))
+            if tick:
+                tick.result = (h, t)
+            else:
+                return h, t
+
+    async def get_info(self, tick: Ticket = None):
+        self.logger.info("Dht get info function")
+        if platf != "RPi":
+            self.logger.error("We are not on RPi, so this unit will be only a stub")
+        else:
+            self.logger.debug((self.pin, self.dhttype))
+            if tick:
+                tick.result = (self.pin, self.dhttype)
+            else:
+                return self.pin, self.dhttype
 
     async def handle_ticket(self, tick: Ticket):
         command = Command(**tick.command)
-        if command.func in self._list_of_methods:
-            if command.func == "get_info":
-                return await self._get_info()
+        if platf != "RPi":
+            self.logger.error("We are not on RPi, so this unit will be only a stub")
         else:
-            raise ValueError("TempSensorUnitError: No such command - {}".format(command.func))
+            if command.func in self._list_of_methods:
+                if command.func == "get_info":
+                    return await self.get_info()
+            else:
+                raise ValueError("TempSensorUnitError: No such command - {}".format(command.func))
 
 
 class SystemUnit(Unit):

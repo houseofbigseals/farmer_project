@@ -2,6 +2,9 @@ import asyncio
 import json
 from command import Command, Ticket, Message
 from typing import Any
+import logging
+
+logger = logging.getLogger("Worker.RawClient")
 
 
 class ClientProtocol(asyncio.Protocol):
@@ -16,13 +19,13 @@ class ClientProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         self.transport = transport
         self.address = transport.get_extra_info('peername')
-        print('Accepted connection from {}'.format(self.address))
+        logger.debug('Accepted connection from {}'.format(self.address))
 
     def send_message(self, message):
         # transport.write(self.message.encode())
         message = message.encode()
         self.transport.write(message)
-        print('Data sent: {!r}'.format(message))
+        logger.debug('Data sent: {!r}'.format(message))
 
     def data_received(self, data):
         asyncio.ensure_future(self.handle_incoming(data))
@@ -31,13 +34,13 @@ class ClientProtocol(asyncio.Protocol):
         self.result = data
         # TODO: fix that ugly crutch
         self.placeholder[0] = data.decode()
-        print('Data received: {!r}'.format(data.decode()))
+        logger.debug('Data received: {!r}'.format(data.decode()))
         return self.result
 
     def connection_lost(self, exc):
         if exc:
-            print('Client {} error: {}'.format(self.address, exc))
-        print('The server closed the connection')
+            logger.debug('Client {} error: {}'.format(self.address, exc))
+        logger.debug('The server closed the connection')
         self.on_con_lost.set_result(True)
 
 

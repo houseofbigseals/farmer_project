@@ -54,6 +54,9 @@ class GPIOWrapper(object):
     def __del__(self):
         GPIO.cleanup()
 
+    def deleter(self):
+        GPIO.cleanup()
+
 
 def all_test():
     g = GPIOWrapper()
