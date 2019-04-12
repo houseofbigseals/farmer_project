@@ -577,19 +577,19 @@ class TempSensorUnit(Unit):
             self.sensor = DHTWrapper(pin=self.pin, DHTTYPE=self.dhttype)
 
     async def get_data(self, tick: Ticket = None):
-        self.logger.info("Dht get data function")
+        self.logger.debug("Dht get data function")
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
         else:
             h, t, log = self.sensor.get_data()
-            self.logger.debug((h, t, log))
+            self.logger.debug((t, h, log))
             if tick:
-                tick.result = (h, t)
+                tick.result = (t, h)
             else:
-                return h, t
+                return t, h
 
     async def get_info(self, tick: Ticket = None):
-        self.logger.info("Dht get info function")
+        self.logger.debug("Dht get info function")
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
         else:
@@ -625,17 +625,17 @@ class SystemUnit(Unit):
         ]
 
     async def _get_info(self, tick: Ticket):
-        print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task started!")
+        # print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task started!")
         proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         content = stdout.decode().strip()
         tick.result = content
-        print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task done!")
+        # print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task done!")
 
     async def _create_tunnel(self, tick: Ticket):
         cmd = 'autossh -M 10984 -N -f -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i /home/pi/.ssh/id_rsa -R 6666:localhost:22 slonik@83.220.174.247 &'
 
-        print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task started!")
+        # print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task started!")
         proc = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -648,22 +648,22 @@ class SystemUnit(Unit):
         #     content = '[stderr]\n{}'.format(stderr.decode()).strip()
         content = stdout.decode().strip()
         tick.result = content
-        print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task done!")
+        # print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task done!")
 
     async def handle_ticket(self, tick: Ticket):
-        print(Back.CYAN + "SystemUnit.handle_ticket started!")
+        # print(Back.CYAN + "SystemUnit.handle_ticket started!")
         command = Command(**tick.command)
 
         if command.func in self._list_of_methods:
-            print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
+            # print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
             if command.func == "get_info":
                 new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
-                print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
+                # print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
             elif command.func == "create_tunnel":
                 new_single_coro = SingleCoro(self._create_tunnel, "SystemUnit.create_tunnel_task", tick)
-                print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
+                # print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
         else:
             raise ValueError("SystemUnitError: No such command - {}".format(command.func))
-        print(Back.CYAN + "SystemUnit.handle_ticket done!")
+        # print(Back.CYAN + "SystemUnit.handle_ticket done!")

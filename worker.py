@@ -410,12 +410,21 @@ class Worker:
             [160, 160],
             [170, 170],
             [180, 180],
+            [100, 100],  # repeat
+            [110, 110],
+            [120, 120],
+            [130, 130],
+            [140, 140],
+            [150, 150],
+            [160, 160],
+            [170, 170],
+            [180, 180]
         ]
         if not self._calibration_lock.locked():
-            if self.current_schedule_point >= 9:
-                self.current_schedule_point = self.current_schedule_point % 9
+            if self.current_schedule_point >= 18:
+                self.current_schedule_point = self.current_schedule_point % 18
             t = time.localtime()
-            if t.tm_min % 20 == 0:
+            if t.tm_min % 30 == 0:
                 remake_coro = SingleCoro(
                     self.remake,
                     "recalibration_task",
@@ -436,11 +445,12 @@ class Worker:
         res += await self._gpio_unit.start_calibration()
         res += await self._co2_sensor_unit.do_calibration()
         await asyncio.sleep(60)
+        await self.measure_task.start()
         res += await self._gpio_unit.stop_calibration()
         await asyncio.sleep(840)
         res += await self._gpio_unit.stop_ventilation()
         logger.debug("Result of calibration coro : " + res)
-        await self.measure_task.start()
+
         self._calibration_lock.release()
         return res
 
