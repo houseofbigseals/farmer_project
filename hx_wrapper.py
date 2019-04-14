@@ -43,6 +43,7 @@ def hx_test():
         measures = hx711.get_raw_data(num_measures=3)
     finally:
         # GPIO.cleanup()  # always do a GPIO cleanup in your scripts!
+        pass
 
     print("\n".join(measures))
 
