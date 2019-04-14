@@ -123,6 +123,7 @@ from raw_client import command_get_server_info, command_request_ticket\
 from colorama import Back, init
 from units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit
 import logging
+from pathlib import Path
 
 
 logger = logging.getLogger("Worker._Worker")
@@ -190,6 +191,7 @@ class Worker:
         self._datafile_lock = asyncio.Lock()
         self._calibration_lock = asyncio.Lock()
         self.current_schedule_point = 0
+        self.cycle = 0
         # append units
         self._units = [
             "system_unit",
@@ -215,6 +217,20 @@ class Worker:
 
     async def start(self):
         logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        # find config and check it
+        try:
+            with open("current.config") as f:
+                raw_data = f.read()
+                data = raw_data.split(":")
+                self.cycle = int(data[0])
+                self.current_schedule_point = int(data[1])
+                logger.info("Config file found, data loaded")
+        except Exception as e:
+            logger.error("Error while reading config: {}".format(e))
+            logger.error("Creating new default config")
+            with open("current.config", "w") as f:
+                f.write("{}:{}".format(self.cycle, self.current_schedule_point))
+
         # start all things, those need to be done once
         await self._gpio_unit.start_coolers()
         # do async init for some units
@@ -399,30 +415,30 @@ class Worker:
         :return:
         """
         logger.debug("check_schedule")
-        # TODO : do real sched table
         sched = [
-            [100, 100],
-            [110, 110],
-            [120, 120],
-            [130, 130],
-            [140, 140],
-            [150, 150],
-            [160, 160],
-            [170, 170],
-            [180, 180],
-            [100, 100],  # repeat
-            [110, 110],
-            [120, 120],
-            [130, 130],
-            [140, 140],
-            [150, 150],
-            [160, 160],
-            [170, 170],
-            [180, 180]
+            [10, 284],  # 700, 0
+            [10, 75],  # 200, 0
+            [10, 179],  # 450, 0
+            [194, 146],  # 700, 1
+            [53, 42],  # 200, 1
+            [124, 94],  # 450, 1
+            [234, 117],  # 700, 1.5
+            [65, 33],  # 200, 1.5
+            [149, 75],  # 450, 1.5
+            [194, 146],  # 700, 1  ------------------- repeating
+            [124, 94],  # 450, 1
+            [53, 42],  # 200, 1
+            [149, 75],  # 450, 1.5
+            [234, 117],  # 700, 1.5
+            [65, 33],  # 200, 1.5
+            [10, 284],  # 700, 0
+            [10, 179],  # 450, 0
+            [10, 75]  # 200, 0
         ]
         if not self._calibration_lock.locked():
             if self.current_schedule_point >= 18:
                 self.current_schedule_point = self.current_schedule_point % 18
+                self.cycle += 1
             t = time.localtime()
             if t.tm_min % 30 == 0:
                 remake_coro = SingleCoro(
@@ -433,6 +449,9 @@ class Worker:
                 )
                 await remake_coro.start()
             self.current_schedule_point += 1
+            logger.info("Writing data to config")
+            with open("current.config", "w") as f:
+                f.write("{}:{}".format(self.cycle, self.current_schedule_point))
 
     async def remake(self, red: int, white : int):
         await self._calibration_lock.acquire()

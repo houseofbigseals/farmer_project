@@ -67,8 +67,8 @@ class Server(object):
             self.is_started = True
             loop = asyncio.get_event_loop()
             coro = loop.create_server(
-                lambda: ServerProtocol(self.commands_list),
-                self.addr,
+                lambda: ServerProtocol(self),
+                self.host,
                 self.port
                 )
             self.aioserver = await coro
