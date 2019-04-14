@@ -448,10 +448,10 @@ class Worker:
                     white=sched[self.current_schedule_point][1]
                 )
                 await remake_coro.start()
-            self.current_schedule_point += 1
-            logger.info("Writing data to config")
-            with open("current.config", "w") as f:
-                f.write("{}:{}".format(self.cycle, self.current_schedule_point))
+                self.current_schedule_point += 1
+                logger.info("Writing data to config")
+                with open("current.config", "w") as f:
+                    f.write("{}:{}".format(self.cycle, self.current_schedule_point))
 
     async def remake(self, red: int, white : int):
         await self._calibration_lock.acquire()
