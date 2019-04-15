@@ -492,7 +492,13 @@ class Worker:
 
         #weight = await self._weight_unit.get_data()
         weight = 0
-        fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid", "CO2","weight"]
+        if self._calibration_lock.locked():
+            air = 1
+        else:
+            air = 0
+        cyc = self.cycle
+        fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+                      "CO2", "weight", "airflow", "cycle"]
 
         data = {
             "date": date_,
@@ -502,7 +508,9 @@ class Worker:
             "temp": temp,
             "humid": hum,
             "CO2": co2,
-            "weight": weight
+            "weight": weight,
+            "airflow": air,
+            "cycle": cyc
         }
         async with self._datafile_lock:
             with open(self._datafile, "a", newline='') as out_file:

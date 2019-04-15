@@ -1,6 +1,7 @@
 # IntellijIdea files
 *.iml
 .idea
+data
 *.log
 *.data
 *.csv
