@@ -21,12 +21,15 @@ def white_far_by_curr(Iw:float):
 
 
 def main():
-    fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid", "CO2","weight"]
+
+    # old fields
+
+    # fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid", "CO2","weight"]
 
     # new fields
 
-    # fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-    #               "CO2", "weight", "airflow", "cycle"]
+    fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+                   "CO2", "weight", "airflow", "cycle"]
 
     pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     print(pd_data.head())
@@ -39,6 +42,7 @@ def main():
     ir = np.array(pd_data['Ired'][tmin:tmax:dt])
     iw = np.array(pd_data['Iwhite'][tmin:tmax:dt])
     co2 = np.array(pd_data['CO2'][tmin:tmax:dt])
+    air = np.array(pd_data['airflow'][tmin:tmax:dt])
     times = pd_data['time'][tmin:tmax:dt]
 
     fr_fw = np.zeros(len(times))
@@ -72,6 +76,7 @@ def main():
     pl.plot(t, co2, '-g', label="CO2, ppm")
     pl.plot(t, fr_fw*100, '-b', label="FARred/FARwhite")
     pl.plot(t, far/10, '-r', label="FAR summ, mkmoles")
+    pl.plot(t,  air*100, '-k', label="Airflow ON")
     # pl.ylabel('CO2, ppm')
     pl.xlabel('time')
     pl.title("CO2 ppm with FARred/FARwhite and FAR summ, mkmoles")

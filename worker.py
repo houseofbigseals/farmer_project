@@ -453,7 +453,7 @@ class Worker:
                 with open("current.config", "w") as f:
                     f.write("{}:{}".format(self.cycle, self.current_schedule_point))
 
-    async def remake(self, red: int, white : int):
+    async def remake(self, red: int, white: int):
         await self._calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         await self.measure_task.stop()
@@ -461,11 +461,15 @@ class Worker:
         res += await self._led_unit.set_current(red=red, white=white)
         logger.info("New red and white currents is {} and {}".format(red, white))
         res += await self._gpio_unit.start_ventilation()
-        res += await self._gpio_unit.start_calibration()
-        res += await self._co2_sensor_unit.do_calibration()
-        await asyncio.sleep(60)
+        # for test only:
+        # TODO: remove after test
+        t = time.localtime()
+        if t.tm_hour % 3 == 0:
+            res += await self._gpio_unit.start_calibration()
+            res += await self._co2_sensor_unit.do_calibration()
+            await asyncio.sleep(30)
+            res += await self._gpio_unit.stop_calibration()
         await self.measure_task.start()
-        res += await self._gpio_unit.stop_calibration()
         await asyncio.sleep(840)
         res += await self._gpio_unit.stop_ventilation()
         logger.debug("Result of calibration coro : " + res)
