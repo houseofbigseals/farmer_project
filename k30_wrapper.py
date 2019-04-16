@@ -24,7 +24,7 @@ class K30(object):
         )
         self.ser.flushInput()
 
-    async def get_data(self):
+    def get_data(self):
         """
         Returns co2 in ppm and str description of operation
         :return:
@@ -34,7 +34,7 @@ class K30(object):
         self.ser.write(read_co2_modbus)
         res += "Sent: {} \n".format(read_co2_modbus.hex())
         # asleep(1)
-        resp = await self.ser.read(7)
+        resp = self.ser.read(7)
         res += "This is resp : {} \n".format(resp.hex())
         high = resp[3]
         low = resp[4]

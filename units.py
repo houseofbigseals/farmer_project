@@ -585,7 +585,7 @@ class K30Unit(Unit):
         ]
 
     async def get_data(self, tick: Ticket = None):
-        co2, logs = await self.sensor.get_data()
+        co2, logs = self.sensor.get_data()
         self.logger.debug("K30 CO2 got results: {}".format(logs))
         if tick:
             tick.result = co2
