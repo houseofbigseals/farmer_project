@@ -29,7 +29,7 @@ def main():
     # new fields
 
     fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                   "CO2", "weight", "airflow", "cycle"]
+                   "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     print(pd_data.head())

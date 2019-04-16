@@ -351,8 +351,8 @@ class GpioUnit(Unit):
                 "stop_coolers",
                 "set_pin"
             ]
-            # clear all before
-            self.gpio.deleter()
+            # # clear all before
+            # self.gpio.deleter()
             # set pins as output
             for i in self.pins.keys():
                 self.gpio.set_mode(i, "output")
