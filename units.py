@@ -6,6 +6,7 @@ from command import Message, Command, Ticket
 from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from colorama import Back
 from sba5_wrapper import SBAWrapper
+from k30_wrapper import K30
 import logging
 
 logger = logging.getLogger("Worker.Units")
@@ -350,6 +351,8 @@ class GpioUnit(Unit):
                 "stop_coolers",
                 "set_pin"
             ]
+            # clear all before
+            self.gpio.deleter()
             # set pins as output
             for i in self.pins.keys():
                 self.gpio.set_mode(i, "output")
@@ -553,6 +556,54 @@ class WeightUnit(Unit):
                 return await self._get_info()
         else:
             raise ValueError("WeightUnitError: No such command - {}".format(command.func))
+
+
+class K30Unit(Unit):
+    """
+    Unit for wrapping k30 methods
+    """
+    def __init__(self,
+                 devname="/dev/ttyUSB0",
+                 baudrate=9600,
+                 timeout=1
+                 ):
+
+        super(K30Unit, self).__init__(name="K30Unit")
+        self.devname = devname
+        self.baudrate = baudrate
+        self.timeout = timeout
+        self.logger = logging.getLogger("Worker.Units.K30")
+        self.sensor = K30(
+            devname=self.devname,
+            baudrate=self.baudrate,
+            timeout=self.timeout
+        )
+        self.logger.info("K30 CO2 sensor started")
+        self._list_of_methods = [
+            #  "get_info",   -- mb later
+            "get_data"
+        ]
+
+    async def get_data(self, tick: Ticket = None):
+        co2, logs = await self.sensor.get_data()
+        self.logger.debug("K30 CO2 got results: {}".format(logs))
+        if tick:
+            tick.result = co2
+        else:
+            return co2
+
+    async def handle_ticket(self, tick: Ticket):
+        command = Command(**tick.command)
+        if command.func in self._list_of_methods:
+            if command.func == "get_data":
+                new_single_coro = SingleCoro(
+                    self.get_data,
+                    "K30Unit: get_data task",
+                    tick
+                )
+                return new_single_coro
+        else:
+            raise ValueError("TempSensorUnitError: No such command - {}".format(command.func))
 
 
 class TempSensorUnit(Unit):

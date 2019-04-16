@@ -121,7 +121,7 @@ from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, Single
 from raw_client import command_get_server_info, command_request_ticket\
     , command_set_ticket_result
 from colorama import Back, init
-from units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit
+from units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit, K30Unit
 import logging
 from pathlib import Path
 
@@ -199,12 +199,16 @@ class Worker:
             "gpio_unit",
             "weight_unit",
             "co2_sensor_unit",
-            "temp_sensor_unit"
+            "temp_sensor_unit",
+            "k30_unit"
         ]
         # create units
         self._system_unit = SystemUnit()
         self._led_unit = LedUnit(
             devname="/dev/ttyUSB1"
+        )
+        self._k30_unit = K30Unit(
+            devname="/dev/ttyUSB2"
         )
         self._gpio_unit = GpioUnit()
         self._co2_sensor_unit = CO2SensorUnit(devname="/dev/ttyUSB0")
@@ -216,6 +220,8 @@ class Worker:
         self.send_results_task = None
 
     async def start(self):
+        logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        logger.info("New epoch started!")
         logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         # find config and check it
         try:
@@ -232,14 +238,15 @@ class Worker:
                 f.write("{}:{}".format(self.cycle, self.current_schedule_point))
 
         # start all things, those need to be done once
+        await self._gpio_unit.stop() # reload gpio
         await self._gpio_unit.start_coolers()
         # do async init for some units
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
-        self.schedule_task = PeriodicCoro(self.check_schedule, 5, name="schedule_task")
-        self.request_task = PeriodicCoro(self.check_server, 5, name="request_task")
-        self.send_results_task = PeriodicCoro(self.send_results, 5, name="send_results_task")
+        self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
+        self.request_task = PeriodicCoro(self.check_server, 3, name="request_task")
+        self.send_results_task = PeriodicCoro(self.send_results, 3, name="send_results_task")
         self.measure_task = PeriodicCoro(self.measure, 1, name="measure_task")
         await self.schedule_task.start()
         await self.request_task.start()
@@ -347,8 +354,6 @@ class Worker:
         :return:
         """
         # TODO: mb we have to send only N of available tickets, not all?
-        # print(Back.MAGENTA + "send_results started")
-        # print(Back.MAGENTA + "send_results is awaiting _done_tickets_lock")
         logger.debug("send_results started")
         async with self._done_tickets_lock:
             for dt in self._done_tickets:
@@ -361,42 +366,32 @@ class Worker:
                         host=self._host,
                         port=self._port
                     )
-                    # print(Back.MAGENTA + "send_results sending results for server")
                     logger.debug("send_results sending results for server")
                 except Exception as e:
                     # TODO: what we have to do with this type errors? How to handle
-                    # print(Back.MAGENTA + "Error while sending request to server: {}".format(e))
                     logger.debug("send_results: Error while sending request to server: {}".format(e))
 
                 if res:
                     # parse answer
                     answer = res # it is already Message object
                     if answer.header == "SUCCESS":
-                        # print(Back.MAGENTA + "send_results parsing answer")
-                        # print("Answer header is: ", answer.header)
                         logger.debug("send_results: Answer header is: {}".format(answer.header))
                         # its ok, remove ticket and archive it
                         await self.archive_ticket(dt)
-                        # print(Back.MAGENTA + "send_results removing sent ticket")
                         self._done_tickets.remove(dt)
                     else:
                         # something went wrong in server side
                         # for now we will remove tickets whatever
-                        # self._done_tickets.remove(dt)
-                        # print(Back.MAGENTA + answer.header+answer.body)
                         logger.debug("send_results: error on server{}".format(
                             answer.header+answer.body))
                         self._done_tickets.remove(dt)
-                        # print(Back.MAGENTA + "send_results removing ticket whatever")
                 else:
                     # something went wrong in server side
                     # try to send this result again after
                     logger.debug("send_results: error on server{}".format(
                         answer.header + answer.body))
                     self._done_tickets.remove(dt)
-                    # print(Back.MAGENTA + "send_results not removing ticket")
                     pass
-        # print(Back.MAGENTA + "send_results done")
         logger.debug("send_results: done")
 
     async def archive_ticket(self, ticket: Ticket):
@@ -461,16 +456,12 @@ class Worker:
         res += await self._led_unit.set_current(red=red, white=white)
         logger.info("New red and white currents is {} and {}".format(red, white))
         res += await self._gpio_unit.start_ventilation()
-        # for test only:
-        # TODO: remove after test
-        t = time.localtime()
-        if t.tm_hour % 3 == 0:
-            res += await self._gpio_unit.start_calibration()
-            res += await self._co2_sensor_unit.do_calibration()
-            await asyncio.sleep(30)
-            res += await self._gpio_unit.stop_calibration()
+        res += await self._gpio_unit.start_calibration()
+        res += await self._co2_sensor_unit.do_calibration()
+        await asyncio.sleep(30)
+        res += await self._gpio_unit.stop_calibration()
         await self.measure_task.start()
-        await asyncio.sleep(840)
+        await asyncio.sleep(870)
         res += await self._gpio_unit.stop_ventilation()
         logger.debug("Result of calibration coro : " + res)
 
@@ -493,7 +484,7 @@ class Worker:
         co2_raw = await self._co2_sensor_unit.do_measurement()
         # print(co2_raw)
         co2 = co2_raw.split(' ')[3]
-
+        k30_co2 = await self._k30_unit.get_data()
         #weight = await self._weight_unit.get_data()
         weight = 0
         if self._calibration_lock.locked():
@@ -502,7 +493,7 @@ class Worker:
             air = 0
         cyc = self.cycle
         fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                      "CO2", "weight", "airflow", "cycle"]
+                      "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
         data = {
             "date": date_,
@@ -514,7 +505,8 @@ class Worker:
             "CO2": co2,
             "weight": weight,
             "airflow": air,
-            "cycle": cyc
+            "cycle": cyc,
+            "K30CO2": k30_co2
         }
         async with self._datafile_lock:
             with open(self._datafile, "a", newline='') as out_file:
@@ -529,7 +521,6 @@ class Worker:
         :return:
         """
         # send request to server
-        # print(Back.BLUE+"check_server started!")
         logger.debug("check_server: started")
         res = None
         try:
@@ -538,15 +529,12 @@ class Worker:
                 host=self._host,
                 port=self._port
             )
-            # print(Back.BLUE+"check_server send reqv!")
             logger.debug("check_server: sent request")
         except Exception as e:
             # TODO: what we have to do with this type errors? How to handle
-            # print(Back.BLUE+"Error while sending request to server: {}".format(e))
             logger.debug("check_server: Error while sending request to server: {}".format(e))
 
         if res:
-            # print(Back.BLUE+"check_server parsing answer!")
             logger.debug("check_server: parsing answer")
             # parse answer
             answer = res # its already Message object
@@ -555,13 +543,11 @@ class Worker:
             # print(answer.header)
             tickets_list = [Ticket(**t_dict) for t_dict in dicts_list]
             # add tickets from answer to list
-            # print(Back.BLUE+"check_server waiting for _new_tickets_lock!")
             async with self._new_tickets_lock:
                 for t in tickets_list:
                     # TODO: remove useless print and do something useful
                     logger.debug(t.id, t.to, t.tfrom)
                     self._new_tickets.append(t)
-            # print(Back.BLUE+"check_server done!")
             logger.debug("check_server: done")
 
 
@@ -581,7 +567,6 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(non_rpi_main())
     loop.run_forever()
-    # BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET
 
 
 async def main(
