@@ -238,7 +238,6 @@ class Worker:
                 f.write("{}:{}".format(self.cycle, self.current_schedule_point))
 
         # start all things, those need to be done once
-        await self._gpio_unit.stop() # reload gpio
         await self._gpio_unit.start_coolers()
         # do async init for some units
         await self._co2_sensor_unit.init() # for time
