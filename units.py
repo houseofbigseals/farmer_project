@@ -234,6 +234,9 @@ class CO2SensorUnit(Unit):
         # we need to start pump
         ans = await self.sensor.send_command("P1\r\n")
         self.logger.info("Command P1, answer: {}".format(ans))
+        # set medium time of calibration
+        ans = await self.sensor.send_command("EM\r\n")
+        self.logger.info("Command EM, answer: {}".format(ans))
 
     async def get_info(self, tick: Ticket = None):
         ans = await self.sensor.send_command("?\r\n")
