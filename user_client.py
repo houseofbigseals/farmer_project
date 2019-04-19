@@ -132,10 +132,16 @@ async def test_gpio():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
+    # com = Command(
+    #     cunit="gpio_unit",
+    #     cfunc="stop_ventilation",
+    #     cargs=None,
+    #     ctype="single"
+    # )
     com = Command(
         cunit="gpio_unit",
-        cfunc="stop_ventilation",
-        cargs=None,
+        cfunc="set_pin",
+        cargs={"pin": 17, "state": True},
         ctype="single"
     )
     tick = Ticket(

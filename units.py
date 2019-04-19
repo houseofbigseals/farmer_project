@@ -529,7 +529,7 @@ class GpioUnit(Unit):
                     state = com.args["state"]
                     new_single_coro = SingleCoro(
                         self.set_pin,
-                        "GpioUnit.start_coolers_task",
+                        "GpioUnit.set_pin_task",
                         tick=tick,
                         pin=pin,
                         state=state

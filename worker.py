@@ -243,9 +243,9 @@ class Worker:
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
-        self.schedule_task = PeriodicCoro(self.check_schedule, 2, name="schedule_task")
-        self.request_task = PeriodicCoro(self.check_server, 2, name="request_task")
-        self.send_results_task = PeriodicCoro(self.send_results, 2, name="send_results_task")
+        self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
+        self.request_task = PeriodicCoro(self.check_server, 3, name="request_task")
+        self.send_results_task = PeriodicCoro(self.send_results, 3, name="send_results_task")
         self.measure_task = PeriodicCoro(self.measure, 1, name="measure_task")
         await self.schedule_task.start()
         await self.request_task.start()
