@@ -77,4 +77,4 @@ def hx_test():
     print("\n".join(measures))
 
 if __name__ == "__main__":
-    hx_test()
+    new_test()
