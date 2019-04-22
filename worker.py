@@ -491,8 +491,8 @@ class Worker:
         # print(co2_raw)
         co2 = co2_raw.split(' ')[3]
         k30_co2 = await self._k30_unit.get_data()
-        #weight = await self._weight_unit.get_data()
-        weight = 0
+        weight = await self._weight_unit.get_data()
+        # weight = 0
         if self._calibration_lock.locked():
             air = 1
         else:

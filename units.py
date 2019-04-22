@@ -469,6 +469,7 @@ class GpioUnit(Unit):
 
     async def handle_ticket(self, tick: Ticket):
         if platf != "RPi":
+            # TODO : we have to send error message to user, not only die here
             raise ValueError("GpioUnitError: cannot work on not-RPi platform")
         else:
             com = Command(**tick.command)
@@ -544,21 +545,53 @@ class WeightUnit(Unit):
     Unit for wrapping weight sensor (HX711) methods
     """
 
-    def __init__(self):
-        super(WeightUnit, self).__init__()
-        self._list_of_methods = ["get_info"]
-        pass
+    def __init__(
+            self,
+            dout_pin: int = 5,
+            pd_sck_pin: int = 6,
+            scale: float = -1142.2754,
+            tare: int = 608
+    ):
+        super(WeightUnit, self).__init__(name="WeightUnit")
+        self.logger = logging.getLogger("Worker.Units.Weight")
+        self.logger.info("WeightUnit init")
+        if platf != "RPi":
+            self.logger.error("WeightUnitError: We are not on RPi, so this unit will be only a stub")
+        else:
+            self.hx = HX711Wrapper(
+                dout_pin=dout_pin,
+                pd_sck_pin=pd_sck_pin,
+                scale=scale,
+                tare=tare
+            )
+            self._list_of_methods = [
+                "get_data"
+            ]
 
-    async def _get_info(self):
-        return await asyncio.create_subprocess_shell("uname -a")
+    async def get_data(self, tick : Ticket = None):
+        res = self.hx.get_data()
+        self.logger.debug("Weight unit get data: {}".format(res))
+        if tick:
+            tick.result = res
+        else:
+            return res
 
     async def handle_ticket(self, tick: Ticket):
-        command = Command(**tick.command)
-        if command in self._list_of_methods:
-            if command == "get_info":
-                return await self._get_info()
+        if platf != "RPi":
+            self.logger.error("WeightUnitError: We are not on RPi, so this unit is a stub only")
+            # TODO : we have to send error message to user, not only die here
         else:
-            raise ValueError("WeightUnitError: No such command - {}".format(command.func))
+            command = Command(**tick.command)
+            if command in self._list_of_methods:
+                if command == "get_data":
+                    new_single_coro = SingleCoro(
+                        self.get_data(),
+                        "WeightUnit.get_data",
+                        tick
+                    )
+                    return new_single_coro
+            else:
+                raise ValueError("WeightUnitError: No such command - {}".format(command.func))
 
 
 class K30Unit(Unit):
