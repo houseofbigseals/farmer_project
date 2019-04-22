@@ -87,6 +87,23 @@ def main():
     pl.grid()
     pl.show()
 
+    temp = np.array(pd_data['temp'][tmin:tmax:dt])
+    hum = np.array(pd_data['humid'][tmin:tmax:dt])
+
+    fig = pl.figure()
+    t = range(len(times))
+    # pl.xticks(t, times, rotation='vertical')
+    pl.plot(t, temp, '-r', label="Temp, C")
+    # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
+    pl.plot(t, hum, '-b', label="Humidity, %")
+    pl.plot(t, air * 100, '-k', label="Airflow ON")
+    # pl.ylabel('CO2, ppm')
+    pl.xlabel('time')
+    pl.title("Temp and humidity by time")
+    pl.legend()
+    pl.grid()
+    pl.show()
+
     # fig = pl.figure()
     # t = range(len(times))
     # # pl.xticks(t, times, rotation='vertical')
