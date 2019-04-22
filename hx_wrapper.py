@@ -33,6 +33,7 @@ def perev_test():
 
 
 def new_test():
+    GPIO.setmode(GPIO.BCM)
     TARA = 608  # 642
     KOEFF = -1142.2754  # 1057.8985
     hx = HX711(dout_pin=5, pd_sck_pin=6, gain_channel_A=64, select_channel='A')
