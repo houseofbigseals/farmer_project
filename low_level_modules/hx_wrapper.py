@@ -1,6 +1,6 @@
 # Just install by pip3 install HX711. A basic usage example is given below:
 
-from hx711 import HX711
+from low_level_modules.hx711 import HX711
 from RPi import GPIO
 
 

@@ -33,6 +33,7 @@ def main():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/19-22_04_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
 
@@ -45,6 +46,7 @@ def main():
     co2 = np.array(pd_data['CO2'][tmin:tmax:dt])
     co2K30 = np.array(pd_data['K30CO2'][tmin:tmax:dt])
     air = np.array(pd_data['airflow'][tmin:tmax:dt])
+    weight = np.array(pd_data['weight'][tmin:tmax:dt])
     times = pd_data['time'][tmin:tmax:dt]
 
     fr_fw = np.zeros(len(times))
@@ -80,6 +82,7 @@ def main():
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")
     pl.plot(t,  air*400, '-k', label="Airflow ON")
     pl.plot(t, co2K30, '-c', label="CO2 outside")
+    pl.plot(t, weight, '-y', label="Raw weight, g")
     # pl.ylabel('CO2, ppm')
     pl.xlabel('time')
     pl.title("CO2 ppm with FARred/FARwhite and FAR summ, mkmoles")

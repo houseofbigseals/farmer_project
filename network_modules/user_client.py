@@ -1,12 +1,11 @@
 # simple wrapper for user client
 
 
-from raw_client import command_get_server_info\
-    , command_set_ticket_result, command_get_ticket_result, command_add_ticket\
+from network_modules.raw_client import command_get_server_info\
+    , command_get_ticket_result, command_add_ticket\
     , command_delete_ticket
 
-from command import Message, Command, Ticket
-from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro
+from network_modules.command import Command, Ticket
 import asyncio
 import json
 import time

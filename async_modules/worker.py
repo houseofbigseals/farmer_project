@@ -113,18 +113,15 @@ import time
 import asyncio
 import json
 import csv
-from uuid import uuid4, UUID
-from typing import Any
+from uuid import uuid4
 from contextlib import suppress
-from command import Message, Command, Ticket
-from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from raw_client import command_get_server_info, command_request_ticket\
+from network_modules.command import Command, Ticket
+from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
+from network_modules.raw_client import command_request_ticket\
     , command_set_ticket_result
-from colorama import Back, init
-from units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit, K30Unit
+from colorama import init
+from async_modules.units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit, K30Unit
 import logging
-from pathlib import Path
-
 
 logger = logging.getLogger("Worker._Worker")
 # platf = None

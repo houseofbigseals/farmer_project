@@ -1,6 +1,6 @@
 import asyncio
 import json
-from command import Command, Ticket, Message
+from network_modules.command import Command, Ticket, Message
 from typing import Any
 import logging
 

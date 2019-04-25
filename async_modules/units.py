@@ -1,12 +1,11 @@
 # units - async wrappers for low-level objects
 
 import asyncio
-from led_uart_wrapper import UartWrapper
-from command import Message, Command, Ticket
-from tasks import PeriodicTask, SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from colorama import Back
-from sba5_wrapper import SBAWrapper
-from k30_wrapper import K30
+from low_level_modules.led_uart_wrapper import UartWrapper
+from network_modules.command import Command, Ticket
+from async_modules.tasks import SingleCoro
+from low_level_modules.sba5_wrapper import SBAWrapper
+from low_level_modules.k30_wrapper import K30
 import logging
 
 logger = logging.getLogger("Worker.Units")
@@ -14,9 +13,9 @@ platf = None
 try:
     # platform dependent modules
     # they work correctly only on raspberry
-    from dht_wrapper import DHTWrapper
-    from gpio_wrapper import GPIOWrapper
-    from hx_wrapper import HX711Wrapper
+    from low_level_modules.dht_wrapper import DHTWrapper
+    from low_level_modules.gpio_wrapper import GPIOWrapper
+    from low_level_modules.hx_wrapper import HX711Wrapper
     platf = "RPi"
 except ImportError:
     logger.info("Looks like we are not on RPi")
