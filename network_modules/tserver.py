@@ -17,7 +17,7 @@ class TServer(object):
         web.run_app(
             self.app,
             host="127.0.0.1",
-            port = "8888"
+            port="8888"
         )
 
     async def handler(self, request):
