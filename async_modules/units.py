@@ -6,6 +6,8 @@ from network_modules.command import Command, Ticket
 from async_modules.tasks import SingleCoro
 from low_level_modules.sba5_wrapper import SBAWrapper
 from low_level_modules.k30_wrapper import K30
+from low_level_modules.ard_wrapper import ArdWrapper
+from typing import Any
 import logging
 
 logger = logging.getLogger("Worker.Units")
@@ -703,53 +705,52 @@ class SystemUnit(Unit):
     pumps, leds and other
     """
 
-    def __init__(self):
-        super(SystemUnit, self).__init__()
+    def __init__(self, worker: Any = None):
+        super(SystemUnit, self).__init__(name="SystemUnit")
         self._list_of_methods = [
             "get_info",
-            "create_tunnel"
+            "create_tunnel",
+            "start",
+            "stop",
+            "kill",
+            "periodic_ventilation",
+            "periodic_calibration"
         ]
 
-    async def _get_info(self, tick: Ticket):
+    async def get_info(self, tick: Ticket):
+        proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
+        stdout, stderr = await proc.communicate()
+        content = stdout.decode().strip()
+        tick.result = content
+
+    async def start(self, tick: Ticket = None):
         # print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task started!")
         proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         content = stdout.decode().strip()
         tick.result = content
-        # print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task done!")
 
-    async def _create_tunnel(self, tick: Ticket):
+    async def create_tunnel(self, tick: Ticket):
         cmd = 'autossh -M 10984 -N -f -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i /home/pi/.ssh/id_rsa -R 6666:localhost:22 slonik@83.220.174.247 &'
 
-        # print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task started!")
         proc = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await proc.communicate()
-        # if stdout:
-        #     content = '[stdout]\n{}'.format(stdout.decode()).strip()
-        # if stderr:
-        #     content = '[stderr]\n{}'.format(stderr.decode()).strip()
         content = stdout.decode().strip()
         tick.result = content
-        # print(Back.CYAN + "SystemUnit.SystemUnit.create_tunnel_task done!")
 
     async def handle_ticket(self, tick: Ticket):
-        # print(Back.CYAN + "SystemUnit.handle_ticket started!")
         command = Command(**tick.command)
 
         if command.func in self._list_of_methods:
-            # print(Back.CYAN + "SystemUnit.handle_ticket command.func in self._list_of_methods!")
             if command.func == "get_info":
                 new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
-                # print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
             elif command.func == "create_tunnel":
                 new_single_coro = SingleCoro(self._create_tunnel, "SystemUnit.create_tunnel_task", tick)
-                # print(Back.CYAN + "SystemUnit.handle_ticket created coro!")
                 return new_single_coro
         else:
             raise ValueError("SystemUnitError: No such command - {}".format(command.func))
-        # print(Back.CYAN + "SystemUnit.handle_ticket done!")

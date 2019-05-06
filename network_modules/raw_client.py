@@ -203,6 +203,28 @@ async def command_set_ticket_result(
     return answer
 
 
+async def simple_test():
+    com = Command(
+        cunit= "system_unit",
+        cfunc= "get_info",
+        cargs= None,
+        ctype="single"
+    )
+    tick = Ticket(
+        tfrom=10,
+        tto=155167253286217647024261323245457212920,
+        tid=None,
+        tcommand=com.cdict,
+        tresult=None
+    )
+    message = Message(header="ADD_TICKET", body=tick.tdict)
+    raw = json.dumps(message.mdict)
+
+    with open("test.txt", 'w') as file_handler:
+        file_handler.write(raw)
+    print(raw)
+
+
 async def main():
     # example uuid for worker =155167253286217647024261323245457212920
     com = Command(
@@ -211,7 +233,6 @@ async def main():
         cargs= None,
         ctype="single"
     )
-
     ans = await command_get_server_info()
     print(ans.header)
     print(ans.body)
@@ -233,5 +254,6 @@ async def main():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    # loop.run_until_complete(main())
+    loop.run_until_complete(simple_test())
     # loop.run_forever()

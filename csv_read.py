@@ -32,8 +32,9 @@ def main():
     fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
-    pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    # pd_data = pd.read_csv("data/19-22_04_data.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/22-29_04_data.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
 
@@ -47,7 +48,8 @@ def main():
     co2K30 = np.array(pd_data['K30CO2'][tmin:tmax:dt])
     air = np.array(pd_data['airflow'][tmin:tmax:dt])
     weight = np.array(pd_data['weight'][tmin:tmax:dt])
-    times = pd_data['time'][tmin:tmax:dt]
+    times = np.array(pd_data['time'][tmin:tmax:dt])
+    dates = np.array(pd_data['date'][tmin:tmax:dt])
 
     fr_fw = np.zeros(len(times))
     far = np.zeros(len(times))
@@ -76,7 +78,7 @@ def main():
     # 2D plot
     fig = pl.figure()
     t = range(len(times))
-    # pl.xticks(t, times, rotation='vertical')
+    pl.xticks(t[0::3000], dates[0::3000], rotation='vertical')
     pl.plot(t, co2, '-g', label="CO2, ppm")
     pl.plot(t, fr_fw*200, '-b', label="FARred/FARwhite")
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")
@@ -106,6 +108,20 @@ def main():
     pl.legend()
     pl.grid()
     pl.show()
+
+    # fig = pl.figure()
+    # t = range(len(times))
+    # # pl.xticks(t, times, rotation='vertical')
+    # pl.plot(t, temp, '-r', label="Temp, C")
+    # # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
+    # pl.plot(t, hum, '-b', label="Humidity, %")
+    # pl.plot(t, air * 100, '-k', label="Airflow ON")
+    # # pl.ylabel('CO2, ppm')
+    # pl.xlabel('time')
+    # pl.title("Temp and humidity by time")
+    # pl.legend()
+    # pl.grid()
+    # pl.show()
 
     # fig = pl.figure()
     # t = range(len(times))
