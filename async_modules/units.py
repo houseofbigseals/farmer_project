@@ -339,6 +339,7 @@ class GpioUnit(Unit):
         self.vent_pins = [2, 3, 4, 17]
         self.cooler_pin = [19]
         self.calibration_pins = [13]
+        self.drain_pins = [26]
         # platform-dependent unit, so we need to check
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
@@ -353,6 +354,8 @@ class GpioUnit(Unit):
                 "stop_calibration",
                 "start_coolers",
                 "stop_coolers",
+                "start_draining",
+                "stop_draining",
                 "set_pin"
             ]
             # # clear all before
@@ -379,6 +382,32 @@ class GpioUnit(Unit):
         self.logger.info("Gpio stop")
         self.gpio.deleter()
         res = "Gpio cleaned up"
+        self.logger.debug(res)
+        if tick:
+            tick.result = res
+        else:
+            return res
+
+    async def start_draining(self, tick: Ticket = None):
+        self.logger.info("Gpio start_ventilation")
+        res = ""
+        for i in self.drain_pins:
+            res += self.gpio.write(i, False)
+            # false - because our relay is low level trigger
+            self.pins[i] = False
+        self.logger.debug(res)
+        if tick:
+            tick.result = res
+        else:
+            return res
+
+    async def stop_draining(self, tick: Ticket = None):
+        self.logger.info("Gpio start_ventilation")
+        res = ""
+        for i in self.drain_pins:
+            res += self.gpio.write(i, True)
+            # false - because our relay is low level trigger
+            self.pins[i] = True
         self.logger.debug(res)
         if tick:
             tick.result = res
@@ -526,6 +555,23 @@ class GpioUnit(Unit):
                         tick
                     )
                     return new_single_coro
+
+                elif command == "start_draining":
+                    new_single_coro = SingleCoro(
+                        self.start_draining,
+                        "GpioUnit.start_draining_task",
+                        tick
+                    )
+                    return new_single_coro
+
+                elif command == "stop_draining":
+                    new_single_coro = SingleCoro(
+                        self.stop_draining,
+                        "GpioUnit.stop_draining_task",
+                        tick
+                    )
+                    return new_single_coro
+
                 elif command == "set_pin":
                     pin = com.args["pin"]
                     state = com.args["state"]

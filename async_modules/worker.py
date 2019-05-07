@@ -121,6 +121,7 @@ class Worker:
 
         # start all things, those need to be done once
         await self._gpio_unit.start_coolers()
+        await self._gpio_unit.start_draining()
         # do async init for some units
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
