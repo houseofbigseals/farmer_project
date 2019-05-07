@@ -688,6 +688,7 @@ class TempSensorUnit(Unit):
                 return self.pin, self.dhttype
 
     async def handle_ticket(self, tick: Ticket):
+        # TODO : fix taht it doesnt works
         command = Command(**tick.command)
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
@@ -703,34 +704,99 @@ class SystemUnit(Unit):
     """
     Unit for all needs, that are not related with real fitostand objects like valves
     pumps, leds and other
+    Methods assigned with linux commands and commands for worker
     """
 
-    def __init__(self, worker: Any = None):
+    def __init__(self, worker: Any):
         super(SystemUnit, self).__init__(name="SystemUnit")
-        self._list_of_methods = [
+        self.worker = worker
+        self.logger = logging.getLogger("Worker.Units.System")
+        self.logger.info("System unit init")
+        self.list_of_methods = [
             "get_info",
             "create_tunnel",
-            "start",
+            "pause",
+            "continue",
             "stop",
-            "kill",
-            "periodic_ventilation",
-            "periodic_calibration"
+            "start_ventilation",
+            "stop_ventilation",
+            "do_calibration",
+            "do_measure"
         ]
 
     async def get_info(self, tick: Ticket):
+        self.logger.info("get info")
         proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         content = stdout.decode().strip()
-        tick.result = content
+        if tick:
+            tick.result = content
+        else:
+            return content
 
-    async def start(self, tick: Ticket = None):
-        # print(Back.CYAN + "SystemUnit.SystemUnit.get_info_task started!")
-        proc = await asyncio.create_subprocess_shell("uname -a", stdout=asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        content = stdout.decode().strip()
-        tick.result = content
+    async def start_ventilation(self, tick: Ticket = None):
+        self.logger.info("manual start ventilation")
+        result = await self.worker.start_ventilation()
+        if tick:
+            tick.result = result
+        else:
+            return result
+
+    async def stop_ventilation(self, tick: Ticket = None):
+        self.logger.info("manual stop ventilation")
+        result = await self.worker.stop_ventilation()
+        if tick:
+            tick.result = result
+        else:
+            return result
+
+    async def do_calibration(self, tick: Ticket = None):
+        self.logger.info("manual do calibration")
+        result = await self.worker.do_calibration()
+        if tick:
+            tick.result = result
+        else:
+            return result
+
+    async def do_measure(self, tick: Ticket = None):
+        self.logger.info("manual do measure")
+        result = await self.worker.measure()
+        if tick:
+            tick.result = result
+        else:
+            return result
+
+    async def pause(self, tick: Ticket = None):
+        self.logger.info("manual pause")
+        await self.worker.pause()
+        result = "worker paused"
+        if tick:
+            tick.result = result
+        else:
+            return result
+
+    async def continue_(self, tick: Ticket = None):
+        self.logger.info("manual continue")
+        await self.worker.continue_()
+        result = "worker continued"
+        if tick:
+            tick.result = result
+        else:
+            return result
+
+    async def stop(self, tick: Ticket = None):
+        self.logger.info("manual kill worker")
+        # TODO: check if it really works
+        await self.worker.stop()
+        result = "worker killed"
+        if tick:
+            tick.result = result
+        else:
+            return result
 
     async def create_tunnel(self, tick: Ticket):
+        self.logger.info("manual create tunnel")
+        # TODO: mb remove it ? It is dangerous
         cmd = 'autossh -M 10984 -N -f -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i /home/pi/.ssh/id_rsa -R 6666:localhost:22 slonik@83.220.174.247 &'
 
         proc = await asyncio.create_subprocess_shell(
@@ -740,17 +806,85 @@ class SystemUnit(Unit):
         )
         stdout, stderr = await proc.communicate()
         content = stdout.decode().strip()
-        tick.result = content
+        if tick:
+            tick.result = content
+        else:
+            return content
 
     async def handle_ticket(self, tick: Ticket):
         command = Command(**tick.command)
 
-        if command.func in self._list_of_methods:
+        if command.func in self.list_of_methods:
             if command.func == "get_info":
-                new_single_coro = SingleCoro(self._get_info, "SystemUnit.get_info_task", tick)
+                new_single_coro = SingleCoro(
+                    self.get_info,
+                    "SystemUnit.get_info_task",
+                    tick
+                )
                 return new_single_coro
+
             elif command.func == "create_tunnel":
-                new_single_coro = SingleCoro(self._create_tunnel, "SystemUnit.create_tunnel_task", tick)
+                new_single_coro = SingleCoro(
+                    self.create_tunnel,
+                    "SystemUnit.create_tunnel_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "pause":
+                new_single_coro = SingleCoro(
+                    self.pause,
+                    "SystemUnit.pause_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "continue":
+                new_single_coro = SingleCoro(
+                    self.continue_,
+                    "SystemUnit.continue_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "stop":
+                new_single_coro = SingleCoro(
+                    self.stop,
+                    "SystemUnit.stop_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "start_ventilation":
+                new_single_coro = SingleCoro(
+                    self.start_ventilation,
+                    "SystemUnit.start_ventilation_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "stop_ventilation":
+                new_single_coro = SingleCoro(
+                    self.stop_ventilation,
+                    "SystemUnit.stop_ventilation_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "do_calibration":
+                new_single_coro = SingleCoro(
+                    self.do_calibration,
+                    "SystemUnit.do_calibration_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "do_measure":
+                new_single_coro = SingleCoro(
+                    self.do_measure,
+                    "SystemUnit.do_measure_task",
+                    tick
+                )
                 return new_single_coro
         else:
             raise ValueError("SystemUnitError: No such command - {}".format(command.func))
