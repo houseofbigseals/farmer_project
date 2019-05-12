@@ -19,7 +19,7 @@ def test_parse_csv():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("data/test_prepared_data_2.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
@@ -57,7 +57,10 @@ def test_parse_csv():
     # current_air = air[0]
     start_pointer = -1
     stop_pointer = -1
-
+    incycle_counter = 0
+    cur_cycle = 0
+    old_cycle = 0
+    debugs = []
     # parse data in cycle
     for i in range(1, len(times)):
         if air[i] != air[i-1]:
@@ -66,14 +69,15 @@ def test_parse_csv():
                 # it means that there is start of new measure epoch
                 start_pointer = i
             if air[i] == 1:
+
                 # it means that there is end of measure epoch
 
                 stop_pointer = i-1
                 if start_pointer != -1:
 
-                    info_str = str(cycle[stop_pointer - 2]) + " " + \
-                               str(dates[stop_pointer - 2]) + " " + \
-                                str(times[stop_pointer - 2])
+                    info_str = str(cycle[stop_pointer - 10]) + " " + \
+                               str(dates[stop_pointer - 10]) + " " + \
+                                str(times[stop_pointer - 10])
                     print("\n" + info_str)
                     print(start_pointer, stop_pointer)
 
@@ -85,7 +89,7 @@ def test_parse_csv():
                     cut_co2 = co2_part[number_of_cut::dc]
                     print(len(cut_co2))
                     if(len(cut_co2)<100):
-                        print("Error: too few points after cutting 220, be careful")
+                        print("Error: too few points after cutting 200, be careful")
                         cut_co2 = co2_part[number_of_cut-100::dc]
                         print("new cut part len is: {}".format(len(cut_co2)))
                     # approximation
@@ -105,25 +109,27 @@ def test_parse_csv():
                     # print("full approx a = {}, b = {}".format(popt[0],popt[1]))
 
 
-                    # # linear at first third of interval
-                    # cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
-                    # y = np.array(cut2_co2, dtype=float)
-                    # x = np.arange(0, len(y))
-                    # popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
-                    # b3 = popt[1]
-                    # a3 = popt[0]
-                    # print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
-
-                    # rude linear at first third of interval
+                    # linear at first third of interval
                     cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
                     y = np.array(cut2_co2, dtype=float)
                     x = np.arange(0, len(y))
-                    dx = len(y)
-                    dy = y[0]-y[len(y)-1]
-                    # popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
-                    b3 = -1000 # aaaaaaaaaaaaaa
-                    a3 = float(-1* (dy/dx))
-                    print("rude linear approx a = {}".format(a3))
+                    popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
+                    b3 = popt[1]
+                    a3 = popt[0]
+                    print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
+
+                    # # rude linear at first third of interval
+                    # cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
+                    # y = np.array(cut2_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # dx = len(y)
+                    # dy = - y[0] + y[len(y)-1]
+                    # # popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
+                    # b3 = -1000 # aaaaaaaaaaaaaa
+                    # a3 = float((dy/dx))
+                    # print("rude linear approx a = {}".format(a3))
+                    # print("far = {}, fr/fw = {}".format(far[stop_pointer - 10],
+                    #                                     fr_fw[stop_pointer - 10]))
 
                     # def func(tt, a, b, c):
                     #     return a * np.exp(b * tt) + c
@@ -215,14 +221,46 @@ def test_parse_csv():
                     #       -1*Fdata, cycle[stop_pointer - 2], info_str, [a0, b0]]],
                     #     axis=0
                     # )
+
+                    # it is hotfix for bug in data numerating
+                    # TODO : remove after fixing that bug in worker
+                    # if incycle_counter < 17:
+                    #     incycle_counter += 1
+                    #     cur_cycle = cycle[stop_pointer - 10]
+                    #     print("cycle {} number {}".format(cur_cycle, incycle_counter))
+                    # elif incycle_counter == 17:
+                    #     incycle_counter = 0
+                    #     cur_cycle = cycle[stop_pointer - 10] -1
+                    #     print("cycle {} number {}".format(cur_cycle, incycle_counter))
+
+                    incycle_counter = incycle_counter + 1
+                    cur_cycle = cycle[stop_pointer - 10]
+
+
+                    cdata = cycle[stop_pointer - 10]
+
+                    if cur_cycle > old_cycle:
+                        debugs.append((old_cycle, incycle_counter))
+                        cdata = old_cycle
+                        print("cycle {} number {}".format(cdata, incycle_counter))
+                        old_cycle = cycle[stop_pointer - 10]
+                        incycle_counter = 0
+                    else:
+                        print("cycle {} number {}".format(cdata, incycle_counter))
+
+                    info_str = str(cdata) + " " + \
+                               str(dates[stop_pointer - 10]) + " " + \
+                                str(times[stop_pointer - 10])
+
                     new_data = np.append(
                         new_data,
-                        [[co2_part, far[stop_pointer - 2], fr_fw[stop_pointer - 2],
-                          -1*a3, cycle[stop_pointer - 2], info_str, [a3, b3]]],
+                        [[co2_part, far[stop_pointer - 10], fr_fw[stop_pointer - 10],
+                          float(-1*a3), cdata, info_str, [a3, b3]]],
                         axis=0
                     )
 
 
+    print(debugs)
     # remove first two rows - they are not necessary anymore
     new_data = np.delete(
         new_data,
@@ -284,35 +322,42 @@ def test_parse_csv():
     start_pointer = -1
     interval = 18
 
-    for i in range(1, len(new_data)):
+    for i in range(0, len(new_data)):
         if new_data[i, 4] > new_data[i-1, 4]:
+            print(i)
+            print(new_data[i, 5])
             print("cycle is : ", new_data[i, 4])
             # it means that there is starting new cycle
             fut_arr = new_data[i:i+interval, 3]
-            if i + interval < len(new_data):
+            if i + interval < len(new_data) and new_data[i+interval -1, 4] == new_data[i, 4]:
+
+                print(i)
+                print(new_data[i, 5])
+                d = new_data[i, 5]
                 # reshape it and summ all repetions
                 # make it acceptable for scipy.interpolate
                 far = np.array([200, 450, 700, 200, 450, 700, 200, 450, 700])
                 rw = np.array([0, 0, 0, 1, 1, 1, 1.5, 1.5, 1.5])
                 dco2 = np.zeros(9, dtype=float)
                 # lets sum repetions
-                dco2[0] = (fut_arr[17] + fut_arr[1])/2
-                dco2[1] = (fut_arr[16] + fut_arr[2]) / 2
-                dco2[2] = (fut_arr[15] + fut_arr[0]) / 2
-                dco2[3] = (fut_arr[11] + fut_arr[4]) / 2
-                dco2[4] = (fut_arr[10] + fut_arr[5]) / 2
-                dco2[5] = (fut_arr[9] + fut_arr[3]) / 2
-                dco2[6] = (fut_arr[14] + fut_arr[7]) / 2
-                dco2[7] = (fut_arr[12] + fut_arr[8]) / 2
-                dco2[8] = (fut_arr[13] + fut_arr[6]) / 2
+                dco2[0] = float((fut_arr[17] + fut_arr[1]) / 2)
+                dco2[1] = float((fut_arr[16] + fut_arr[2]) / 2)
+                dco2[2] = float((fut_arr[15] + fut_arr[0]) / 2)
+                dco2[3] = float((fut_arr[11] + fut_arr[4]) / 2)
+                dco2[4] = float((fut_arr[10] + fut_arr[5]) / 2)
+                dco2[5] = float((fut_arr[9] + fut_arr[3]) / 2)
+                dco2[6] = float((fut_arr[14] + fut_arr[7]) / 2)
+                dco2[7] = float((fut_arr[12] + fut_arr[8]) / 2)
+                dco2[8] = float((fut_arr[13] + fut_arr[6]) / 2)
+
                 for i in range(0, 9):
                     print("dco2/dt = {}, far = {}, fr/fw = {}".format(
                         dco2[i], far[i], rw[i]
                     ))
                 # add it to final array
                 # final_data = np.append(final_data, [[-100000*dco2, far, rw, new_data[i, 5]]], axis=0)
-                final_data = np.append(final_data, [[dco2, far, rw, new_data[i, 5],
-                                                     new_data[i, 6]]], axis=0)
+                final_data = np.append(final_data, [[dco2, far, rw, d,
+                                                     new_data[i*interval - 2, 6]]], axis=0)
 
     # remove first two rows - they are not necessary anymore
     print(len(final_data))
@@ -322,6 +367,12 @@ def test_parse_csv():
         axis=0
     )
     print(len(final_data))
+
+    for i in range(0, len(new_data)):
+        print('Interpolated, cycle {}'.format(new_data[i, 5]))
+
+    for i in range(0, len(final_data)):
+        print('Interpolated, cycle {}'.format(final_data[i, 3]))
 
     for i in range(0, len(final_data)):
         # # plot 3d points
