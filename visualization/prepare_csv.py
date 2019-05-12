@@ -9,7 +9,7 @@ def test_prepare_csv():
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     old_datafile = "data/second_plants_data.csv"
-    new_datafile = "data/test_prepared_data.csv"
+    new_datafile = "data/test_prepared_data_2.csv"
     pd_data = pd.read_csv(old_datafile, header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())

@@ -122,11 +122,15 @@ class Worker:
         # start all things, those need to be done once
         await self._gpio_unit.start_coolers()
         await self._gpio_unit.start_draining()
+        await self._led_unit.set_current(red=10, white=10)
         # do async init for some units
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
-        self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
+        # self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
+        # TODO: remove it in future
+        self.schedule_task = PeriodicCoro(self.passive_schedule, 3, name="schedule_task")
+
         self.request_task = PeriodicCoro(self.check_server, 3, name="request_task")
         self.send_results_task = PeriodicCoro(self.send_results, 3, name="send_results_task")
         self.measure_task = PeriodicCoro(self.measure, 1, name="measure_task")
@@ -148,10 +152,12 @@ class Worker:
         await self.send_results_task.stop()
         await self.measure_task.stop()
         self._main_loop_task.cancel()
+        # TODO: mb add stopping led driver?
         self._started = False
         logger.info("MANUAL COMMAND: worker stopped")
         with suppress(asyncio.CancelledError):
             await self._main_loop_task
+
 
     async def pause(self):
         # stop scheduling and measurements
@@ -327,6 +333,29 @@ class Worker:
         # TODO: do real archiving
         pass
 
+    async def passive_schedule(self):
+        """
+        simple schedule with constant parameter
+        :return:
+        """
+        logger.debug("Passive_schedule")
+        # constant point [500, 1.5]
+        red = 166
+        white = 83
+
+        period = 30 # mins
+
+        if not self._calibration_lock.locked():
+            t = time.localtime()
+            if t.tm_min % period == 0:
+                remake_coro = SingleCoro(
+                    self.remake,
+                    "recalibration_task",
+                    red=red,
+                    white=white
+                )
+                await remake_coro.start()
+
     async def check_schedule(self):
         """
         do read schedule
@@ -335,6 +364,7 @@ class Worker:
         :return:
         """
         logger.debug("check_schedule")
+        period = 30 # in mins
         sched = [
             [10, 284],  # 700, 0
             [10, 75],  # 200, 0
@@ -356,11 +386,11 @@ class Worker:
             [10, 75]  # 200, 0
         ]
         if not self._calibration_lock.locked():
-            if self.current_schedule_point >= 18:
-                self.current_schedule_point = self.current_schedule_point % 18
+            if self.current_schedule_point >= len(sched):
+                self.current_schedule_point = self.current_schedule_point % len(sched)
                 self.cycle += 1
             t = time.localtime()
-            if t.tm_min % 30 == 0:
+            if t.tm_min % period == 0:
                 remake_coro = SingleCoro(
                     self.remake,
                     "recalibration_task",

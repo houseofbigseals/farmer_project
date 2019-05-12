@@ -19,7 +19,8 @@ def test_parse_csv():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
 
@@ -48,8 +49,8 @@ def test_parse_csv():
     # creating new array of parts of data in which no airflow
 
     new_data = np.array([
-        [np.array([0, 1]), 1, 2, 3, 4, 5],
-        [np.array([0, 1]), 0, 0, 0, 0, 0]
+        [np.array([0, 1]), 1, 2, 3, 4, 5, [0, 0]],
+        [np.array([0, 1]), 0, 0, 0, 0, 0, [0, 0]]
         ]
     )
     print("shape of new data ", np.shape(new_data))
@@ -66,6 +67,7 @@ def test_parse_csv():
                 start_pointer = i
             if air[i] == 1:
                 # it means that there is end of measure epoch
+
                 stop_pointer = i-1
                 if start_pointer != -1:
 
@@ -73,73 +75,153 @@ def test_parse_csv():
                                str(dates[stop_pointer - 2]) + " " + \
                                 str(times[stop_pointer - 2])
                     print("\n" + info_str)
+                    print(start_pointer, stop_pointer)
 
                     co2_part = co2[start_pointer: stop_pointer]
 
                     # make a scipy interpolation here
                     dc = 1
-                    number_of_cut = 220  # for first time
+                    number_of_cut = 200  # for first time
                     cut_co2 = co2_part[number_of_cut::dc]
-
+                    print(len(cut_co2))
+                    if(len(cut_co2)<100):
+                        print("Error: too few points after cutting 220, be careful")
+                        cut_co2 = co2_part[number_of_cut-100::dc]
+                        print("new cut part len is: {}".format(len(cut_co2)))
                     # approximation
 
                     def func(tt, a, b):
                         return a * np.exp(b * tt)
 
-                    # at full interval
-                    y = np.array(cut_co2, dtype=float)
-                    x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    b0 = popt[1]
-                    print("full approx a = {}, b = {}".format(popt[0],popt[1]))
+                    def linefunc(tt, a, b):
+                        return a * tt + b
 
-                    # at first half of interval
-                    cut2_co2 = cut_co2[:int(len(cut_co2)/2):dc]
-                    y = np.array(cut_co2, dtype=float)
-                    x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    b1 = popt[1]
-                    print("first half approx a = {}, b = {}".format(popt[0],popt[1]))
+                    # # at full interval
+                    # y = np.array(cut_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    # b0 = popt[1]
+                    # a0 = popt[0]
+                    # print("full approx a = {}, b = {}".format(popt[0],popt[1]))
 
-                    # at second half of interval
-                    cut2_co2 = cut_co2[int(len(cut_co2) / 2)::dc]
+
+                    # # linear at first third of interval
+                    # cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
+                    # y = np.array(cut2_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
+                    # b3 = popt[1]
+                    # a3 = popt[0]
+                    # print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
+
+                    # rude linear at first third of interval
+                    cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
                     y = np.array(cut2_co2, dtype=float)
                     x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    b2 = popt[1]
-                    print("second half approx a = {}, b = {}".format(popt[0], popt[1]))
+                    dx = len(y)
+                    dy = y[0]-y[len(y)-1]
+                    # popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
+                    b3 = -1000 # aaaaaaaaaaaaaa
+                    a3 = float(-1* (dy/dx))
+                    print("rude linear approx a = {}".format(a3))
 
-                    # at first third of interval
-                    cut2_co2 = cut_co2[:int(len(cut_co2) / 3):dc]
-                    y = np.array(cut2_co2, dtype=float)
-                    x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    b3 = popt[1]
-                    print("first third approx a = {}, b = {}".format(popt[0], popt[1]))
+                    # def func(tt, a, b, c):
+                    #     return a * np.exp(b * tt) + c
+                    #
+                    # # at full interval
+                    # y = np.array(cut_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # try:
+                    #     popt, pcov = curve_fit(func, x, y, p0=(2, -1, 100))  # p0=(2.5, -1.3)
+                    #     b0 = popt[1]
+                    #     a0 = popt[0]
+                    #     c0 = popt[2]
+                    #     print("full approx a = {}, b = {} c = {}".format(popt[0],popt[1], popt[2]))
+                    # except Exception as e:
+                    #     print(e)
+                    #     a0, b0, c0 = (0, 0, 0)
 
-                    # at second third of interval
-                    cut2_co2 = cut_co2[int(len(cut_co2) / 3):int(len(cut_co2)*2 / 3):dc]
-                    y = np.array(cut2_co2, dtype=float)
-                    x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    b4 = popt[1]
-                    print("second third approx a = {}, b = {}".format(popt[0], popt[1]))
-
-                    # at third third of interval
-                    cut2_co2 = cut_co2[int(len(cut_co2)*2 / 3)::dc]
-                    y = np.array(cut2_co2, dtype=float)
-                    x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    b5 = popt[1]
-                    print("third third approx a = {}, b = {}".format(popt[0], popt[1]))
+                    # # at first half of interval
+                    # cut2_co2 = cut_co2[:int(len(cut_co2)/2):dc]
+                    # y = np.array(cut_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    # b1 = popt[1]
+                    # print("first half approx a = {}, b = {}".format(popt[0],popt[1]))
+                    #
+                    # # at second half of interval
+                    # cut2_co2 = cut_co2[int(len(cut_co2) / 2)::dc]
+                    # y = np.array(cut2_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    # b2 = popt[1]
+                    # print("second half approx a = {}, b = {}".format(popt[0], popt[1]))
+                    #
+                    # # at first third of interval
+                    # cut2_co2 = cut_co2[:int(len(cut_co2) / 3):dc]
+                    # y = np.array(cut2_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    # b3 = popt[1]
+                    # print("first third approx a = {}, b = {}".format(popt[0], popt[1]))
+                    #
+                    # # at second third of interval
+                    # cut2_co2 = cut_co2[int(len(cut_co2) / 3):int(len(cut_co2)*2 / 3):dc]
+                    # y = np.array(cut2_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    # b4 = popt[1]
+                    # print("second third approx a = {}, b = {}".format(popt[0], popt[1]))
+                    #
+                    # # at third third of interval
+                    # cut2_co2 = cut_co2[int(len(cut_co2)*2 / 3)::dc]
+                    # y = np.array(cut2_co2, dtype=float)
+                    # x = np.arange(0, len(y))
+                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    # b5 = popt[1]
+                    # print("third third approx a = {}, b = {}".format(popt[0], popt[1]))
 
                     # save results to new array
+                    # new_data = np.append(
+                    #     new_data,
+                    #     [[co2_part, far[stop_pointer - 2], fr_fw[stop_pointer - 2],
+                    #      np.mean([b0, b1, b2, b3, b4, b5]), cycle[stop_pointer - 2], info_str]],
+                    #     axis=0
+                    # )
+
+                    # recalculate (a0, b0) to photosyntethys
+                    # F = - dCO2 / dt
+
+                    def Ffunc(tt, a, b):
+                        return (-1) * a * b * np.exp(b * tt)
+                        # return a * b * np.exp(b * tt)
+
+                    # point for calculating
+                    x0 = x[int(len(x)/8)]
+                    print("current CO2 {}".format(cut_co2[x0]))
+
+                    # Fdata = Ffunc(x0, a0, b0)
+
+                    # new_data = np.append(
+                    #     new_data,
+                    #     [[co2_part, far[stop_pointer - 2], fr_fw[stop_pointer - 2],
+                    #       Fdata, cycle[stop_pointer - 2], info_str, [a0, b0]]],
+                    #     axis=0
+                    # )
+
+                    # new_data = np.append(
+                    #     new_data,
+                    #     [[co2_part, far[stop_pointer - 2], fr_fw[stop_pointer - 2],
+                    #       -1*Fdata, cycle[stop_pointer - 2], info_str, [a0, b0]]],
+                    #     axis=0
+                    # )
                     new_data = np.append(
                         new_data,
                         [[co2_part, far[stop_pointer - 2], fr_fw[stop_pointer - 2],
-                         np.mean([b0, b1, b2, b3, b4, b5]), cycle[stop_pointer - 2], info_str]],
+                          -1*a3, cycle[stop_pointer - 2], info_str, [a3, b3]]],
                         axis=0
                     )
+
 
     # remove first two rows - they are not necessary anymore
     new_data = np.delete(
@@ -193,8 +275,8 @@ def test_parse_csv():
     # we have to reshape data and summ all repetions to interpolate
 
     final_data = np.array([
-        [np.zeros(9), np.zeros(9), np.zeros(9), 1],
-        [np.zeros(9), np.zeros(9), np.zeros(9), 1]
+        [np.zeros(9), np.zeros(9), np.zeros(9), 1, [0, 0]],
+        [np.zeros(9), np.zeros(9), np.zeros(9), 1, [0, 0]]
         ]
     )
 
@@ -210,8 +292,8 @@ def test_parse_csv():
             if i + interval < len(new_data):
                 # reshape it and summ all repetions
                 # make it acceptable for scipy.interpolate
-                rw = np.array([200, 450, 700, 200, 450, 700, 200, 450, 700])
-                far = np.array([0, 0, 0, 1, 1, 1, 1.5, 1.5, 1.5])
+                far = np.array([200, 450, 700, 200, 450, 700, 200, 450, 700])
+                rw = np.array([0, 0, 0, 1, 1, 1, 1.5, 1.5, 1.5])
                 dco2 = np.zeros(9, dtype=float)
                 # lets sum repetions
                 dco2[0] = (fut_arr[17] + fut_arr[1])/2
@@ -223,8 +305,14 @@ def test_parse_csv():
                 dco2[6] = (fut_arr[14] + fut_arr[7]) / 2
                 dco2[7] = (fut_arr[12] + fut_arr[8]) / 2
                 dco2[8] = (fut_arr[13] + fut_arr[6]) / 2
+                for i in range(0, 9):
+                    print("dco2/dt = {}, far = {}, fr/fw = {}".format(
+                        dco2[i], far[i], rw[i]
+                    ))
                 # add it to final array
-                final_data = np.append(final_data, [[-100000*dco2, far, rw, new_data[i, 5]]], axis=0)
+                # final_data = np.append(final_data, [[-100000*dco2, far, rw, new_data[i, 5]]], axis=0)
+                final_data = np.append(final_data, [[dco2, far, rw, new_data[i, 5],
+                                                     new_data[i, 6]]], axis=0)
 
     # remove first two rows - they are not necessary anymore
     print(len(final_data))
@@ -285,7 +373,7 @@ def test_parse_csv():
         fig.colorbar(cs, shrink=0.5, aspect=5)
         ax.set_ylabel('FR/FW')
         ax.set_xlabel('FAR, mkmoles')
-        ax.set_zlabel('dCO2/dt *-100000')
+        ax.set_zlabel('dCO2/dt *-1')
         ax.set_title('Interpolated, cycle {}'.format(final_data[i, 3]))
         # pl.grid()
         # pl.savefig("gradient_metaopt_5678676787656765456765.png")
