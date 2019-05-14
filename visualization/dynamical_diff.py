@@ -19,7 +19,7 @@ def test_parse_csv():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("data/test_prepared_data_2.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
@@ -322,6 +322,8 @@ def test_parse_csv():
     start_pointer = -1
     interval = 18
 
+    maxes = np.array([[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]])
+
     for i in range(0, len(new_data)):
         if new_data[i, 4] > new_data[i-1, 4]:
             print(i)
@@ -350,6 +352,16 @@ def test_parse_csv():
                 dco2[7] = float((fut_arr[12] + fut_arr[8]) / 2)
                 dco2[8] = float((fut_arr[13] + fut_arr[6]) / 2)
 
+                mco2 = float(np.max(dco2))
+                mrw = float(rw[np.argmax(dco2)])
+                mfar = float(far[np.argmax(dco2)])
+
+                maxes = np.append(
+                    maxes,
+                    [np.array([mco2, mfar, mrw, new_data[i, 4], d.split(' ')[1]])],
+                    axis=0
+                )
+
                 for i in range(0, 9):
                     print("dco2/dt = {}, far = {}, fr/fw = {}".format(
                         dco2[i], far[i], rw[i]
@@ -368,11 +380,208 @@ def test_parse_csv():
     )
     print(len(final_data))
 
-    for i in range(0, len(new_data)):
-        print('Interpolated, cycle {}'.format(new_data[i, 5]))
+    maxes = np.delete(
+        maxes,
+        slice(0,2),
+        axis=0
+    )
 
-    for i in range(0, len(final_data)):
-        print('Interpolated, cycle {}'.format(final_data[i, 3]))
+    print(np.shape(maxes))
+    print(maxes)
+
+    # lets visualize behavior of photosynthesys maximum points
+    # at first - plot maximum by time
+
+    # 2D plots
+    fig, axs = pl.subplots(3, 1)
+    t = range(len(maxes))
+    fig.suptitle('-1*dCO2/dt maximum by time', fontsize=14)
+
+    # first subplot
+    axs[0].plot(t, maxes[::, 0], '-og')
+    # axs[0].set_xlabel('time, cycles (cycle = about 9 hours)')
+    axs[0].set_ylabel("-1*dCO2/dt, ppm/sec")
+    # axs[0].set_title("-1*dCO2/dt maximum by time")
+    axs[0].grid()
+
+    # second subplot
+    axs[1].plot(t, maxes[::, 1], '-vr')
+    # axs[1].set_xlabel('time, cycles (cycle = about 9 hours)')
+    axs[1].set_ylabel("far, ppf")
+    axs[1].grid()
+    axs[1].set_ylim(450, 750)
+
+    # for i in range(len(maxes)):
+    #     # ax.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))
+    #     axs[1].text(t[i], maxes[i, 1], str(maxes[i, 4]))
+    # ax.set_xlim(0, len(t))
+    # ax.set_ylim(0, 1.5)
+    # ax.set_zlim(5, 700)
+    # axs[1].set_title("far coordinates of maximum by time")
+
+    # third subplot
+    axs[2].plot(t, maxes[::, 2], '-vb')
+    axs[2].set_xlabel('time, cycles (cycle = about 9 hours)')
+    axs[2].set_ylabel("fr/fw")
+    axs[2].grid()
+    # axs[2].set_title("fr/fw coordinates of maximum by time")
+    pl.xticks(t, maxes[::, 4], rotation='vertical')
+    # pl.grid()
+    pl.show()
+
+    # 2D plot
+    fig = pl.figure()
+    t = range(len(maxes))
+    print(len(t))
+    print(len(maxes[::, 4]))
+    print(len(maxes[::, 0]))
+    pl.xticks(t, maxes[::, 4], rotation='vertical')
+    pl.plot(t, maxes[::, 0], '-og', label="maximum of -1*dCO2/dt , ppm by sec")
+    # pl.plot(t, fr_fw*200, '-b', label="FARred/FARwhite")
+    # pl.plot(t, far, '-r', label="FAR summ, mkmoles")
+    # pl.plot(t,  air*400, '-k', label="Airflow ON")
+    # pl.plot(t, co2K30, '-c', label="CO2 outside")
+    # pl.plot(t, weight, '-y', label="Raw weight, g")
+    # pl.ylabel('CO2, ppm')
+    pl.xlabel('time, cycles (cycle = about 9 hours)')
+    pl.ylabel("maximum of -1*dCO2/dt , ppm by sec")
+    pl.title("-1*dCO2/dt maximum by time")
+
+    for i in range(len(maxes)):
+        pl.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))
+
+    pl.legend()
+    pl.grid()
+    pl.show()
+
+    # next lets show the trajectory of maximum od -dco2/dt in (far, fr/fw) coordinates
+    # and with it lets draw the first surface - in day 1 - for for comparison
+
+    f = interpolate.interp2d([200, 450, 700], [0, 1, 1.5],
+                             np.reshape(final_data[1, 0], (3, 3)), kind='linear')
+    # far = np.arange(200, 800, 10)
+    # fw = np.arange(0, 2, 0.05)
+    far = np.arange(200, 800, 20)
+    fw = np.arange(0, 1.5, 0.1)
+
+    xx_new, yy_new = np.meshgrid(far, fw, indexing='ij')
+    #
+    # xx = np.reshape(final_data[i, 1], (3, 3))
+    # yy =  np.reshape(final_data[i, 2], (3, 3))
+    # interp = f([200, 450, 700], [0, 1, 1.5])
+    interp = f(far, fw)
+    # # print(np.shape(interp))
+    # # print(np.shape(xx_new))
+    # # print(np.shape(yy_new))
+    # # print(interp)
+    # fig = pl.figure()
+    # # ax = p3.Axes3D(fig)
+    # cs = pl.contour(xx_new, yy_new, interp.T, rstride=1, cstride=1, color='g', cmap=cm.coolwarm)
+    # pl.plot(maxes[::, 1], maxes[::, 2], "-ob", label='trajectory of maximum')
+    # pl.clabel(cs, fmt='%.1f')  # , colors="black")
+    # fig.colorbar(cs, shrink=0.5, aspect=5)
+    # pl.ylabel('FR/FW')
+    # pl.xlabel('FAR, mkmoles')
+    # # ax.set_zlabel('dCO2/dt *-1')
+    # pl.title('Maximum trajectory')
+    # # fig.legend()
+    # # pl.grid()
+    # # pl.savefig("gradient_metaopt_5678676787656765456765.png")
+    # pl.show()
+
+    # print(type(maxes[::, 1][0]))
+    # ffff = list(map(float, maxes[::, 1]))
+    # print(type(ffff[0]))
+    # print(ffff[0])
+    # print(type(maxes[::, 2][0]))
+    # print(type(maxes[::, 0][0]))
+
+    fig = pl.figure()
+    # ax = p3.Axes3D(fig)
+    ax = pl.axes(projection='3d')
+    cs = ax.plot_surface(xx_new, yy_new, interp.T, rstride=1, cstride=1, color='g', cmap=cm.coolwarm)
+    pl.clabel(cs, fmt='%.3f')  # , colors="black")
+
+    farp = list(map(float, maxes[::, 1]))
+    frfwp = list(map(float, maxes[::, 2]))
+    zp = (list(map(float, maxes[::, 0])))
+    ax.plot3D(
+        farp,
+        frfwp,
+        zp,
+        "-",
+        label='trajectory of maximum'
+    )
+    ax.scatter3D(
+        farp,
+        frfwp,
+        zp,
+        # c=list(map(float, maxes[::, 0])),
+        cmap='Greens',
+        label='trajectory of maximum'
+    )
+
+    for i in range(len(maxes)):
+        # ax.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))
+        ax.text(farp[i], frfwp[i], zp[i], str(i))
+
+    fig.colorbar(cs, shrink=0.5, aspect=5)
+    ax.set_ylabel('FR/FW')
+    ax.set_xlabel('FAR, mkmoles')
+    ax.set_zlabel('dCO2/dt *-1')
+    ax.set_title('Surface and maximum points')
+    ax.legend()
+    # pl.grid()
+    # pl.savefig("gradient_metaopt_5678676787656765456765.png")
+    pl.show()
+
+
+
+    # lets show dynamics of max point coordinates
+
+    fig = pl.figure()
+    ax = p3.Axes3D(fig)
+    # ax = pl.axes(projection='3d')
+    t = range(len(maxes))
+
+
+    ax.plot3D(
+        t,
+        frfwp,
+        farp,
+        "-b",
+        label='trajectory of maximum'
+    )
+    ax.scatter3D(
+        t,
+        frfwp,
+        farp,
+        # c=list(map(float, maxes[::, 0])),
+        cmap='Greens',
+        label='trajectory of maximum'
+    )
+
+    for i in range(len(maxes)):
+        # ax.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))
+        ax.text(t[i], frfwp[i], farp[i], maxes[i, 4], 'z')
+
+    ax.set_xlim(0, len(t))
+    ax.set_ylim(0, 1.5)
+    ax.set_zlim(5, 700)
+
+    # fig.colorbar(cs, shrink=0.5, aspect=5)
+    ax.set_ylabel('FR/FW')
+    ax.set_xlabel('t, cycles')
+    ax.set_zlabel('FAR, mkmoles')
+    ax.set_title('Dynamics of maximum point')
+    ax.legend()
+    # pl.grid()
+    # pl.savefig("gradient_metaopt_5678676787656765456765.png")
+    pl.show()
+
+
+
+    # and at the end lets print all interpolated surfaces
 
     for i in range(0, len(final_data)):
         # # plot 3d points
@@ -413,10 +622,10 @@ def test_parse_csv():
         # yy =  np.reshape(final_data[i, 2], (3, 3))
         # interp = f([200, 450, 700], [0, 1, 1.5])
         interp = f(far, fw)
-        print(np.shape(interp))
-        print(np.shape(xx_new))
-        print(np.shape(yy_new))
-        print(interp)
+        # print(np.shape(interp))
+        # print(np.shape(xx_new))
+        # print(np.shape(yy_new))
+        # print(interp)
         fig = pl.figure()
         ax = p3.Axes3D(fig)
         cs = ax.plot_surface(xx_new, yy_new, interp.T, rstride=1, cstride=1, color='g', cmap=cm.coolwarm)
