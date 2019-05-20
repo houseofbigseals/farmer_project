@@ -88,7 +88,7 @@ async def test_co2():
     com = Command(
         cunit="led_unit",
         cfunc="set_current",
-        cargs={"red":10, "white":10},
+        cargs={"red":115, "white":58},
         ctype="single"
     )
     # com = Command(
@@ -132,7 +132,7 @@ async def test_gpio():
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
     com = Command(
         cunit="gpio_unit",
-        cfunc="stop_ventilation",
+        cfunc="start_ventilation",
         cargs=None,
         ctype="single"
     )
@@ -167,7 +167,7 @@ async def test_tunnel():
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
     com = Command(
         cunit="system_unit",
-        cfunc="stop",
+        cfunc="pause",
         cargs=None,
         ctype="single"
     )
@@ -191,6 +191,6 @@ async def test_tunnel():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(test_tunnel())
+    #loop.run_until_complete(test_tunnel())
     # loop.run_until_complete(test_gpio())
-    # loop.run_until_complete(test_co2())
+    loop.run_until_complete(test_co2())

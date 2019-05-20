@@ -5,21 +5,7 @@ import mpl_toolkits.mplot3d.axes3d as p3
 from matplotlib import cm
 from scipy import interpolate
 from scipy.optimize import curve_fit
-
-
-def red_far_by_curr(Ir:float):
-    # this constants are determined from experiment
-    a1 = 1.77451454
-    b1 = 5.52067992
-    return a1*Ir + b1
-
-
-def white_far_by_curr(Iw:float):
-    # this constants are determined from experiment
-    a2 = 2.40069694
-    b2 = 0.24050309
-    return a2*Iw + b2
-
+from visualization.adjustment import red_far_by_curr, white_far_by_curr
 
 def main():
 
@@ -32,8 +18,8 @@ def main():
     fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
-    pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
-    # pd_data = pd.read_csv("data/22-29_04_data.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())

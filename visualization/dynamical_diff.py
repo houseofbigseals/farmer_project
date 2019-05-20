@@ -19,7 +19,7 @@ def test_parse_csv():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("data/test_prepared_data_2.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
@@ -331,6 +331,7 @@ def test_parse_csv():
             print("cycle is : ", new_data[i, 4])
             # it means that there is starting new cycle
             fut_arr = new_data[i:i+interval, 3]
+            far_arr = new_data[i:i+interval, 1]
             if i + interval < len(new_data) and new_data[i+interval -1, 4] == new_data[i, 4]:
 
                 print(i)
@@ -341,6 +342,7 @@ def test_parse_csv():
                 far = np.array([200, 450, 700, 200, 450, 700, 200, 450, 700])
                 rw = np.array([0, 0, 0, 1, 1, 1, 1.5, 1.5, 1.5])
                 dco2 = np.zeros(9, dtype=float)
+                QQ = np.zeros(9, dtype=float)
                 # lets sum repetions
                 dco2[0] = float((fut_arr[17] + fut_arr[1]) / 2)
                 dco2[1] = float((fut_arr[16] + fut_arr[2]) / 2)
@@ -352,9 +354,34 @@ def test_parse_csv():
                 dco2[7] = float((fut_arr[12] + fut_arr[8]) / 2)
                 dco2[8] = float((fut_arr[13] + fut_arr[6]) / 2)
 
+                farrrr = new_data[i, 1]
+                print("farrrr is ", farrrr)
+
+                def qfunc(F, E):
+                    return 0.28*F + 0.72*(F/E)
+
+                # another type of plot
+                for i in range(0, len(dco2)):
+                    QQ[i] = qfunc(dco2[i], farrrr)
+
+                QQ[0] = float(qfunc(dco2[0], far_arr[17]))
+                QQ[1] = float(qfunc(dco2[1], far_arr[16]))
+                QQ[2] = float(qfunc(dco2[2], far_arr[15]))
+                QQ[3] = float(qfunc(dco2[3], far_arr[11]))
+                QQ[4] = float(qfunc(dco2[4], far_arr[10]))
+                QQ[5] = float(qfunc(dco2[5], far_arr[9]))
+                QQ[6] = float(qfunc(dco2[6], far_arr[14]))
+                QQ[7] = float(qfunc(dco2[7], far_arr[12]))
+                QQ[8] = float(qfunc(dco2[8], far_arr[13]))
+
+
                 mco2 = float(np.max(dco2))
                 mrw = float(rw[np.argmax(dco2)])
                 mfar = float(far[np.argmax(dco2)])
+
+                mQQ = float(np.max(dco2))
+                mQQrw = float(rw[np.argmax(dco2)])
+                mQQfar = float(far[np.argmax(dco2)])
 
                 maxes = np.append(
                     maxes,
@@ -474,20 +501,20 @@ def test_parse_csv():
     # # print(np.shape(xx_new))
     # # print(np.shape(yy_new))
     # # print(interp)
-    # fig = pl.figure()
-    # # ax = p3.Axes3D(fig)
-    # cs = pl.contour(xx_new, yy_new, interp.T, rstride=1, cstride=1, color='g', cmap=cm.coolwarm)
-    # pl.plot(maxes[::, 1], maxes[::, 2], "-ob", label='trajectory of maximum')
-    # pl.clabel(cs, fmt='%.1f')  # , colors="black")
-    # fig.colorbar(cs, shrink=0.5, aspect=5)
-    # pl.ylabel('FR/FW')
-    # pl.xlabel('FAR, mkmoles')
-    # # ax.set_zlabel('dCO2/dt *-1')
-    # pl.title('Maximum trajectory')
-    # # fig.legend()
-    # # pl.grid()
-    # # pl.savefig("gradient_metaopt_5678676787656765456765.png")
-    # pl.show()
+    fig = pl.figure()
+    # ax = p3.Axes3D(fig)
+    cs = pl.contour(xx_new, yy_new, interp.T, rstride=1, cstride=1, color='g', cmap=cm.coolwarm)
+    pl.plot(maxes[::, 1], maxes[::, 2], "-ob", label='trajectory of maximum')
+    pl.clabel(cs, fmt='%.1f')  # , colors="black")
+    fig.colorbar(cs, shrink=0.5, aspect=5)
+    pl.ylabel('FR/FW')
+    pl.xlabel('FAR, mkmoles')
+    # ax.set_zlabel('dCO2/dt *-1')
+    pl.title('Maximum trajectory')
+    # fig.legend()
+    # pl.grid()
+    # pl.savefig("gradient_metaopt_5678676787656765456765.png")
+    pl.show()
 
     # print(type(maxes[::, 1][0]))
     # ffff = list(map(float, maxes[::, 1]))
