@@ -19,8 +19,8 @@ def test_parse_csv():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("data/test_prepared_data_2.csv", header=None, names=fieldnames)
-    # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/partly_test_prepared_data_4.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/test_prepared_data_3", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
 
@@ -110,13 +110,20 @@ def test_parse_csv():
 
 
                     # linear at first third of interval
-                    cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
-                    y = np.array(cut2_co2, dtype=float)
-                    x = np.arange(0, len(y))
-                    popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
-                    b3 = popt[1]
-                    a3 = popt[0]
-                    print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
+                    try:
+                        cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
+                        y = np.array(cut2_co2, dtype=float)
+                        x = np.arange(0, len(y))
+                        popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
+                        b3 = popt[1]
+                        a3 = popt[0]
+                        print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
+                    except Exception as e:
+                        b3 = 0
+                        a3 = 0
+                        print("We got error {}".format(e))
+                        print("The data will be a= {}, b = {}".format(0, 0))
+                        print("Remember, thats not real data")
 
                     # # rude linear at first third of interval
                     # cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
@@ -436,7 +443,7 @@ def test_parse_csv():
     # axs[1].set_xlabel('time, cycles (cycle = about 9 hours)')
     axs[1].set_ylabel("far, ppf")
     axs[1].grid()
-    axs[1].set_ylim(450, 750)
+    axs[1].set_ylim(200, 750)
 
     # for i in range(len(maxes)):
     #     # ax.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))

@@ -61,9 +61,9 @@ class GPIOWrapper(object):
 def all_test():
     g = GPIOWrapper()
     pins = {
-        "ch1": 2,
-        "ch2": 3,
-        "ch3": 4,
+        "ch1": 10,
+        "ch2": 9,
+        "ch3": 11,
         "ch4": 17,
         "ch5": 27,
         "ch6": 13,

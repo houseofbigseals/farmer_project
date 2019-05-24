@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import csv
+import os
 
 def test_prepare_csv():
 
@@ -8,8 +9,9 @@ def test_prepare_csv():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
-    old_datafile = "data/second_plants_data.csv"
-    new_datafile = "data/test_prepared_data_2.csv"
+    # old_datafile = os.path.abspath("data/data.csv")
+    old_datafile = "../data/data.csv"
+    new_datafile = "../data/partly_test_prepared_data_4.csv"
     pd_data = pd.read_csv(old_datafile, header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
@@ -24,13 +26,13 @@ def test_prepare_csv():
                 # simple remove this points
                 pass
             else:
-                if pd_data['temp'][i] <= 25:
-                    # it means that there is an error with dht11
-                    # TODO: it may cause errors, in another experiment (where 25C is ok)
-                    temp = pd_data['temp'][i-1]
-                    # TODO: it may cause errors, if previous (first) data incorrect
-                else:
-                    temp = pd_data['temp'][i]
+                # if pd_data['temp'][i] <= 20:
+                #     # it means that there is an error with dht11
+                #     # TODO: it may cause errors, in another experiment (where 25C is ok)
+                #     temp = pd_data['temp'][i-1]
+                #     # TODO: it may cause errors, if previous (first) data incorrect
+                # else:
+                #     temp = pd_data['temp'][i]
 
                 if pd_data['humid'][i] > 110:
                     # it means that there is an error with dht11
@@ -51,7 +53,7 @@ def test_prepare_csv():
                     "time": pd_data['time'][i],
                     "Ired": pd_data['Ired'][i],
                     "Iwhite": pd_data['Iwhite'][i],
-                    "temp": temp,
+                    "temp": pd_data['temp'][i],
                     "humid": hum,
                     "CO2": pd_data['CO2'][i],
                     "weight": weight,

@@ -18,8 +18,9 @@ def main():
     fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
-    # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
     pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/partly_test_prepared_data_4.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
@@ -66,7 +67,7 @@ def main():
     t = range(len(times))
     pl.xticks(t[0::3000], dates[0::3000], rotation='vertical')
     pl.plot(t, co2, '-g', label="CO2, ppm")
-    pl.plot(t, fr_fw*200, '-b', label="FARred/FARwhite")
+    pl.plot(t, fr_fw*300, '-b', label="FARred/FARwhite")
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")
     pl.plot(t,  air*400, '-k', label="Airflow ON")
     pl.plot(t, co2K30, '-c', label="CO2 outside")

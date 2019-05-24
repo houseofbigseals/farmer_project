@@ -57,7 +57,7 @@ class DHTWrapper:
     Simple wrapper class for our tasks
     """
     # TODO: we should do retries, because dht can return None instead data sometimes
-    def __init__(self, pin: int = 14, DHTTYPE: int = 11):
+    def __init__(self, pin: int = 14, DHTTYPE: int = 22):
         self.pin = pin
         self.DHTTYPE = DHTTYPE
 

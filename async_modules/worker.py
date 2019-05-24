@@ -71,6 +71,7 @@ class Worker:
         self._datafile = "data.csv"
         self._datafile_lock = asyncio.Lock()
         self._calibration_lock = asyncio.Lock()
+        self._search_lock = asyncio.Lock()
         self.current_schedule_point = 0
         self.cycle = 0
         self._calibration_time = 45  # medium time of calibration, it simply hardcoded
@@ -128,9 +129,10 @@ class Worker:
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
-        self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
+        # self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
         # # TODO: remove it in future
         # self.schedule_task = PeriodicCoro(self.passive_schedule, 3, name="schedule_task")
+        self.schedule_task = PeriodicCoro(self.one_shot_schedule, 3, name="schedule_task")
 
         self.request_task = PeriodicCoro(self.check_server, 3, name="request_task")
         self.send_results_task = PeriodicCoro(self.send_results, 3, name="send_results_task")
@@ -406,58 +408,20 @@ class Worker:
                 logger.info("Writing data to config")
                 with open("current.config", "w") as f:
                     f.write("{}:{}".format(self.cycle, self.current_schedule_point))
+        if self._search_lock.locked():
+            self._search_lock.release()
+        self._search_done = True
 
-    # async def rare_schedule(self):
-    #     """
-    #     do read schedule
-    #     and then put tasks to self.tickets[] (with lock)
-    #     hehe, nope
-    #     :return:
-    #     """
-    #     logger.debug("check_schedule")
-    #     period = 30 # in mins
-    #     sched = [
-    #         [10, 258],  # 700, 0
-    #         [10, 69],  # 200, 0
-    #         [10, 163],  # 450, 0
-    #         [166, 133],  # 700, 1
-    #         [46, 38],  # 200, 1
-    #         [106, 85],  # 450, 1
-    #         [199, 106],  # 700, 1.5
-    #         [56, 30],  # 200, 1.5
-    #         [128, 68],  # 450, 1.5
-    #         [166, 133],  # 700, 1  ------------------- repeating
-    #         [106, 85],  # 450, 1
-    #         [46, 38],  # 200, 1
-    #         [128, 68],  # 450, 1.5
-    #         [199, 106],  # 700, 1.5
-    #         [56, 30],  # 200, 1.5
-    #         [10, 258],  # 700, 0
-    #         [10, 163],  # 450, 0
-    #         [10, 69]  # 200, 0
-    #     ]
-    #
-    #     if not self._calibration_lock.locked():
-    #         # TODO: find here the cause of mistake in numbering of data in csv file
-    #         # mb it >=  ??? mb change to >
-    #         if self.current_schedule_point >= len(sched):
-    #             self.current_schedule_point = self.current_schedule_point % len(sched)
-    #             self.cycle += 1
-    #         t = time.localtime()
-    #         if t.tm_min == 0 and t.tm_hour == 1:
-    #             if self._search_done:
-    #             remake_coro = SingleCoro(
-    #                 self.remake,
-    #                 "recalibration_task",
-    #                 red=sched[self.current_schedule_point][0],
-    #                 white=sched[self.current_schedule_point][1]
-    #             )
-    #             await remake_coro.start()
-    #             self.current_schedule_point += 1
-    #             logger.info("Writing data to config")
-    #             with open("current.config", "w") as f:
-    #                 f.write("{}:{}".format(self.cycle, self.current_schedule_point))
-
+    async def one_shot_schedule(self):
+        t = time.localtime()
+        if not self._search_lock.locked():
+            if t.tm_min == 0 and t.tm_hour == 1 or not self._search_done:
+                self._search_lock.locked()
+                one_shot_sched_coro = SingleCoro(
+                    self.check_schedule,
+                    "one_shot_sched_task"
+                )
+                await one_shot_sched_coro.start()
 
     async def remake(self, red: int, white: int):
         await self._calibration_lock.acquire()

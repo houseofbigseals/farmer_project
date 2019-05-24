@@ -132,7 +132,7 @@ async def test_gpio():
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
     com = Command(
         cunit="gpio_unit",
-        cfunc="start_ventilation",
+        cfunc="start_coolers",
         cargs=None,
         ctype="single"
     )
@@ -167,7 +167,7 @@ async def test_tunnel():
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
     com = Command(
         cunit="system_unit",
-        cfunc="pause",
+        cfunc="stop",
         cargs=None,
         ctype="single"
     )
