@@ -367,7 +367,8 @@ class Worker:
         :return:
         """
         logger.debug("check_schedule")
-        period = 30 # in mins
+        # period = 30 # in mins
+        period = 45  # in mins
         sched = [
             [10, 258],  # 700, 0
             [10, 69],  # 200, 0
@@ -401,7 +402,8 @@ class Worker:
                     self.remake,
                     "recalibration_task",
                     red=sched[self.current_schedule_point][0],
-                    white=sched[self.current_schedule_point][1]
+                    white=sched[self.current_schedule_point][1],
+                    period=15
                 )
                 await remake_coro.start()
                 self.current_schedule_point += 1
@@ -423,7 +425,7 @@ class Worker:
                 )
                 await one_shot_sched_coro.start()
 
-    async def remake(self, red: int, white: int):
+    async def remake(self, red: int, white: int, period: int):
         await self._calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         res = ""
@@ -443,7 +445,8 @@ class Worker:
         await asyncio.sleep(self._calibration_time)
         res += await self._gpio_unit.stop_calibration()
         await self.measure_task.start()
-        await asyncio.sleep(410)
+        # TODO fix that please
+        await asyncio.sleep(period*60)
         res += await self._gpio_unit.stop_ventilation()
         logger.debug("Result of calibration coro : " + res)
 
