@@ -694,7 +694,7 @@ class TempSensorUnit(Unit):
     Unit for wrapping temp sensor methods - dht11 for now
     """
 
-    def __init__(self, pin: int = 14, dhttype: int = 11 ):
+    def __init__(self, pin: int = 14, dhttype: int = 22):
         super(TempSensorUnit, self).__init__(name="TempSensorUnit")
         self.logger = logging.getLogger("Worker.Units.Gpio")
         self.logger.info("Gpio init")
