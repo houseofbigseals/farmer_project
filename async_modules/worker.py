@@ -129,10 +129,10 @@ class Worker:
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
-        # self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
+        self.schedule_task = PeriodicCoro(self.check_schedule, 3, name="schedule_task")
         # # TODO: remove it in future
         # self.schedule_task = PeriodicCoro(self.passive_schedule, 3, name="schedule_task")
-        self.schedule_task = PeriodicCoro(self.one_shot_schedule, 3, name="schedule_task")
+        # self.schedule_task = PeriodicCoro(self.one_shot_schedule, 3, name="schedule_task")
 
         self.request_task = PeriodicCoro(self.check_server, 3, name="request_task")
         self.send_results_task = PeriodicCoro(self.send_results, 3, name="send_results_task")
@@ -413,6 +413,7 @@ class Worker:
         if self._search_lock.locked():
             self._search_lock.release()
         self._search_done = True
+        # TODO: set max optimal current here
 
     async def one_shot_schedule(self):
         t = time.localtime()
