@@ -368,7 +368,7 @@ class Worker:
         """
         logger.debug("check_schedule")
         # period = 30 # in mins
-        period = 45  # in mins
+        period = 30  # in mins
         sched = [
             [10, 258],  # 700, 0
             [10, 69],  # 200, 0
@@ -403,7 +403,7 @@ class Worker:
                     "recalibration_task",
                     red=sched[self.current_schedule_point][0],
                     white=sched[self.current_schedule_point][1],
-                    period=15
+                    period=10
                 )
                 await remake_coro.start()
                 self.current_schedule_point += 1
@@ -469,6 +469,7 @@ class Worker:
         co2 = co2_raw.split(' ')[3]
         k30_co2 = await self._k30_unit.get_data()
         weight = await self._weight_unit.get_data()
+        # TODO: fix that crutch - air might be set manually
         if self._calibration_lock.locked():
             air = 1
         else:
@@ -527,7 +528,6 @@ class Worker:
             # add tickets from answer to list
             async with self._new_tickets_lock:
                 for t in tickets_list:
-                    # TODO: remove useless print and do something useful
                     logger.debug(t.id, t.to, t.tfrom)
                     self._new_tickets.append(t)
             logger.debug("check_server: done")

@@ -10,8 +10,8 @@ def test_prepare_csv():
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # old_datafile = os.path.abspath("data/data.csv")
-    old_datafile = "../data/data.csv"
-    new_datafile = "../data/partly_test_prepared_data_4.csv"
+    old_datafile = "../data/third_plants_data.csv"
+    new_datafile = "../data/another_test_prepared_data_3.csv"
     pd_data = pd.read_csv(old_datafile, header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
@@ -41,9 +41,9 @@ def test_prepare_csv():
                 else:
                     hum = pd_data['humid'][i]
 
-                if abs(pd_data['weight'][i] - pd_data['weight'][i-1])>50  :
+                if abs(pd_data['weight'][i] - pd_data['weight'][i-1])>30:
                     # it means that its noize
-                    weight = pd_data['weight'][i-1]
+                    weight = pd_data['weight'][i-5]
                 else:
                     weight = pd_data['weight'][i]
 
