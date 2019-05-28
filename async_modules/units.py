@@ -340,6 +340,7 @@ class GpioUnit(Unit):
         self.cooler_pin = [19]
         self.calibration_pins = [13]
         self.drain_pins = [26]
+        self.measure_pins = [27]
         # platform-dependent unit, so we need to check
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
@@ -445,6 +446,11 @@ class GpioUnit(Unit):
             res = self.gpio.write(i, False)
             # false - because our relay is low level trigger
             self.pins[i] = False
+        # then we need to stop pump3
+        for i in self.measure_pins:
+            res = self.gpio.write(i, True)
+            # false - because our relay is low level trigger
+            self.pins[i] = True
         self.logger.debug(res)
         if tick:
             tick.result = res
@@ -457,6 +463,11 @@ class GpioUnit(Unit):
             res = self.gpio.write(i, True)
             # false - because our relay is low level trigger
             self.pins[i] = True
+        # then we need to start pump3
+        for i in self.measure_pins:
+            res = self.gpio.write(i, False)
+            # false - because our relay is low level trigger
+            self.pins[i] = False
         self.logger.debug(res)
         if tick:
             tick.result = res

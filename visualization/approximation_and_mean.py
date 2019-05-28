@@ -18,8 +18,8 @@ def main():
     fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
-    pd_data = pd.read_csv("../data/data.csv", header=None, names=fieldnames)
-    # pd_data = pd.read_csv("../data/another_test_prepared_data_3.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/data.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/another_test_prepared_data_3.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/prepared_data.csv", header=None, names=fieldnames)
     print(pd_data.head())

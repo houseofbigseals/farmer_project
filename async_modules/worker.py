@@ -125,6 +125,11 @@ class Worker:
         await self._gpio_unit.start_coolers()
         await self._gpio_unit.start_draining()
         await self._led_unit.set_current(red=10, white=10)
+        # we have to start air pump 3 before all
+        # TODO: think how to work with pump 3 normally
+        pump3_pin = self._gpio_unit.measure_pins # it is list, yeah its dumb
+        for i in pump3_pin:
+            await self._gpio_unit.set_pin(pin=i, state=False)
         # do async init for some units
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks

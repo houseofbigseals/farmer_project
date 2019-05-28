@@ -167,7 +167,7 @@ async def test_tunnel():
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
     com = Command(
         cunit="system_unit",
-        cfunc="continue",
+        cfunc="stop",
         cargs=None,
         ctype="single"
     )
@@ -191,6 +191,6 @@ async def test_tunnel():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    # loop.run_until_complete(test_tunnel())
-    loop.run_until_complete(test_gpio())
+    loop.run_until_complete(test_tunnel())
+    # loop.run_until_complete(test_gpio())
     # loop.run_until_complete(test_co2())
