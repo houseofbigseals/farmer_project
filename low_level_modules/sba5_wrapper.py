@@ -125,7 +125,7 @@ async def main():
             "CO2": co2,
         }
 
-        with open(_datafile, "a", newline='') as out_file:
+        with open(_datafile, "w", newline='') as out_file:
             writer = csv.DictWriter(out_file, delimiter=',', fieldnames=fieldnames)
             writer.writerow(data)
 
