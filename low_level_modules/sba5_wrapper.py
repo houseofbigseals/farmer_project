@@ -5,6 +5,8 @@
 
 import serial
 import asyncio
+import time
+import csv
 # TODO: add logging, its important
 
 class SBAWrapper(object):
@@ -107,8 +109,28 @@ def send_command(c):
 
 async def main():
     s = SBAWrapper()
-    res = await s.send_command('M\r\n')
-    print(res)
+    date_ = time.strftime("%x", time.localtime())
+    time_ = time.strftime("%X", time.localtime())
+    _datafile = 'co2_test_{}_{}.csv'.format(date_, time_)
+
+    while True:
+        co2 = await s.send_command('M\r\n')
+        fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+                      "CO2", "weight", "airflow", "cycle", "K30CO2"]
+        date_ = time.strftime("%x", time.localtime())
+        time_ = time.strftime("%X", time.localtime())
+        data = {
+            "date": date_,
+            "time": time_,
+            "CO2": co2,
+        }
+
+        with open(_datafile, "a", newline='') as out_file:
+            writer = csv.DictWriter(out_file, delimiter=',', fieldnames=fieldnames)
+            writer.writerow(data)
+
+        print(co2)
+        time.sleep(2)
 
 if __name__=="__main__":
     loop = asyncio.get_event_loop()
