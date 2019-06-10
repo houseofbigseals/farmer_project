@@ -111,7 +111,7 @@ async def main():
     s = SBAWrapper()
     date_ = time.strftime("%x", time.localtime())
     time_ = time.strftime("%X", time.localtime())
-    _datafile = 'co2_test_{}_{}.csv'.format(date_, time_)
+    _datafile = 'co2_test_{}.csv'.format(time.time)
 
     while True:
         co2 = await s.send_command('M\r\n')

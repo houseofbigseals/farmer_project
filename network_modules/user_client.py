@@ -136,6 +136,8 @@ async def test_gpio():
         cargs=None,
         ctype="single"
     )
+
+
     # com = Command(
     #     cunit="gpio_unit",
     #     cfunc="set_pin",
@@ -165,12 +167,27 @@ async def test_tunnel():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
+    # com = Command(
+    #     cunit="system_unit",
+    #     cfunc="pause",
+    #     cargs=None,
+    #     ctype="single"
+    # )
+
+    # com = Command(
+    #     cunit="led_unit",
+    #     cfunc="set_current",
+    #     cargs={"red": 10, "white": 200},
+    #     ctype="single"
+    # )
     com = Command(
-        cunit="system_unit",
-        cfunc="stop",
+        cunit="gpio_unit",
+        cfunc="stop_ventilation",
         cargs=None,
         ctype="single"
     )
+
+
     tick = Ticket(
         tfrom=10,
         tto=155167253286217647024261323245457212920,
