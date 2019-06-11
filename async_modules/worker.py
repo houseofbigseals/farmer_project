@@ -124,6 +124,7 @@ class Worker:
         # start all things, those need to be done once
         await self._gpio_unit.start_coolers()
         # await self._gpio_unit.start_draining()
+        await self._gpio_unit.stop_draining()
         await self._led_unit.set_current(red=10, white=10)
         # we have to start air pump 3 before all
         # TODO: think how to work with pump 3 normally
@@ -435,7 +436,7 @@ class Worker:
         await self._calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         res = ""
-        res += await self._gpio_unit.start_draining()
+        # res += await self._gpio_unit.start_draining()
         res += await self._led_unit.set_current(red=red, white=white)
         logger.info("New red and white currents is {} and {}".format(red, white))
         res += await self._gpio_unit.start_ventilation()
@@ -456,7 +457,7 @@ class Worker:
         await asyncio.sleep(period*60)
         res += await self._gpio_unit.stop_ventilation()
         logger.debug("Result of calibration coro : " + res)
-        res += await self._gpio_unit.stop_draining()
+        # res += await self._gpio_unit.stop_draining()
         self._calibration_lock.release()
         return res
 
