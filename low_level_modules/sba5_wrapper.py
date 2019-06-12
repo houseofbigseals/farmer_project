@@ -111,21 +111,20 @@ async def main():
     s = SBAWrapper()
     date_ = time.strftime("%x", time.localtime())
     time_ = time.strftime("%X", time.localtime())
-    _datafile = 'co2_test_{}.csv'.format(time.time)
+    _datafile = 'co2_test_{}.csv'.format(time.time())
 
     while True:
         co2 = await s.send_command('M\r\n')
-        fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                      "CO2", "weight", "airflow", "cycle", "K30CO2"]
+        fieldnames = ["date", "time", "CO2"]
         date_ = time.strftime("%x", time.localtime())
         time_ = time.strftime("%X", time.localtime())
         data = {
             "date": date_,
             "time": time_,
-            "CO2": co2,
+            "CO2": co2.split(' ')[3],
         }
 
-        with open(_datafile, "w", newline='') as out_file:
+        with open(_datafile, "a", newline='') as out_file:
             writer = csv.DictWriter(out_file, delimiter=',', fieldnames=fieldnames)
             writer.writerow(data)
 

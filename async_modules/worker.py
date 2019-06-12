@@ -375,25 +375,36 @@ class Worker:
         logger.debug("check_schedule")
         # period = 30 # in mins
         period = 30  # in mins
+        # sched = [
+        #     [10, 258],  # 700, 0
+        #     [10, 69],  # 200, 0
+        #     [10, 163],  # 450, 0
+        #     [166, 133],  # 700, 1
+        #     [46, 38],  # 200, 1
+        #     [106, 85],  # 450, 1
+        #     [199, 106],  # 700, 1.5
+        #     [56, 30],  # 200, 1.5
+        #     [128, 68],  # 450, 1.5
+        #     [166, 133],  # 700, 1  ------------------- repeating
+        #     [106, 85],  # 450, 1
+        #     [46, 38],  # 200, 1
+        #     [128, 68],  # 450, 1.5
+        #     [199, 106],  # 700, 1.5
+        #     [56, 30],  # 200, 1.5
+        #     [10, 258],  # 700, 0
+        #     [10, 163],  # 450, 0
+        #     [10, 69]  # 200, 0
+        # ]
+        # TODO: remove after end of transients research
         sched = [
             [10, 258],  # 700, 0
-            [10, 69],  # 200, 0
             [10, 163],  # 450, 0
-            [166, 133],  # 700, 1
-            [46, 38],  # 200, 1
-            [106, 85],  # 450, 1
-            [199, 106],  # 700, 1.5
-            [56, 30],  # 200, 1.5
-            [128, 68],  # 450, 1.5
-            [166, 133],  # 700, 1  ------------------- repeating
-            [106, 85],  # 450, 1
-            [46, 38],  # 200, 1
-            [128, 68],  # 450, 1.5
-            [199, 106],  # 700, 1.5
-            [56, 30],  # 200, 1.5
             [10, 258],  # 700, 0
-            [10, 163],  # 450, 0
-            [10, 69]  # 200, 0
+            [199, 106],  # 700, 1.5
+            [128, 68],  # 450, 1.5
+            [199, 106],  # 700, 1.5
+            [10, 258],  # 700, 0
+            [199, 106]  # 700, 1.5
         ]
 
         if not self._calibration_lock.locked():
@@ -403,7 +414,9 @@ class Worker:
                 self.current_schedule_point = self.current_schedule_point % len(sched)
                 self.cycle += 1
             t = time.localtime()
-            if t.tm_min % period == 0:
+            # if t.tm_min % period == 0:
+            # TODO: remove after end of transients research
+            if t.tm_hour % 2 == 0 and t.tm_min == 11:
                 remake_coro = SingleCoro(
                     self.remake,
                     "recalibration_task",
@@ -416,12 +429,22 @@ class Worker:
                 logger.info("Writing data to config")
                 with open("current.config", "w") as f:
                     f.write("{}:{}".format(self.cycle, self.current_schedule_point))
-        if self._search_lock.locked():
-            self._search_lock.release()
-        self._search_done = True
-        # TODO: set max optimal current here
+            # TODO: remove after end of transients research
+            else:
+                if t.tm_min % 20 == 0:
+                    simple_calibration_coro = SingleCoro(
+                        self.simple_calibration,
+                        "simple_calibration_task"
+                    )
+                    await simple_calibration_coro.start()
+
+        # if self._search_lock.locked():
+        #     self._search_lock.release()
+        # self._search_done = True
+        # # TODO: set max optimal current here
 
     async def one_shot_schedule(self):
+        # TODO: fix that, it doesnt really work
         t = time.localtime()
         if not self._search_lock.locked():
             if t.tm_min == 0 and t.tm_hour == 1 or not self._search_done:
@@ -432,11 +455,24 @@ class Worker:
                 )
                 await one_shot_sched_coro.start()
 
+    async def simple_calibration(self):
+        await self._calibration_lock.acquire()
+        logger.info("Simple calibration started")
+        res = ""
+        res += await self.measure_task.stop()
+        res += await self._gpio_unit.start_calibration()
+        res += await self._co2_sensor_unit.do_calibration()
+        await asyncio.sleep(self._calibration_time)
+        res += await self._gpio_unit.stop_calibration()
+        await self.measure_task.start()
+        self._calibration_lock.release()
+        return res
+
     async def remake(self, red: int, white: int, period: int):
         await self._calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         res = ""
-        # res += await self._gpio_unit.start_draining()
+        res += await self._gpio_unit.start_draining()
         res += await self._led_unit.set_current(red=red, white=white)
         logger.info("New red and white currents is {} and {}".format(red, white))
         res += await self._gpio_unit.start_ventilation()
@@ -457,7 +493,7 @@ class Worker:
         await asyncio.sleep(period*60)
         res += await self._gpio_unit.stop_ventilation()
         logger.debug("Result of calibration coro : " + res)
-        # res += await self._gpio_unit.stop_draining()
+        res += await self._gpio_unit.stop_draining()
         self._calibration_lock.release()
         return res
 

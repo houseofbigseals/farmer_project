@@ -257,7 +257,8 @@ class CO2SensorUnit(Unit):
 
     async def do_measurement(self, tick: Ticket = None):
         ans = await self.sensor.send_command("M\r\n")
-        # self.logger.debug("Do measure SBA5")
+        self.logger.debug("Do measure SBA5 \n")
+        self.logger.debug("SBA5 result is {}".format(ans))
         if tick:
             tick.result = ans
         else:
