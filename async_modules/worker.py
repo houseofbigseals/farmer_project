@@ -397,14 +397,20 @@ class Worker:
         # ]
         # TODO: remove after end of transients research
         sched = [
-            [10, 258],  # 700, 0
-            [10, 163],  # 450, 0
-            [10, 258],  # 700, 0
-            [199, 106],  # 700, 1.5
-            [128, 68],  # 450, 1.5
-            [199, 106],  # 700, 1.5
-            [10, 258],  # 700, 0
-            [199, 106]  # 700, 1.5
+            [10, 258, 10],  # 700, 0
+            [10, 163, 10],  # 450, 0
+            [10, 258, 10],  # 700, 0
+            [199, 106, 10],  # 700, 1.5
+            [128, 68, 10],  # 450, 1.5
+            [199, 106, 10],  # 700, 1.5
+            [10, 258, 10],  # 700, 0
+            [199, 106, 10],  # 700, 1.5
+            [128, 68, 0],  # 450, 1.5
+            [128, 68, 2],  # 450, 1.5
+            [128, 68, 5],  # 450, 1.5
+            [128, 68, 10],  # 450, 1.5
+            [128, 68, 15],  # 450, 1.5
+            [128, 68, 20],  # 450, 1.5
         ]
 
         if not self._calibration_lock.locked():
@@ -416,13 +422,13 @@ class Worker:
             t = time.localtime()
             # if t.tm_min % period == 0:
             # TODO: remove after end of transients research
-            if t.tm_hour % 2 == 0 and t.tm_min == 11:
+            if t.tm_hour % 1 == 0 and t.tm_min == 11:
                 remake_coro = SingleCoro(
                     self.remake,
                     "recalibration_task",
                     red=sched[self.current_schedule_point][0],
                     white=sched[self.current_schedule_point][1],
-                    period=10
+                    period=sched[self.current_schedule_point][2]
                 )
                 await remake_coro.start()
                 self.current_schedule_point += 1
@@ -459,7 +465,7 @@ class Worker:
         await self._calibration_lock.acquire()
         logger.info("Simple calibration started")
         res = ""
-        res += await self.measure_task.stop()
+        await self.measure_task.stop()
         res += await self._gpio_unit.start_calibration()
         res += await self._co2_sensor_unit.do_calibration()
         await asyncio.sleep(self._calibration_time)
@@ -473,7 +479,7 @@ class Worker:
         logger.info("Airflow and calibration started")
         res = ""
         res += await self._gpio_unit.start_draining()
-        res += await self._led_unit.set_current(red=red, white=white)
+        # res += await self._led_unit.set_current(red=red, white=white)
         logger.info("New red and white currents is {} and {}".format(red, white))
         res += await self._gpio_unit.start_ventilation()
         await self.measure_task.stop()
@@ -492,8 +498,11 @@ class Worker:
         # TODO fix that please
         await asyncio.sleep(period*60)
         res += await self._gpio_unit.stop_ventilation()
-        logger.debug("Result of calibration coro : " + res)
+
+        # TODO: remove after end of transients research
+        res += await self._led_unit.set_current(red=red, white=white)
         res += await self._gpio_unit.stop_draining()
+        logger.debug("Result of calibration coro : " + res)
         self._calibration_lock.release()
         return res
 

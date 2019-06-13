@@ -19,6 +19,7 @@ def main():
                    "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
     pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("data/first_good_data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/another_test_prepared_data_3.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
