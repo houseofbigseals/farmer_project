@@ -8,7 +8,7 @@ from network_modules.command import Command, Ticket
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from network_modules.raw_client import command_request_ticket\
     , command_set_ticket_result
-from colorama import init
+# from colorama import init
 from async_modules.units import SystemUnit, LedUnit, CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit, K30Unit
 import logging
 
@@ -410,7 +410,7 @@ class Worker:
             [128, 68, 5],  # 450, 1.5
             [128, 68, 10],  # 450, 1.5
             [128, 68, 15],  # 450, 1.5
-            [128, 68, 20],  # 450, 1.5
+            [128, 68, 20]  # 450, 1.5
         ]
 
         if not self._calibration_lock.locked():
