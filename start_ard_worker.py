@@ -2,7 +2,7 @@
 # file to find correct version of worker - for rpi or for x86_64
 # you should start worker from here
 
-from async_modules.worker import main
+from async_modules.ard_worker import main
 import asyncio
 import argparse
 import logging
