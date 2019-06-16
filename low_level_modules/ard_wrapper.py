@@ -2,6 +2,7 @@
 import serial
 from typing import Tuple, Optional
 import six
+import time
 from time import sleep
 
 CRC16_CCITT_TAB = \
@@ -113,7 +114,7 @@ class ArdWrapper(object):
             0x02 - invalid command - not from available list
             0x03 - invalid argument for correct command
             0x04 - error during command execution
-            0xAA - unknown error, something went wrong
+            0xBB - unknown error, something went wrong
 
 
 
@@ -121,8 +122,8 @@ class ArdWrapper(object):
     """
     def __init__(self,
                  devname: str = '/dev/ttyUSB0',
-                 baudrate: int = 19200,
-                 timeout: float = 10
+                 baudrate: int = 9600,
+                 timeout: float = 1
                  ):
         self.dev = devname
         self.baud = baudrate
@@ -138,9 +139,12 @@ class ArdWrapper(object):
             logstring += "Sending {}\n".format(log_comment)
         else:
             logstring += "We want to send this:\n"
+            print("We want to send {}".format(com.hex()))
         logstring += self.parse_command(com)
         try:
             ser = serial.Serial(port=self.dev, baudrate=self.baud, timeout=self.timeout)
+            ser.flushInput()
+            ser.flushOutput()
             ser.write(com)
         except Exception as e:
             logstring += "Error happened while write: {}\n".format(e)
@@ -148,23 +152,39 @@ class ArdWrapper(object):
             return ans, logstring
 
         try:
-            ans = ser.read(len(com))
+            # TODO : fix that  - length of ans mb another than reqv
+            # ans = bytearray()
+            # ans_byte = b'\x00'
+            # while ans_byte != b'\xFA':
+            #     ans_byte = ser.read(1)
+            #     ans.extend(ans_byte)
+            # # then we have to read crc sum bytes
+            # crc_bytes = ser.read(2)
+
+            # ans.extend(crc_bytes)
+
+            ans = ser.read(50)
         except Exception as e:
             logstring += "Error happened while read: {}\n".format(e)
             logstring += "-------------------------------\n"
             return ans, logstring
 
-        if(not ans or (len(ans) != len(com))):
+        if not ans:
             logstring += "Broken answer from ard: {}\n".format(ans)
             logstring += "-------------------------------\n"
         else:
             logstring += "Succesfully got answer from ard:\n"
             logstring += self.parse_command(ans)
+        print("send command done")
         return ans, logstring
 
     def parse_command(self, com: bytearray) -> str:
+        print("parse command started")
         # parse content of command
         length = len(com)
+        print("len of com is {}".format(length))
+        print("com in hex {}".format(com.hex()))
+        print(type(com[2]))
         parsed_output = ""
         parsed_output += "-------------------------------\n"
         parsed_output += "Parsed command {} \n".format(com.hex())
@@ -184,10 +204,11 @@ class ArdWrapper(object):
         parsed_output += "{} - last byte of CRC16 ccitt control sum\n".format(hex(com[length - 2]))
         parsed_output += "{} - first byte of CRC16 ccitt control sum\n".format(hex(com[length - 1]))
         parsed_output += "-------------------------------\n"
+        print("parse command done")
         return parsed_output
 
     def create_command(self,
-                       common_sign: bytes = b'\x55',
+                       common_sign: bytes = b'\xAA',
                        start_byte: bytes = b'\x45',
                        address: bytes = b'\xFF',
                        commandt: bytes = b'\x14', # get info for example
@@ -207,6 +228,7 @@ class ArdWrapper(object):
         crc_bytes = crc_raw.to_bytes(2, byteorder='little')  # byteorder='little'
         # its important
         command.extend(crc_bytes)
+        print("create command done")
         return command
 
     def crc16_ccitt(self, data_, crc=0xffff) -> int:
@@ -230,11 +252,14 @@ class ArdWrapper(object):
                        name: str = "get firmware info"
                        ) -> Tuple[Optional[bytearray], str]:
         # this is a simple command template
+        print("simple command started")
         command = self.create_command(
             address=address,
             commandt=commandt,
             data=data)
         ans, log = self.send_command(command, log_comment=name)
+        print("ans in hex {}".format(ans.hex()))
+        print(log)
         if ans:
             answer = bytearray(ans)
             flag = answer[4]
@@ -259,10 +284,12 @@ class ArdWrapper(object):
                 else:
                     log += "0x{} - unknown code of error\n".format(hex(answer[5]))
                 log += "-------------------------------\n"
+            print("simple command done")
             return ans, log
         else:
             log += "Something went wrong, we got no answer at all\n"
             log += "-------------------------------\n"
+            print("simple command done")
             return ans, log
 
     def start(self, addr: bytes = b'\xFF') -> Tuple[Optional[bytearray], str]:
@@ -280,3 +307,36 @@ class ArdWrapper(object):
                         data= None,
                         name="stop"
                        )
+
+    def set_lamp_on(self, addr: bytes = b'\x05') \
+        -> Tuple[Optional[bytearray], str]:
+        return self.simple_command(
+                        address=addr,
+                        commandt=b'\x03',
+                        data= None,
+                        name="set lamp on"
+                       )
+
+    def set_lamp_off(self, addr: bytes = b'\x05') \
+        -> Tuple[Optional[bytearray], str]:
+        return self.simple_command(
+                        address=addr,
+                        commandt=b'\x04',
+                        data= None,
+                        name="set lamp off"
+                       )
+
+
+def main():
+    ard = ArdWrapper()
+    while True:
+        print(ard.set_lamp_on()[0])
+    # print(ard.set_lamp_on()[1])
+        time.sleep(1)
+        print(ard.set_lamp_off()[0])
+    # print(ard.set_lamp_on()[1])
+
+
+if __name__ == "__main__":
+    main()
+
