@@ -173,6 +173,40 @@ class LedUnit(Unit):
             raise ValueError("LedUnitError: No such command - {}".format(command.func))
 
 
+class ArdUnit(Unit):
+    """
+    Unit for simple arduino module, that controls simple greenhouse
+    through usb-rs485 adapter
+    Look for description of protocol in ard_wrapper.py
+    """
+    def __init__(
+            self,
+            devname: str = '/dev/ttyUSB0',
+            baudrate: int = 9600,
+            timeout: float = 0.5,
+            devices: list = None
+    ):
+        super(ArdUnit, self).__init__(name="ArdUnit")
+        self.sensor = ArdWrapper(
+            devname=devname,
+            baudrate=baudrate,
+            timeout=timeout
+        )
+        self._list_of_methods = [
+            "get_info",
+            "set_led",
+            "do_measurement",
+            "do_command"
+        ]
+        if devices is None:
+            self.devices = [b'\x05']  # list of hex ids of current devices
+        else:
+            self.devices = devices
+        self.logger = logging.getLogger("Worker.Units.ArdUnit")
+        self.logger.info("ArdUnit init")
+
+
+
 class CO2SensorUnit(Unit):
     """
     Unit for CO2Sensor methods wrapping

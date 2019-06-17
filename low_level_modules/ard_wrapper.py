@@ -55,6 +55,7 @@ class ArdWrapper(object):
     | COMMON_SIGN | START_BYTE | ADDR | COMMAND | ANS OR ERR | STOP_BYTE | CRC_LOW | CRC_HIGH |
     --------------------------------------------------------------------------------------------------
 
+    max length of message is 32 bytes
 
     COMMON_SIGN - common for all commands and answers - 0xAA - 1 byte
     START_BYTE - 0x45 for message and 0x54 for answer - 1 byte
@@ -128,6 +129,7 @@ class ArdWrapper(object):
         self.dev = devname
         self.baud = baudrate
         self.timeout = timeout
+        self.max_len = 32
 
     def send_command(self,
                      com: bytearray,
@@ -152,18 +154,10 @@ class ArdWrapper(object):
             return ans, logstring
 
         try:
-            # TODO : fix that  - length of ans mb another than reqv
-            # ans = bytearray()
-            # ans_byte = b'\x00'
-            # while ans_byte != b'\xFA':
-            #     ans_byte = ser.read(1)
-            #     ans.extend(ans_byte)
-            # # then we have to read crc sum bytes
-            # crc_bytes = ser.read(2)
+            # we dont know whats len of answer, so we wait for
+            # message with maximum length
+            ans = ser.read(self.max_len)
 
-            # ans.extend(crc_bytes)
-
-            ans = ser.read(50)
         except Exception as e:
             logstring += "Error happened while read: {}\n".format(e)
             logstring += "-------------------------------\n"
@@ -292,48 +286,93 @@ class ArdWrapper(object):
             print("simple command done")
             return ans, log
 
-    def start(self, addr: bytes = b'\xFF') -> Tuple[Optional[bytearray], str]:
+    def start(self, addr: bytes = b'\x05') -> Tuple[Optional[bytearray], str]:
         return self.simple_command(
                         address=addr,
                         commandt=b'\x00',
-                        data= None,
-                        name="start"
+                        data=None,
+                        name="start auto mode"
                        )
 
-    def stop(self, addr: bytes = b'\xFF') -> Tuple[Optional[bytearray], str]:
+    def stop(self, addr: bytes = b'\x05') -> Tuple[Optional[bytearray], str]:
         return self.simple_command(
                         address=addr,
                         commandt=b'\x01',
-                        data= None,
-                        name="stop"
+                        data=None,
+                        name="stop auto mode"
                        )
 
     def set_lamp_on(self, addr: bytes = b'\x05') \
-        -> Tuple[Optional[bytearray], str]:
+            -> Tuple[Optional[bytearray], str]:
         return self.simple_command(
                         address=addr,
                         commandt=b'\x03',
-                        data= None,
+                        data=None,
                         name="set lamp on"
                        )
 
     def set_lamp_off(self, addr: bytes = b'\x05') \
-        -> Tuple[Optional[bytearray], str]:
+            -> Tuple[Optional[bytearray], str]:
         return self.simple_command(
                         address=addr,
                         commandt=b'\x04',
-                        data= None,
+                        data=None,
                         name="set lamp off"
                        )
+
+    def set_pump_on(self, addr: bytes = b'\x05') \
+            -> Tuple[Optional[bytearray], str]:
+        return self.simple_command(
+                        address=addr,
+                        commandt=b'\x05',
+                        data=None,
+                        name="set pump on"
+                       )
+
+    def set_pump_off(self, addr: bytes = b'\x05') \
+            -> Tuple[Optional[bytearray], str]:
+        return self.simple_command(
+                        address=addr,
+                        commandt=b'\x06',
+                        data=None,
+                        name="set pump off"
+                       )
+
+    def set_vent_on(self, addr: bytes = b'\x05') \
+            -> Tuple[Optional[bytearray], str]:
+        return self.simple_command(
+            address=addr,
+            commandt=b'\x07',
+            data=None,
+            name="set vent on"
+        )
+
+    def set_vent_off(self, addr: bytes = b'\x05') \
+            -> Tuple[Optional[bytearray], str]:
+        return self.simple_command(
+            address=addr,
+            commandt=b'\x08',
+            data=None,
+            name="set vent off"
+        )
 
 
 def main():
     ard = ArdWrapper()
+    # print(ard.stop()[0])
+    # print(ard.set_lamp_on()[0])
     while True:
+        print(ard.stop()[0])
+        print(ard.set_pump_on()[0])
         print(ard.set_lamp_on()[0])
+
+        print(ard.set_vent_on()[0])
     # print(ard.set_lamp_on()[1])
         time.sleep(1)
+        print(ard.set_pump_off()[0])
         print(ard.set_lamp_off()[0])
+
+        print(ard.set_vent_off()[0])
     # print(ard.set_lamp_on()[1])
 
 
