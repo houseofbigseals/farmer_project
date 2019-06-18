@@ -492,7 +492,7 @@ class Worker:
         logger.info("Airflow and calibration started")
         res = ""
         res += await self._gpio_unit.start_draining()
-        # res += await self._led_unit.set_current(red=red, white=white)
+        res += await self._led_unit.set_current(red=red, white=white)
         logger.info("New red and white currents is {} and {}".format(red, white))
         res += await self._gpio_unit.start_ventilation()
         await self.measure_task.stop()
@@ -512,7 +512,7 @@ class Worker:
         res += await self._gpio_unit.stop_ventilation()
 
         # TODO: remove after end of transients research
-        res += await self._led_unit.set_current(red=red, white=white)
+        # res += await self._led_unit.set_current(red=red, white=white)
         #res += await self._gpio_unit.stop_draining()
         logger.debug("Result of calibration coro : " + res)
         self._calibration_lock.release()
