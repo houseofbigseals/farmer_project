@@ -122,14 +122,14 @@ class Worker:
 
         # start all things, those need to be done once
         await self._gpio_unit.start_coolers()
-        # await self._gpio_unit.start_draining()
-        await self._gpio_unit.stop_draining()
+        await self._gpio_unit.start_draining()
+        # await self._gpio_unit.stop_draining()
         await self._led_unit.set_current(red=10, white=10)
         # we have to start air pump 3 before all
         # TODO: think how to work with pump 3 normally
-        pump3_pin = self._gpio_unit.measure_pins # it is list, yeah its dumb
-        for i in pump3_pin:
-            await self._gpio_unit.set_pin(pin=i, state=False)
+        # pump3_pin = self._gpio_unit.measure_pins
+        # for i in pump3_pin:
+        #     await self._gpio_unit.set_pin(pin=i, state=False)
         # do async init for some units
         await self._co2_sensor_unit.init() # for time
         # that tasks is not user`s, so they not in self._tasks
@@ -374,43 +374,43 @@ class Worker:
         logger.debug("check_schedule")
         # period = 30 # in mins
         period = 30  # in mins
-        # sched = [
-        #     [10, 258],  # 700, 0
-        #     [10, 69],  # 200, 0
-        #     [10, 163],  # 450, 0
-        #     [166, 133],  # 700, 1
-        #     [46, 38],  # 200, 1
-        #     [106, 85],  # 450, 1
-        #     [199, 106],  # 700, 1.5
-        #     [56, 30],  # 200, 1.5
-        #     [128, 68],  # 450, 1.5
-        #     [166, 133],  # 700, 1  ------------------- repeating
-        #     [106, 85],  # 450, 1
-        #     [46, 38],  # 200, 1
-        #     [128, 68],  # 450, 1.5
-        #     [199, 106],  # 700, 1.5
-        #     [56, 30],  # 200, 1.5
-        #     [10, 258],  # 700, 0
-        #     [10, 163],  # 450, 0
-        #     [10, 69]  # 200, 0
-        # ]
-        # TODO: remove after end of transients research
         sched = [
             [10, 258, 10],  # 700, 0
+            [10, 69, 10],  # 200, 0
             [10, 163, 10],  # 450, 0
-            [10, 258, 10],  # 700, 0
+            [166, 133, 10],  # 700, 1
+            [46, 38, 10],  # 200, 1
+            [106, 85, 10],  # 450, 1
             [199, 106, 10],  # 700, 1.5
+            [56, 30, 10],  # 200, 1.5
+            [128, 68, 10],  # 450, 1.5
+            [166, 133, 10],  # 700, 1  ------------------- repeating
+            [106, 85, 10],  # 450, 1
+            [46, 38, 10],  # 200, 1
             [128, 68, 10],  # 450, 1.5
             [199, 106, 10],  # 700, 1.5
+            [56, 30, 10],  # 200, 1.5
             [10, 258, 10],  # 700, 0
-            [199, 106, 10],  # 700, 1.5
-            [128, 68, 0],  # 450, 1.5
-            [128, 68, 2],  # 450, 1.5
-            [128, 68, 5],  # 450, 1.5
-            [128, 68, 10],  # 450, 1.5
-            [128, 68, 15],  # 450, 1.5
-            [128, 68, 20]  # 450, 1.5
+            [10, 163, 10],  # 450, 0
+            [10, 69, 10]  # 200, 0
         ]
+        # TODO: remove after end of transients research
+        # sched = [
+        #     [10, 258, 10],  # 700, 0
+        #     [10, 163, 10],  # 450, 0
+        #     [10, 258, 10],  # 700, 0
+        #     [199, 106, 10],  # 700, 1.5
+        #     [128, 68, 10],  # 450, 1.5
+        #     [199, 106, 10],  # 700, 1.5
+        #     [10, 258, 10],  # 700, 0
+        #     [199, 106, 10],  # 700, 1.5
+        #     [128, 68, 0],  # 450, 1.5
+        #     [128, 68, 2],  # 450, 1.5
+        #     [128, 68, 5],  # 450, 1.5
+        #     [128, 68, 10],  # 450, 1.5
+        #     [128, 68, 15],  # 450, 1.5
+        #     [128, 68, 20]  # 450, 1.5
+        # ]
 
         if not self._calibration_lock.locked():
             # TODO: find here the cause of mistake in numbering of data in csv file
@@ -419,29 +419,43 @@ class Worker:
                 self.current_schedule_point = self.current_schedule_point % len(sched)
                 self.cycle += 1
             t = time.localtime()
-            # if t.tm_min % period == 0:
-            # TODO: remove after end of transients research
-            if t.tm_hour % 1 == 0 and t.tm_min == 11:
-                remake_coro = SingleCoro(
-                    self.remake,
-                    "recalibration_task",
-                    red=sched[self.current_schedule_point][0],
-                    white=sched[self.current_schedule_point][1],
-                    period=sched[self.current_schedule_point][2]
-                )
-                await remake_coro.start()
-                self.current_schedule_point += 1
-                logger.info("Writing data to config")
-                with open("current.config", "w") as f:
-                    f.write("{}:{}".format(self.cycle, self.current_schedule_point))
-            # TODO: remove after end of transients research
-            else:
-                if t.tm_min % 20 == 0:
-                    simple_calibration_coro = SingleCoro(
-                        self.simple_calibration,
-                        "simple_calibration_task"
+            if t.tm_min % period == 0:
+                    remake_coro = SingleCoro(
+                        self.remake,
+                        "recalibration_task",
+                        red=sched[self.current_schedule_point][0],
+                        white=sched[self.current_schedule_point][1],
+                        period=sched[self.current_schedule_point][2]
                     )
-                    await simple_calibration_coro.start()
+                    await remake_coro.start()
+                    self.current_schedule_point += 1
+                    logger.info("Writing data to config")
+                    with open("current.config", "w") as f:
+                        f.write("{}:{}".format(self.cycle, self.current_schedule_point))
+
+
+            # TODO: remove after end of transients research
+            # if t.tm_hour % 1 == 0 and t.tm_min == 11:
+            #     remake_coro = SingleCoro(
+            #         self.remake,
+            #         "recalibration_task",
+            #         red=sched[self.current_schedule_point][0],
+            #         white=sched[self.current_schedule_point][1],
+            #         period=sched[self.current_schedule_point][2]
+            #     )
+            #     await remake_coro.start()
+            #     self.current_schedule_point += 1
+            #     logger.info("Writing data to config")
+            #     with open("current.config", "w") as f:
+            #         f.write("{}:{}".format(self.cycle, self.current_schedule_point))
+            # # TODO: remove after end of transients research
+            # else:
+            #     if t.tm_min % 20 == 0:
+            #         simple_calibration_coro = SingleCoro(
+            #             self.simple_calibration,
+            #             "simple_calibration_task"
+            #         )
+            #         await simple_calibration_coro.start()
 
         # if self._search_lock.locked():
         #     self._search_lock.release()
@@ -494,13 +508,12 @@ class Worker:
         await asyncio.sleep(self._calibration_time)
         res += await self._gpio_unit.stop_calibration()
         await self.measure_task.start()
-        # TODO fix that please
         await asyncio.sleep(period*60)
         res += await self._gpio_unit.stop_ventilation()
 
         # TODO: remove after end of transients research
         res += await self._led_unit.set_current(red=red, white=white)
-        res += await self._gpio_unit.stop_draining()
+        #res += await self._gpio_unit.stop_draining()
         logger.debug("Result of calibration coro : " + res)
         self._calibration_lock.release()
         return res

@@ -374,8 +374,8 @@ class GpioUnit(Unit):
         self.vent_pins = [10, 9, 11, 17]
         self.cooler_pin = [19]
         self.calibration_pins = [13]
-        self.drain_pins = [26]
-        self.measure_pins = [27]
+        self.drain_pins = [26, 27]
+        self.measure_pins = []
         # platform-dependent unit, so we need to check
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
