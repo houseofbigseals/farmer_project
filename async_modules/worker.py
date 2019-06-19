@@ -122,8 +122,8 @@ class Worker:
 
         # start all things, those need to be done once
         await self._gpio_unit.start_coolers()
-        await self._gpio_unit.start_draining()
-        # await self._gpio_unit.stop_draining()
+        # await self._gpio_unit.start_draining()
+        await self._gpio_unit.stop_draining()
         await self._led_unit.set_current(red=10, white=10)
         # we have to start air pump 3 before all
         # TODO: think how to work with pump 3 normally
@@ -513,7 +513,7 @@ class Worker:
 
         # TODO: remove after end of transients research
         # res += await self._led_unit.set_current(red=red, white=white)
-        #res += await self._gpio_unit.stop_draining()
+        res += await self._gpio_unit.stop_draining()
         logger.debug("Result of calibration coro : " + res)
         self._calibration_lock.release()
         return res
