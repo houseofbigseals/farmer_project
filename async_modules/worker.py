@@ -90,10 +90,16 @@ class Worker:
             if u[0] in config and config.get(u[0], 'use') is True:
                 self._unitnames.append(u[0])
                 kwargs = dict(config.items(u[0]))
-                kwargs.pop('use') # we dont need that key as argument of unit
+                kwargs.pop('use')  # we dont need that key as argument of unit
                 unit_obj = getattr(units, u[1])
                 setattr(self, u[0], unit_obj(**kwargs))
                 logger.debug("{} added to worker".format(u[0]))
+
+        # system unit not in config because we always use it
+        # so we have to add it manually
+        self.system_unit = units.SystemUnit(worker=self)
+        self._unitnames.append('system_unit')
+        logger.debug("system_unit added to worker")
 
         # create stubs for periodic tasks
         self.measure_task = None
