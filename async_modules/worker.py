@@ -90,7 +90,7 @@ class Worker:
             if u[0] in config and config.get(u[0], 'use') is True:
                 self._unitnames.append(u[0])
                 kwargs = dict(config.items(u[0]))
-                kwargs = kwargs.pop('use')
+                kwargs.pop('use') # we dont need that key as argument of unit
                 unit_obj = getattr(units, u[1])
                 setattr(self, u[0], unit_obj(**kwargs))
                 logger.debug("{} added to worker".format(u[0]))
