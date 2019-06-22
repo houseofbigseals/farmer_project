@@ -24,6 +24,18 @@ except ImportError:
     platf = "PC"
 
 
+# list with pairs of real class names and their names in worker
+list_of_available_units = [
+    ('led_unit', 'LedUnit'),
+    ('ard_unit', 'ArdUnit'),
+    ('co2_sensor_unit', 'CO2SensorUnit'),
+    ('gpio_unit', 'GpioUnit'),
+    ('weight_unit', 'WeightUnit'),
+    ('k30_unit', 'K30Unit'),
+    ('temp_sensor_unit', 'TempSensorUnit'),
+    ('system_unit', 'SystemUnit')
+]
+
 class Unit(object):
     """
     Simple prototype for unit object
@@ -58,7 +70,7 @@ class LedUnit(Unit):
             timeout: int = 10
     ):
 
-        super(LedUnit, self).__init__(name="LedUnit")
+        super(LedUnit, self).__init__(name="led_unit")
         self._list_of_methods = [
             "get_info",
             "start",
@@ -186,7 +198,7 @@ class ArdUnit(Unit):
             timeout: float = 0.5,
             devices: list = None
     ):
-        super(ArdUnit, self).__init__(name="ArdUnit")
+        super(ArdUnit, self).__init__(name="ard_unit")
         self.sensor = ArdWrapper(
             devname=devname,
             baudrate=baudrate,
@@ -232,7 +244,7 @@ class CO2SensorUnit(Unit):
             baudrate: int = 19200,
             timeout: float = 0.1
     ):
-        super(CO2SensorUnit, self).__init__(name="CO2SensorUnit")
+        super(CO2SensorUnit, self).__init__(name="co2_sensor_unit")
         self.sensor = SBAWrapper(
             devname=devname,
             baudrate=baudrate,
@@ -346,7 +358,7 @@ class GpioUnit(Unit):
     """
 
     def __init__(self):
-        super(GpioUnit, self).__init__(name="GpioUnit")
+        super(GpioUnit, self).__init__(name="gpio_unit")
         self.logger = logging.getLogger("Worker.Units.Gpio")
         self.logger.info("Gpio init")
         # pins and devices, connected to them
@@ -645,7 +657,7 @@ class WeightUnit(Unit):
             scale: float = -1142.2754,
             tare: int = 608
     ):
-        super(WeightUnit, self).__init__(name="WeightUnit")
+        super(WeightUnit, self).__init__(name="weight_unit")
         self.logger = logging.getLogger("Worker.Units.Weight")
         self.logger.info("WeightUnit init")
         if platf != "RPi":
@@ -697,7 +709,7 @@ class K30Unit(Unit):
                  timeout=1
                  ):
 
-        super(K30Unit, self).__init__(name="K30Unit")
+        super(K30Unit, self).__init__(name="k30_unit")
         self.devname = devname
         self.baudrate = baudrate
         self.timeout = timeout
@@ -741,7 +753,7 @@ class TempSensorUnit(Unit):
     """
 
     def __init__(self, pin: int = 14, dhttype: int = 22):
-        super(TempSensorUnit, self).__init__(name="TempSensorUnit")
+        super(TempSensorUnit, self).__init__(name="temp_sensor_unit")
         self.logger = logging.getLogger("Worker.Units.Gpio")
         self.logger.info("Gpio init")
         # platform-dependent unit, so we need to check
@@ -800,7 +812,7 @@ class SystemUnit(Unit):
     """
 
     def __init__(self, worker: Any):
-        super(SystemUnit, self).__init__(name="SystemUnit")
+        super(SystemUnit, self).__init__(name="system_unit")
         self.worker = worker
         self.logger = logging.getLogger("Worker.Units.System")
         self.logger.info("System unit init")

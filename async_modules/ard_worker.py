@@ -1,6 +1,7 @@
 import time
 import asyncio
 import json
+import sys
 from uuid import uuid4
 from contextlib import suppress
 from network_modules.command import Command, Ticket
@@ -156,8 +157,9 @@ class Worker:
         # TODO: mb add stopping led driver?
         self._started = False
         logger.info("MANUAL COMMAND: worker stopped")
-        with suppress(asyncio.CancelledError):
-            await self._main_loop_task
+        # TODO: its too rude
+        sys.exit()
+
 
     async def pause(self):
         # stop scheduling and measurements

@@ -53,12 +53,12 @@ async def test_ard():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
-    # com = Command(
-    #     cunit="system_unit",
-    #     cfunc="stop",
-    #     cargs=None,
-    #     ctype="single"
-    # )
+    com = Command(
+        cunit="system_unit",
+        cfunc="stop",
+        cargs=None,
+        ctype="single"
+    )
 
     # com = Command(
     #     cunit="led_unit",
@@ -66,12 +66,12 @@ async def test_ard():
     #     cargs={"red": 10, "white": 200},
     #     ctype="single"
     # )
-    com = Command(
-        cunit="system_unit",
-        cfunc="get_info",
-        cargs=None,
-        ctype="single"
-    )
+    # com = Command(
+    #     cunit="system_unit",
+    #     cfunc="get_info",
+    #     cargs=None,
+    #     ctype="single"
+    # )
 
 
     tick = Ticket(

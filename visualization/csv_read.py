@@ -84,8 +84,9 @@ def main():
     hum = np.array(pd_data['humid'][tmin:tmax:dt])
 
     fig = pl.figure()
-    t = range(len(times))
     # pl.xticks(t, times, rotation='vertical')
+    t = range(len(times))
+    pl.xticks(t[0::3000], dates[0::3000], rotation='vertical')
     pl.plot(t, temp, '-r', label="Temp, C")
     # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
     pl.plot(t, hum, '-b', label="Humidity, %")
