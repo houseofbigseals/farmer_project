@@ -12,6 +12,27 @@ from scipy import interpolate
 from scipy.optimize import curve_fit
 from visualization.csv_read import red_far_by_curr, white_far_by_curr
 
+mass_of_pipe = 421  # in grams
+
+def make_cool_far_rw(far, rw):
+    # i know, its dumb
+    cfar = 0
+    crw = 0
+    if far > 600:
+        cfar = 700
+    elif far > 300:
+        cfar = 450
+    else:
+        cfar = 200
+
+    if rw > 1.25:
+        crw = 1.5
+    elif rw > 0.7:
+        crw = 1
+    else:
+        crw = 0
+    return cfar, crw
+
 
 def test_parse_csv():
 
@@ -20,7 +41,8 @@ def test_parse_csv():
 
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/partly_test_prepared_data_4.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv('../data/test_prepared_data_3.csv', header=None, names=fieldnames)
+    pd_data = pd.read_csv('../data/another_test_prepared_data_4.csv', header=None, names=fieldnames)
+    # pd_data = pd.read_csv('../data/another_test_prepared_data_3.csv', header=None, names=fieldnames)
     print(pd_data.head())
     print(pd_data.tail())
 
@@ -80,12 +102,14 @@ def test_parse_csv():
                                 str(times[stop_pointer - 10])
                     print("\n" + info_str)
                     print(start_pointer, stop_pointer)
-
+                    print("far = {}, fr_fw = {}".format(
+                        far[stop_pointer - 10], fr_fw[stop_pointer - 10])
+                    )
                     co2_part = co2[start_pointer: stop_pointer]
 
                     # make a scipy interpolation here
                     dc = 1
-                    number_of_cut = 200  # for first time
+                    number_of_cut = 100  # for first time
                     cut_co2 = co2_part[number_of_cut::dc]
                     print(len(cut_co2))
                     if(len(cut_co2)<100):
@@ -100,30 +124,30 @@ def test_parse_csv():
                     def linefunc(tt, a, b):
                         return a * tt + b
 
-                    # # at full interval
-                    # y = np.array(cut_co2, dtype=float)
-                    # x = np.arange(0, len(y))
-                    # popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
-                    # b0 = popt[1]
-                    # a0 = popt[0]
-                    # print("full approx a = {}, b = {}".format(popt[0],popt[1]))
+                    # at full interval
+                    y = np.array(cut_co2, dtype=float)
+                    x = np.arange(0, len(y))
+                    popt, pcov = curve_fit(func, x, y, p0=(2, -1))  # p0=(2.5, -1.3)
+                    b3 = popt[1]
+                    a3 = popt[0]
+                    print("full approx a = {}, b = {}".format(popt[0],popt[1]))
 
 
                     # linear at first third of interval
-                    try:
-                        cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
-                        y = np.array(cut2_co2, dtype=float)
-                        x = np.arange(0, len(y))
-                        popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
-                        b3 = popt[1]
-                        a3 = popt[0]
-                        print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
-                    except Exception as e:
-                        b3 = 0
-                        a3 = 0
-                        print("We got error {}".format(e))
-                        print("The data will be a= {}, b = {}".format(0, 0))
-                        print("Remember, thats not real data")
+                    # try:
+                    #     cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
+                    #     y = np.array(cut2_co2, dtype=float)
+                    #     x = np.arange(0, len(y))
+                    #     popt, pcov = curve_fit(linefunc, x, y, p0=(-2, 100))  # p0=(2.5, -1.3)
+                    #     b3 = popt[1]
+                    #     a3 = popt[0]
+                    #     print("first third linear approx a = {}, b = {}".format(popt[0], popt[1]))
+                    # except Exception as e:
+                    #     b3 = 0
+                    #     a3 = 0
+                    #     print("We got error {}".format(e))
+                    #     print("The data will be a= {}, b = {}".format(0, 0))
+                    #     print("Remember, thats not real data")
 
                     # # rude linear at first third of interval
                     # cut2_co2 = cut_co2[:int(len(cut_co2) / 4):dc]
@@ -206,12 +230,36 @@ def test_parse_csv():
                     # F = - dCO2 / dt
 
                     def Ffunc(tt, a, b):
-                        return (-1) * a * b * np.exp(b * tt)
+                        return -1* a * b * np.exp(b * tt)
                         # return a * b * np.exp(b * tt)
 
                     # point for calculating
                     x0 = x[int(len(x)/8)]
                     print("current CO2 {}".format(cut_co2[x0]))
+
+                    # function to calculate Q for moon from dCO2/dt
+                    def q(dC, E, weight):
+                        # convert from ppmv to mg CO2/ m3
+                        dCC = 1.8 * dC
+                        # then calculate Q and divide it to mean weight
+                        return (0.28 * dCC + 0.72 * (dCC / E)) / weight
+
+                    def fe(dC, E, weight):
+                        # convert from ppmv to mg CO2/ m3
+                        dCC = 1.8 * dC
+                        # then calculate Q and divide it to mean weight
+                        return (dCC / E) / weight
+
+                    def f(dC, weight):
+                        # convert from ppmv to mg CO2/ m3
+                        dCC = 1.8 * dC
+                        # then calculate Q and divide it to mean weight
+                        return dCC / weight
+
+                    # current_q = q(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
+                    # current_fe = fe(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
+                    # current_f = f(Ffunc(x0, a3, b3), current_mean_weight)
+                    # print("Q = {}, F = {}".format(current_q, Ffunc(x0, a3, b3)))
 
                     # Fdata = Ffunc(x0, a0, b0)
 
@@ -259,10 +307,16 @@ def test_parse_csv():
                                str(dates[stop_pointer - 10]) + " " + \
                                 str(times[stop_pointer - 10])
 
+                    # new_data = np.append(
+                    #     new_data,
+                    #     [[co2_part, far[stop_pointer - 10], fr_fw[stop_pointer - 10],
+                    #       float(-1*a3), cdata, info_str, [a3, b3]]],
+                    #     axis=0
+                    # )
                     new_data = np.append(
                         new_data,
                         [[co2_part, far[stop_pointer - 10], fr_fw[stop_pointer - 10],
-                          float(-1*a3), cdata, info_str, [a3, b3]]],
+                          Ffunc(x0, a3, b3), cdata, info_str, [a3, b3]]],
                         axis=0
                     )
 
@@ -325,28 +379,33 @@ def test_parse_csv():
         ]
     )
 
-    # start_pointer = -1
-    start_pointer = -1
     interval = 18
 
-    maxes = np.array([[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]])
+    maxes = np.array(
+        [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0]
+        ]
+    )
 
     for i in range(0, len(new_data)):
         if new_data[i, 4] > new_data[i-1, 4]:
             print(i)
             print(new_data[i, 5])
             print("cycle is : ", new_data[i, 4])
-            # it means that there is starting new cycle
+            # it means that there is star of new cycle
             fut_arr = new_data[i:i+interval, 3]
             far_arr = new_data[i:i+interval, 1]
-            if i + interval < len(new_data) and new_data[i+interval -1, 4] == new_data[i, 4]:
+            frfw_arr = new_data[i:i+interval, 2]
+            if i + interval < len(new_data) and new_data[i+interval - 1, 4] == new_data[i, 4]:
 
                 print(i)
                 print(new_data[i, 5])
                 d = new_data[i, 5]
                 # reshape it and summ all repetions
                 # make it acceptable for scipy.interpolate
-                far = np.array([200, 450, 700, 200, 450, 700, 200, 450, 700])
+                # far = np.array([200, 450, 700, 200, 450, 700, 200, 450, 700])
+                far = np.array([700, 200, 450, 700, 200, 450, 700, 200, 450])
                 rw = np.array([0, 0, 0, 1, 1, 1, 1.5, 1.5, 1.5])
                 dco2 = np.zeros(9, dtype=float)
                 QQ = np.zeros(9, dtype=float)
@@ -361,38 +420,57 @@ def test_parse_csv():
                 dco2[7] = float((fut_arr[12] + fut_arr[8]) / 2)
                 dco2[8] = float((fut_arr[13] + fut_arr[6]) / 2)
 
-                farrrr = new_data[i, 1]
-                print("farrrr is ", farrrr)
+                # farrrr = new_data[i, 1]
+                # print("farrrr is ", farrrr)
 
-                def qfunc(F, E):
+                def qfunc2(F, E):
                     return 0.28*F + 0.72*(F/E)
 
-                # another type of plot
+                def qfunc(F, E):
+                    return (F/E)
+
+                # # another type of plot
                 for i in range(0, len(dco2)):
-                    QQ[i] = qfunc(dco2[i], farrrr)
+                    QQ[i] = qfunc2(dco2[i], far_arr[i])
+                    print('dco2 = {}, QQ = {}, far = {}, frfw = {}'.format(
+                        dco2[i], QQ[i], far_arr[i], frfw_arr[i]
+                    ))
 
-                QQ[0] = float(qfunc(dco2[0], far_arr[17]))
-                QQ[1] = float(qfunc(dco2[1], far_arr[16]))
-                QQ[2] = float(qfunc(dco2[2], far_arr[15]))
-                QQ[3] = float(qfunc(dco2[3], far_arr[11]))
-                QQ[4] = float(qfunc(dco2[4], far_arr[10]))
-                QQ[5] = float(qfunc(dco2[5], far_arr[9]))
-                QQ[6] = float(qfunc(dco2[6], far_arr[14]))
-                QQ[7] = float(qfunc(dco2[7], far_arr[12]))
-                QQ[8] = float(qfunc(dco2[8], far_arr[13]))
-
+                # QQ[0] = float(qfunc(dco2[0], far_arr[1]))
+                # QQ[1] = float(qfunc(dco2[1], far_arr[2]))
+                # QQ[2] = float(qfunc(dco2[2], far_arr[0]))
+                # QQ[3] = float(qfunc(dco2[3], far_arr[4]))
+                # QQ[4] = float(qfunc(dco2[4], far_arr[5]))
+                # QQ[5] = float(qfunc(dco2[5], far_arr[3]))
+                # QQ[6] = float(qfunc(dco2[6], far_arr[7]))
+                # QQ[7] = float(qfunc(dco2[7], far_arr[8]))
+                # QQ[8] = float(qfunc(dco2[8], far_arr[6]))
+                # QQ[0] = float(qfunc(dco2[0], far_arr[1]))
+                # QQ[1] = float(qfunc(dco2[1], far_arr[2]))
+                # QQ[2] = float(qfunc(dco2[2], far_arr[0]))
+                # QQ[3] = float(qfunc(dco2[3], far_arr[4]))
+                # QQ[4] = float(qfunc(dco2[4], far_arr[5]))
+                # QQ[5] = float(qfunc(dco2[5], far_arr[3]))
+                # QQ[6] = float(qfunc(dco2[6], far_arr[7]))
+                # QQ[7] = float(qfunc(dco2[7], far_arr[8]))
+                # QQ[8] = float(qfunc(dco2[8], far_arr[6]))
 
                 mco2 = float(np.max(dco2))
                 mrw = float(rw[np.argmax(dco2)])
                 mfar = float(far[np.argmax(dco2)])
 
-                mQQ = float(np.max(dco2))
-                mQQrw = float(rw[np.argmax(dco2)])
-                mQQfar = float(far[np.argmax(dco2)])
+                mQQ = float(np.max(QQ))
+                mQQrw = float(rw[np.argmax(QQ)])
+                mQQfar = float(far[np.argmax(QQ)])
 
+                # maxes = np.append(
+                #     maxes,
+                #     [np.array([mco2, mfar, mrw, new_data[i, 4], d.split(' ')[1]])],
+                #     axis=0
+                # )
                 maxes = np.append(
                     maxes,
-                    [np.array([mco2, mfar, mrw, new_data[i, 4], d.split(' ')[1]])],
+                    [np.array([mQQ, mQQfar, mQQrw, new_data[i, 4], d.split(' ')[1]])],
                     axis=0
                 )
 
@@ -400,9 +478,13 @@ def test_parse_csv():
                     print("dco2/dt = {}, far = {}, fr/fw = {}".format(
                         dco2[i], far[i], rw[i]
                     ))
+                for i in range(0, 9):
+                    print("Q = {}, far = {}, fr/fw = {}".format(
+                        QQ[i], far[i], rw[i]
+                    ))
                 # add it to final array
                 # final_data = np.append(final_data, [[-100000*dco2, far, rw, new_data[i, 5]]], axis=0)
-                final_data = np.append(final_data, [[dco2, far, rw, d,
+                final_data = np.append(final_data, [[QQ, far, rw, d,
                                                      new_data[i*interval - 2, 6]]], axis=0)
 
     # remove first two rows - they are not necessary anymore
@@ -495,7 +577,7 @@ def test_parse_csv():
                              np.reshape(final_data[1, 0], (3, 3)), kind='linear')
     # far = np.arange(200, 800, 10)
     # fw = np.arange(0, 2, 0.05)
-    far = np.arange(200, 800, 20)
+    far = np.arange(200, 700, 20)
     fw = np.arange(0, 1.5, 0.1)
 
     xx_new, yy_new = np.meshgrid(far, fw, indexing='ij')
@@ -570,50 +652,82 @@ def test_parse_csv():
     pl.show()
 
 
+    #
+    # # lets show dynamics of max point coordinates
+    #
+    # fig = pl.figure()
+    # ax = p3.Axes3D(fig)
+    # # ax = pl.axes(projection='3d')
+    # t = range(len(maxes))
+    #
+    #
+    # ax.plot3D(
+    #     t,
+    #     frfwp,
+    #     farp,
+    #     "-b",
+    #     label='trajectory of maximum'
+    # )
+    # ax.scatter3D(
+    #     t,
+    #     frfwp,
+    #     farp,
+    #     # c=list(map(float, maxes[::, 0])),
+    #     cmap='Greens',
+    #     label='trajectory of maximum'
+    # )
+    #
+    # for i in range(len(maxes)):
+    #     # ax.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))
+    #     ax.text(t[i], frfwp[i], farp[i], maxes[i, 4], 'z')
+    #
+    # ax.set_xlim(0, len(t))
+    # ax.set_ylim(0, 1.5)
+    # ax.set_zlim(5, 700)
+    #
+    # # fig.colorbar(cs, shrink=0.5, aspect=5)
+    # ax.set_ylabel('FR/FW')
+    # ax.set_xlabel('t, cycles')
+    # ax.set_zlabel('FAR, mkmoles')
+    # ax.set_title('Dynamics of maximum point')
+    # ax.legend()
+    # # pl.grid()
+    # # pl.savefig("gradient_metaopt_5678676787656765456765.png")
+    # pl.show()
 
-    # lets show dynamics of max point coordinates
 
+
+
+    # test surface -------
+    ffff = interpolate.interp2d([200, 450, 700], [0, 1, 1.5],
+                               np.reshape(final_data[1, 0], (3, 3)), kind='linear')
+    # far = np.arange(200, 800, 10)
+    # fw = np.arange(0, 2, 0.05)
+    far = np.arange(200, 700, 20)
+    fw = np.arange(0, 1.5, 0.1)
+
+    xx_new, yy_new = np.meshgrid(far, fw, indexing='ij')
+    #
+    # xx = np.reshape(final_data[i, 1], (3, 3))
+    # yy =  np.reshape(final_data[i, 2], (3, 3))
+    # interp = f([200, 450, 700], [0, 1, 1.5])
+    interp = ffff(far, fw)
+    # print(np.shape(interp))
+    # print(np.shape(xx_new))
+    # print(np.shape(yy_new))
+    # print(interp)
     fig = pl.figure()
     ax = p3.Axes3D(fig)
-    # ax = pl.axes(projection='3d')
-    t = range(len(maxes))
-
-
-    ax.plot3D(
-        t,
-        frfwp,
-        farp,
-        "-b",
-        label='trajectory of maximum'
-    )
-    ax.scatter3D(
-        t,
-        frfwp,
-        farp,
-        # c=list(map(float, maxes[::, 0])),
-        cmap='Greens',
-        label='trajectory of maximum'
-    )
-
-    for i in range(len(maxes)):
-        # ax.annotate(str(maxes[i, 1])+","+str(maxes[i, 2]), (t[i], maxes[i, 0]))
-        ax.text(t[i], frfwp[i], farp[i], maxes[i, 4], 'z')
-
-    ax.set_xlim(0, len(t))
-    ax.set_ylim(0, 1.5)
-    ax.set_zlim(5, 700)
-
-    # fig.colorbar(cs, shrink=0.5, aspect=5)
+    cs = ax.plot_surface(xx_new, yy_new, interp.T, rstride=1, cstride=1, color='g', cmap=cm.coolwarm)
+    pl.clabel(cs, fmt='%.1f')  # , colors="black")
+    fig.colorbar(cs, shrink=0.5, aspect=5)
     ax.set_ylabel('FR/FW')
-    ax.set_xlabel('t, cycles')
-    ax.set_zlabel('FAR, mkmoles')
-    ax.set_title('Dynamics of maximum point')
-    ax.legend()
+    ax.set_xlabel('FAR, mkmoles')
+    ax.set_zlabel('dCO2/dt *-1')
+    ax.set_title('Interpolated, cycle {}'.format(final_data[i, 3]))
     # pl.grid()
     # pl.savefig("gradient_metaopt_5678676787656765456765.png")
     pl.show()
-
-
 
     # and at the end lets print all interpolated surfaces
 
@@ -641,8 +755,8 @@ def test_parse_csv():
         # points for interpolate
         # print(np.shape(final_data))
         # print(final_data[i])
-        print(np.shape(final_data[i, 1]), np.shape(final_data[i, 2]), np.shape(final_data[i, 0]))
-        f = interpolate.interp2d([200, 450, 700], [0, 1, 1.5],
+        # print(np.shape(final_data[i, 1]), np.shape(final_data[i, 2]), np.shape(final_data[i, 0]))
+        fff = interpolate.interp2d([200, 450, 700], [0, 1, 1.5],
                                  np.reshape(final_data[i, 0], (3, 3)), kind='linear')
         # far = np.arange(200, 800, 10)
         # fw = np.arange(0, 2, 0.05)
@@ -655,7 +769,7 @@ def test_parse_csv():
         # xx = np.reshape(final_data[i, 1], (3, 3))
         # yy =  np.reshape(final_data[i, 2], (3, 3))
         # interp = f([200, 450, 700], [0, 1, 1.5])
-        interp = f(far, fw)
+        interp = fff(far, fw)
         # print(np.shape(interp))
         # print(np.shape(xx_new))
         # print(np.shape(yy_new))

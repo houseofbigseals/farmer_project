@@ -1,20 +1,23 @@
-import time
 import asyncio
 import json
-import csv
-from uuid import uuid4
 from contextlib import suppress
-from async_modules.schedule import Schedule
+
 from network_modules.command import Command, Ticket
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from network_modules.raw_client import command_request_ticket\
     , command_set_ticket_result
-# from async_modules.units import SystemUnit, LedUnit,\
-#     CO2SensorUnit, WeightUnit, TempSensorUnit, GpioUnit, K30Unit, list_of_available_units
 import async_modules.units as units
 import logging
 import sys
 import localconfig
+import importlib
+
+# import correct type of schedule
+config_p = "worker.conf"
+conf = localconfig.config
+conf.read(config_p)
+Schedule = importlib.import_module(conf.get('schedule', 'type'))
+
 logger = None
 
 
@@ -26,7 +29,7 @@ class Worker:
     """
     def __init__(
             self,
-            config_path: str = "worker.conf"
+            config_path: str = config_p
     ):
         # do some init things
         # init units, test  connection with server and some other things

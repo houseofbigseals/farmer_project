@@ -169,7 +169,7 @@ async def test_tunnel():
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
     com = Command(
         cunit="system_unit",
-        cfunc="stop",
+        cfunc="pause",
         cargs=None,
         ctype="single"
     )

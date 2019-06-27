@@ -366,10 +366,10 @@ class GpioUnit(Unit):
         # 9 - valve1
         # 11 - pump2
         # 17 - valve2
-        # 27 - pump3
+        # 27 - drain_pump
         # 13 - valve3
         # 19 - 12VDC coolers
-        # 26 - none for now
+        # 26 - drain_pump
 
         # map of pins connected to channels and their states
         self.pins = {
@@ -406,8 +406,6 @@ class GpioUnit(Unit):
                 "stop_draining",
                 "set_pin"
             ]
-            # # clear all before
-            # self.gpio.deleter()
             # set pins as output
             for i in self.pins.keys():
                 self.gpio.set_mode(i, "output")
@@ -416,11 +414,7 @@ class GpioUnit(Unit):
 
     async def get_info(self, tick: Ticket = None):
         self.logger.info("Gpio get_info")
-        res = "Version : " + self.gpio.info()
-        res += "\nState of outputs: "
-        for i in self.pins.keys():
-            res += "\n Gpio pin {} is {}".format(i, self.pins[i])
-        self.logger.debug(res)
+        res = self.pins
         if tick:
             tick.result = res
         else:
@@ -744,7 +738,7 @@ class K30Unit(Unit):
                 )
                 return new_single_coro
         else:
-            raise ValueError("TempSensorUnitError: No such command - {}".format(command.func))
+            raise ValueError("K30UnitError: No such command - {}".format(command.func))
 
 
 class TempSensorUnit(Unit):
@@ -754,8 +748,8 @@ class TempSensorUnit(Unit):
 
     def __init__(self, pin: int = 14, dhttype: int = 22):
         super(TempSensorUnit, self).__init__(name="temp_sensor_unit")
-        self.logger = logging.getLogger("Worker.Units.Gpio")
-        self.logger.info("Gpio init")
+        self.logger = logging.getLogger("Worker.Units.TempSensor")
+        self.logger.info("TempSensor init")
         # platform-dependent unit, so we need to check
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
