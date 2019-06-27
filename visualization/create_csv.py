@@ -192,7 +192,7 @@ def test_parse_csv():
 
                     # recalculate far and rw to its real meanings
                     cool_far, cool_rw = make_cool_far_rw(far[stop_pointer - 10], fr_fw[stop_pointer - 10])
-                    # calculate mean weight by cyrrent period of measure
+                    # calculate mean weight by current period of measure
                     current_mean_weight = np.mean(
                         weight[start_pointer: stop_pointer] - mass_of_pipe
                     )
@@ -234,8 +234,8 @@ def test_parse_csv():
                               current_f, current_q, current_fe, incycle_counter, cdata]],
                             axis=0
                         )
-
                         incycle_counter = 0
+
                     else:
                         final_data = np.append(
                             final_data,
