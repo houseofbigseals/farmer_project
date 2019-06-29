@@ -1,11 +1,8 @@
 import pandas as pd
 import numpy as np
 import pylab as pl
-import mpl_toolkits.mplot3d.axes3d as p3
-from matplotlib import cm
-from scipy import interpolate
 from scipy.optimize import curve_fit
-from visualization.adjustment import red_far_by_curr, white_far_by_curr
+
 
 def main():
 
