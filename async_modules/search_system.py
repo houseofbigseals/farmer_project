@@ -19,7 +19,7 @@ class SearchSystem:
     """
     def __init__(
             self,
-            worker: Any = None, # TODO is this correct way or not
+            worker: Any = None,  # TODO is this correct way or not
             config_path: str = "worker.config"
     ):
         self.loop = asyncio.get_event_loop()
@@ -27,41 +27,22 @@ class SearchSystem:
         config = localconfig.config
         config.read(config_path)
         self.worker = worker
-        self.calibration_time = config.get('schedule', 'calibration_time')
-        self.search_params_file = config.get('schedule', 'schedule_point_file')
-        self.start_red = config.get('schedule', 'start_red')
-        self.start_white = config.get('schedule', 'start_white')
-        self.datafile = config.get('schedule', 'datafile')
-        self.measure_period = config.get('schedule', 'measure_time')
+        self.calibration_time = config.get('search_system', 'calibration_time')
+        self.search_params_file = config.get('search_system', 'search_point_file')
+        self.start_red = config.get('search_system', 'start_red')
+        self.start_white = config.get('search_system', 'start_white')
+        self.datafile = config.get('search_system', 'datafile')
+        self.measure_period = config.get('search_system', 'measure_time')
         # default search parameters
-        self.current_schedule_point = 0
-        self.cycle = 0
-        self.current_comment = "usual"
-        self.fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                      "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
-        self.schedule = [
-            [10, 258, 10],  # 700, 0
-            [10, 69, 10],  # 200, 0
-            [10, 163, 10],  # 450, 0
-            [166, 133, 10],  # 700, 1
-            [46, 38, 10],  # 200, 1
-            [106, 85, 10],  # 450, 1
-            [199, 106, 10],  # 700, 1.5
-            [56, 30, 10],  # 200, 1.5
-            [128, 68, 10],  # 450, 1.5
-            [166, 133, 10],  # 700, 1  ------------------- repeating
-            [106, 85, 10],  # 450, 1
-            [46, 38, 10],  # 200, 1
-            [128, 68, 10],  # 450, 1.5
-            [199, 106, 10],  # 700, 1.5
-            [56, 30, 10],  # 200, 1.5
-            [10, 258, 10],  # 700, 0
-            [10, 163, 10],  # 450, 0
-            [10, 69, 10]  # 200, 0
-        ]
+        # self.current_schedule_point = 0
+        # self.cycle = 0
+        # self.current_comment = "usual"
+        # self.fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+        #                    "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
+
         # array to put here all measures through one point
         # of search array
-        self.current_search_array = []
+        # self.current_search_array = []
 
         # find schedule_point_config and check it
         try:
@@ -69,7 +50,7 @@ class SearchSystem:
                 raw_data = f.read()
                 data = raw_data.split(":")
                 self.cycle = int(data[0])
-                self.current_schedule_point = int(data[1])
+                self.current_search_point = int(data[1])
                 logger.info("Config file found, data loaded")
         except Exception as e:
             logger.error("Error while reading config: {}".format(e))

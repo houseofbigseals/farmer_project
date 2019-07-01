@@ -19,6 +19,41 @@ class SearchPoint(object):
         self.name = name
 
 
+class TableSearch(object):
+    """
+    This object contains table with fixed number of points
+    to search with with predetermined coordinates
+    After search the worker must wait delay_after_search time
+    """
+    def __init__(
+            self,
+            delay_after_search: int
+    ):
+        self.schedule = [
+            [10, 258, 10],  # 700, 0
+            [10, 69, 10],  # 200, 0
+            [10, 163, 10],  # 450, 0
+            [166, 133, 10],  # 700, 1
+            [46, 38, 10],  # 200, 1
+            [106, 85, 10],  # 450, 1
+            [199, 106, 10],  # 700, 1.5
+            [56, 30, 10],  # 200, 1.5
+            [128, 68, 10],  # 450, 1.5
+            [166, 133, 10],  # 700, 1  ------------------- repeating
+            [106, 85, 10],  # 450, 1
+            [46, 38, 10],  # 200, 1
+            [128, 68, 10],  # 450, 1.5
+            [199, 106, 10],  # 700, 1.5
+            [56, 30, 10],  # 200, 1.5
+            [10, 258, 10],  # 700, 0
+            [10, 163, 10],  # 450, 0
+            [10, 69, 10]  # 200, 0
+        ]
+
+        # TODO: finish it correctly
+
+
+
 class StupidGradientMethod(object):
     """
     This object contains abstraction of dynamical search

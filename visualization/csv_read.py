@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pylab as pl
-from search.adjustment import red_far_by_curr, white_far_by_curr
+from math_tools.adjustment import red_far_by_curr, white_far_by_curr
 
 def main():
 

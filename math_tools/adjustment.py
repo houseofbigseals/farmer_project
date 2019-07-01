@@ -60,3 +60,23 @@ def currents_from_newcoords(A: float, B: float):
         Iw = (A - z - b2)/a2
 
         return Ir, Iw
+
+
+# functions to calculate different Q for moon from raw -dCO2/dt
+def Q(dC, E, weight):
+    # convert from ppmv/sec to mg CO2/(m3*sec)
+    dCC = 1.8 * dC
+    # then calculate Q and divide it to mean weight
+    return ((0.28 * dCC + 0.72 * (dCC / E)) / weight)
+
+def FE(dC, E, weight):
+    # convert from ppmv/sec to mg CO2/(m3*sec)
+    dCC = 1.8 * dC
+    # then calculate Q and divide it to mean weight
+    return ((dCC / E) / weight)
+
+def F(dC, weight):
+    # convert from ppmv/sec to mg CO2/(m3*sec)
+    dCC = 1.8 * dC
+    # then calculate Q and divide it to mean weight
+    return (dCC / weight)
