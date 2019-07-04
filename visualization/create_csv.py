@@ -6,6 +6,7 @@ from matplotlib import cm
 from scipy import interpolate
 from scipy.optimize import curve_fit
 from visualization.csv_read import red_far_by_curr, white_far_by_curr
+from math_tools.math_methods import Q, F, FE
 
 
 mass_of_pipe = 370  # in grams
@@ -74,11 +75,11 @@ def test_parse_csv():
 
     # creating new array of parts of data in which no airflow
 
-    new_data = np.array([
-        [np.array([0, 1]), 1, 2, 3, 4, 5, [0, 0]],
-        [np.array([0, 1]), 0, 0, 0, 0, 0, [0, 0]]
-        ]
-    )
+    # new_data = np.array([
+    #     [np.array([0, 1]), 1, 2, 3, 4, 5, [0, 0]],
+    #     [np.array([0, 1]), 0, 0, 0, 0, 0, [0, 0]]
+    #     ]
+    # )
     # final data [far, rw, dco2/dt, Q, F/E, num_in_cycle, cycle]
     final_data = np.array([
         [1, 2, 3, 4, 5, 6, 7],
@@ -198,28 +199,28 @@ def test_parse_csv():
                     )
                     print("current mean weight {}".format(current_mean_weight))
 
-                    # functions to calculate different Q for moon from raw dCO2/dt
-                    def q(dC, E, weight):
-                        # convert from ppmv to mg CO2/ m3
-                        dCC = 1.8 * dC
-                        # then calculate Q and divide it to mean weight
-                        return ((0.28 * dCC + 0.72 * (dCC/E))/weight)*1000
+                    # # functions to calculate different Q for moon from raw dCO2/dt
+                    # def q(dC, E, weight):
+                    #     # convert from ppmv to mg CO2/ m3
+                    #     dCC = 1.8 * dC
+                    #     # then calculate Q and divide it to mean weight
+                    #     return ((0.28 * dCC + 0.72 * (dCC/E))/weight)*1000
+                    #
+                    # def fe(dC, E, weight):
+                    #     # convert from ppmv to mg CO2/ m3
+                    #     dCC = 1.8 * dC
+                    #     # then calculate Q and divide it to mean weight
+                    #     return ((dCC/E)/weight)*1000
+                    #
+                    # def f(dC, weight):
+                    #     # convert from ppmv to mg CO2/ m3
+                    #     dCC = 1.8 * dC
+                    #     # then calculate Q and divide it to mean weight
+                    #     return (dCC/weight)*1000
 
-                    def fe(dC, E, weight):
-                        # convert from ppmv to mg CO2/ m3
-                        dCC = 1.8 * dC
-                        # then calculate Q and divide it to mean weight
-                        return ((dCC/E)/weight)*1000
-
-                    def f(dC, weight):
-                        # convert from ppmv to mg CO2/ m3
-                        dCC = 1.8 * dC
-                        # then calculate Q and divide it to mean weight
-                        return (dCC/weight)*1000
-
-                    current_q = q(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
-                    current_fe = fe(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
-                    current_f = f(Ffunc(x0, a3, b3), current_mean_weight)
+                    current_q = Q(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
+                    current_fe = FE(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
+                    current_f = F(Ffunc(x0, a3, b3), current_mean_weight)
                     print("Q = {}, F = {}, F/E = {}".format(current_q, current_f, current_fe))
 
                     if cur_cycle > old_cycle:
@@ -259,12 +260,12 @@ def test_parse_csv():
 
 
 
-                    new_data = np.append(
-                        new_data,
-                        [[co2_part, far[stop_pointer - 10], fr_fw[stop_pointer - 10],
-                          Ffunc(x0, a3, b3), cdata, info_str, [a3, b3]]],
-                        axis=0
-                    )
+                    # new_data = np.append(
+                    #     new_data,
+                    #     [[co2_part, far[stop_pointer - 10], fr_fw[stop_pointer - 10],
+                    #       Ffunc(x0, a3, b3), cdata, info_str, [a3, b3]]],
+                    #     axis=0
+                    # )
 
 
     print(debugs)
@@ -277,12 +278,15 @@ def test_parse_csv():
     print(np.shape(final_data))
     print(np.shape(final_data[0]))
     print(final_data)
-    datafile = "new_data.csv"
+    datafile = "recalculated_new_data.csv"
     # now print it to new csv file
-    new_pd = pd.DataFrame(final_data)
+    old_pd = pd.DataFrame(final_data)
     # new_pd.columns = ['FAR', 'red/white', 'F', 'Q', 'F/E', 'point_number', 'cycle_number']
-    new_pd.columns = ['x1', 'x2', 'y1', 'y2', 'y3', 'point_number', 'cycle_number']
-    new_pd.to_csv("new_data.csv", index=False)
+    old_pd.columns = ['x1', 'x2', 'y1', 'y2', 'y3', 'point_number', 'cycle_number']
+    # new_pd = old_pd.loc[:, ['x1', 'x2','y2', 'point_number', 'cycle_number']]
+    new_pd = old_pd
+    # new_pd.columns = ['x1', 'x2','y2', 'point_number', 'cycle_number']
+    new_pd.to_csv(datafile, index=False, float_format='%g')
 
 
     # for i in range(0, len(new_data)):

@@ -4,6 +4,12 @@ import asyncio
 from typing import Any
 import localconfig
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
+from math_tools.search_methods import StupidGradientMethod
+from math_tools.math_methods import Q
+from async_modules.data_handler import DataHandler
+from async_modules.worker import Worker
+from math_tools.adjustment import currents_from_newcoords
+from math_tools.math_methods import differentiate_one_point
 import csv
 import pandas as pd
 import numpy as np
@@ -19,7 +25,7 @@ class SearchSystem:
     """
     def __init__(
             self,
-            worker: Any = None,  # TODO is this correct way or not
+            worker: Worker = None,  # TODO is this correct way or not
             config_path: str = "worker.config"
     ):
         self.loop = asyncio.get_event_loop()
@@ -29,39 +35,86 @@ class SearchSystem:
         self.worker = worker
         self.calibration_time = config.get('search_system', 'calibration_time')
         self.search_params_file = config.get('search_system', 'search_point_file')
+        # start red and white for time where no search
         self.start_red = config.get('search_system', 'start_red')
         self.start_white = config.get('search_system', 'start_white')
         self.datafile = config.get('search_system', 'datafile')
+
         self.measure_period = config.get('search_system', 'measure_time')
+        self.pipe_mass = config.get('search_system', 'mass_of_pipe')
+        # add fields for our data tables
+        self.data_fields = [
+            "date",
+            "time",
+            "Ired",
+            "Iwhite",
+            "temp",
+            "humid",
+            "CO2",
+            "weight",
+            "airflow",
+            "K30CO2",
+            "step",
+            "point",
+            "label"
+        ]
+        # add data_handler
+        self.data_handler = DataHandler(
+            worker=self.worker._id,
+            session=self.worker._session_id,
+            fields=self.data_fields
+        )
+
         # default search parameters
-        # self.current_schedule_point = 0
-        # self.cycle = 0
-        # self.current_comment = "usual"
-        # self.fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-        #                    "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
+        skwargs = dict(config.items("StupidGradientMethod"))
+        self.search_method = StupidGradientMethod(**skwargs)
+        self.current_search_step = 0
+        self.current_search_point = 0
 
-        # array to put here all measures through one point
-        # of search array
-        # self.current_search_array = []
-
-        # find schedule_point_config and check it
+        # find search_point_config and check it
         try:
             with open(self.search_params_file) as f:
+                # we have to read one number from this file
                 raw_data = f.read()
-                data = raw_data.split(":")
-                self.cycle = int(data[0])
-                self.current_search_point = int(data[1])
-                logger.info("Config file found, data loaded")
+                data = int(raw_data)
+                self.current_search_step = data
+                logger.info("Search_point_config file found, current_search_step loaded")
         except Exception as e:
-            logger.error("Error while reading config: {}".format(e))
-            logger.error("Creating new default config")
+            logger.error("Error while reading search_point_config: {}".format(e))
+            logger.error("Creating new default search_point_config")
             with open(self.search_params_file, "w") as f:
-                f.write("{}:{}".format(self.cycle, self.current_schedule_point))
+                f.write("{}".format(self.current_search_step))
 
-        self.search_done = False
-        self.search_lock = asyncio.Lock()
+        # find search table and check it
+        self.search_method_log = config.get('search_system', 'search_logfile')
+        self.search_log_fields = [
+            'date',
+            'time',
+            'x1',
+            'x2',
+            'Q',
+            'step',
+            'label'
+        ]
+        try:
+            with open(self.search_method_log) as f:
+                pass  # TODO change to isfile construction
+                logger.info("search_method_log file found")
+        except Exception as e:
+            logger.error("Error while reading search_method_log: {}".format(e))
+            logger.error("Creating new default search_method_log")
+            with open(self.search_method_log, "w") as f:
+                # f.write("{}".format(self.current_search_step))
+                writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
+                writer.writeheader()
+
+        # add table with search points of current step
+        self.current_search_table = self.search_method.search_table
+        self.search_step_done = False
+        # self.search_lock = asyncio.Lock()
         self.datafile_lock = asyncio.Lock()
         self.calibration_lock = asyncio.Lock()
+        self.current_comment = "loading"
 
         # add units from worker
         self.system_unit = getattr(worker, 'system_unit')
@@ -78,13 +131,10 @@ class SearchSystem:
         # await self._gpio_unit.start_draining()
         await self.gpio_unit.stop_draining()
         await self.led_unit.set_current(red=self.start_red, white=self.start_white)
-        # we have to start air pump 3 before all
-        # pump3_pin = self._gpio_unit.measure_pins
-        # for i in pump3_pin:
-        #     await self._gpio_unit.set_pin(pin=i, state=False)
-
         # do async init for some units
         await self.co2_sensor_unit.init()  # for time
+        # we really dont need measures until search started
+        await self.worker.measure_task.stop()
 
     async def stop(self):
         await self.gpio_unit.stop()
@@ -108,145 +158,89 @@ class SearchSystem:
         res += await self.gpio_unit.stop_calibration()
         return res
 
-    async def check_schedule(self):
-
-        logger.debug("check shedule")
-        t = time.localtime()
-        if t.tm_min == 1 and t.tm_hour == 3:
-            # it is time to start search by search table
-            # so we have to de
-            pass
-            search_coro = SingleCoro(
-                self.search(),
-                "search_task"
-            )
-            await search_coro.start()
-
-        else:
+    async def update_state(self):
+        logger.debug("update_state")
+        if not self.calibration_lock.locked():
+            # if it locked, it means that there is calibration now and
+            # we do not need to do anything now
             t = time.localtime()
-            if t.tm_min % 20 == 0:
-                ventilation_and_calibration_coro = SingleCoro(
-                    self.ventilation_and_calibration,
-                    "ventilation_and_calibration_task"
+            if t.tm_min % self.measure_period == 0:
+                # here we need to put result of finished previous
+                # measuring to appropriate point in self.current_search_table
+
+                # firstly lets get current measured interval
+                point_data = self.data_handler.get_one_point(
+                    self.current_search_step,
+                    self.current_search_point
                 )
-                await ventilation_and_calibration_coro.start()
+                # then lets calculate Q on this data
+                f, q, fe = differentiate_one_point(data=point_data,
+                                                   mass_of_pipe=self.pipe_mass,
+                                                   cut_number=100,
+                                                   points_low_limit=100
+                                                   )
+                # then put results to current_search_table
+                self.current_search_table[self.current_search_point].result = q
 
+                # then check if we do all current table
+                if self.current_search_point + 1 >= len(self.current_search_table):
+                    # it means that we have collected all data for current step
+                    # and we can start new search step
 
-    async def search(self):
-        logger.debug("search")
-        period = self.measure_period  # in mins
-        # we need to go through all points from experimental schedule
-        sched = self.schedule
-        #await self.search_lock.acquire()
-        while self.current_schedule_point < len(sched):
-            await asyncio.sleep(1)
-            if not self.calibration_lock.locked():
-                # TODO: find here the cause of mistake in numbering of data in csv file
-                # mb it >=  ??? mb change to >
-                if self.current_schedule_point > len(sched):
-                    self.current_schedule_point = 0
+                    # we have to write all old search table to special csv
+                    # for simplification of the search visualization process later
+                    for p in self.current_search_table:
+                        rowdict = {
+                            'date': time.strftime("%x", time.localtime()),
+                            'time': time.strftime("%X", time.localtime()),
+                            'x1': p.x1,
+                            'x2': p.x2,
+                            'Q': p.result,
+                            'step': self.current_search_step,
+                            'label': p.name
+                        }
+                        with open(self.search_method_log, "a") as f:
+                            # f.write("{}".format(self.current_search_step))
+                            writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
+                            writer.writerow(rowdict)
 
-                t = time.localtime()
-                if t.tm_min % period == 0:
-                    remake_coro = SingleCoro(
-                        self.remake,
-                        "recalibration_task",
-                        red=sched[self.current_schedule_point][0],
-                        white=sched[self.current_schedule_point][1],
-                        period=sched[self.current_schedule_point][2]
-                    )
-                    await remake_coro.start()
-                    self.current_schedule_point += 1
-                    # put here data to current search table
-                    logger.info("Writing data to config")
-                    with open("current.config", "w") as f:
-                        f.write("{}:{}".format(self.cycle, self.current_schedule_point))
-        # at the end of search
-        self.current_schedule_point = 0
-        self.search_done = True
-        self.cycle += 1
-        # now we have to find and set optimal currents here
-        # find
-        opt_red, opt_white = await self.find_optimal_currents()
-        # set
-        await self.led_unit.set_current(red=opt_red, white=opt_white)
-        logger.info("New optimal red and white currents is {} and {}".format(opt_red, opt_white))
+                    # lets do search step
+                    self.search_method.do_search_step()
+                    # then lets calculate new search table
+                    self.current_search_table = self.search_method.search_table
+                    # then lets update counters
+                    self.current_search_point = 0
+                    self.current_search_step += 1
+                    # then write number of new step to file
+                    logger.info("Writing data to search steps config")
+                    with open(self.search_params_file, "w") as f:
+                        f.write("{}".format(self.current_search_step))
 
+                else:
+                    self.current_search_point += 1
 
-    async def find_optimal_currents(self):
-        logger.info("find_optimal_currents")
-        # at first we need to find current search data rows from data.csv
-        # or database
-        opt_red= None
-        opt_white = None
-        current_cycle = self.cycle -1
-        # load all data
-        # yeah, its dumb
-        pd_data = pd.read_csv("data.csv", header=None, names=self.fieldnames)
-        tmin = 0
-        tmax = len(pd_data['cycle'])
-        dt = 1
-        t_start = tmin
-        t_finish = tmax
-        # ir = np.array(pd_data['Ired'][tmin:tmax:dt])
-        # iw = np.array(pd_data['Iwhite'][tmin:tmax:dt])
-        # co2 = np.array(pd_data['CO2'][tmin:tmax:dt])
-        # weight = np.array(pd_data['weight'][tmin:tmax:dt])
-        cycles = np.array(pd_data['cycle'][tmin:tmax:dt])
-        # parse data in cycle to find t_start and t_finish of current cycle rows
-        for t in range(tmin, tmax, dt):
-            if cycles[t] == current_cycle:
-                # we have found t_start
-                t_start = t
-                break
-        for t in range(tmin, tmax, dt):
-            if cycles[t] == current_cycle + 1:
-                # we have found t_finish
-                t_finish = t
-                break
+                # its time to do measures for next search point from table
+                # at first find new far and r/w coordinates
+                new_far = self.current_search_table[self.current_search_point].x1
+                new_rw = self.current_search_table[self.current_search_point].x2
+                # then lets convert them to Ired and Iwhite
+                new_red, new_white = currents_from_newcoords(new_far, new_rw)
+                # then create coro for measure new search point
+                reconfiguration_coro = SingleCoro(
+                    self.reconfiguration,
+                    "reconfiguration_task",
+                    red=new_red,
+                    white=new_white,
+                    period=10  # TODO: fix that thing somehow but with beauty
+                )
+                await reconfiguration_coro.start()
 
-        co2 = np.array(pd_data['CO2'][t_start:t_finish:dt])
-        weight = np.array(pd_data['weight'][t_start:t_finish:dt])
-        # create table for mean weight for each schedule point
-        mean_weight = np.zeros(len(self.schedule))
-        diffs = np.zeros(len(self.schedule))
-        reds = np.zeros(len(self.schedule))
-        whites = np.zeros(len(self.schedule))
-        dates = []
-        times = []
-        # TODO: resume from here
-
-
-
-        return opt_red, opt_white
-
-    async def simple_calibration(self):
-        await self.calibration_lock.acquire()
-        logger.info("Simple calibration started")
-        res = ""
-        await self.worker.measure_task.stop()
-        res += await self.gpio_unit.start_calibration()
-        res += await self.co2_sensor_unit.do_calibration()
-        await asyncio.sleep(self.calibration_time)
-        res += await self.gpio_unit.stop_calibration()
-        await self.worker.measure_task.start()
-        self.calibration_lock.release()
-        return res
-
-    async def ventilation_and_calibration(self):
-        await self.calibration_lock.acquire()
-        logger.info("Simple calibration started")
-        res = ""
-        await self.worker.measure_task.stop()
-        res += await self.gpio_unit.start_calibration()
-        res += await self.co2_sensor_unit.do_calibration()
-        await asyncio.sleep(self.calibration_time)
-        res += await self.gpio_unit.stop_calibration()
-        await self.worker.measure_task.start()
-        self.calibration_lock.release()
-        return res
-
-    async def remake(self, red: int, white: int, period: int):
+    async def reconfiguration(
+            self,
+            red: int,
+            white: int,
+            period: int
+    ):
         await self.calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         self.current_comment = "ventilation"
@@ -273,7 +267,6 @@ class SearchSystem:
         res += await self.gpio_unit.stop_draining()
         logger.debug("Result of calibration coro : " + res)
         self.calibration_lock.release()
-        self.current_comment = "search"
         return res
 
     async def measure(self):
@@ -299,9 +292,9 @@ class SearchSystem:
             air = 1
         else:
             air = 0
-        cyc = self.cycle
-        point = self.current_schedule_point
-        fieldnames = self.fieldnames
+        step = self.current_search_step
+        point = self.current_search_point
+        fieldnames = self.data_fields
         data = {
             "date": date_,
             "time": time_,
@@ -312,10 +305,10 @@ class SearchSystem:
             "CO2": co2,
             "weight": weight,
             "airflow": air,
-            "cycle": cyc,
-            "point": point,
             "K30CO2": k30_co2,
-            "comment": self.current_comment
+            "step": step,
+            "point": point,
+            "label": self.current_comment
         }
         async with self.datafile_lock:
             with open(self.datafile, "a", newline='') as out_file:

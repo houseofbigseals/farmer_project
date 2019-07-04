@@ -12,9 +12,9 @@ class DataHandler(object):
 
     def __init__(
             self,
-            worker: int,
-            session: int,
-            fields: list
+            worker: int,  # really its id
+            session: int,  # really its id
+            fields: list  # list of fields in data table
     ):
         self.session = session
         self.worker = worker

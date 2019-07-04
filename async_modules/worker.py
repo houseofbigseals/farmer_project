@@ -1,6 +1,5 @@
 import asyncio
 import json
-from contextlib import suppress
 
 from network_modules.command import Command, Ticket
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
@@ -10,13 +9,7 @@ import async_modules.units as units
 import logging
 import sys
 import localconfig
-import importlib
-
-# import correct type of schedule
-config_p = "worker.conf"
-conf = localconfig.config
-conf.read(config_p)
-Schedule = importlib.import_module(conf.get('schedule', 'type'))
+from async_modules.search_system import SearchSystem
 
 logger = None
 
@@ -29,7 +22,7 @@ class Worker:
     """
     def __init__(
             self,
-            config_path: str = config_p
+            config_path: str = "worker.conf"
     ):
         # do some init things
         # init units, test  connection with server and some other things
@@ -89,6 +82,9 @@ class Worker:
         logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         logger.info("New epoch started!")
         logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+        # here is dynamical loading loading units
+        # its not simple to understand that painful thing
         for u in units_units:
             if u[0] in config and config.get(u[0], 'use') is True:
                 self._unitnames.append(u[0])
@@ -110,17 +106,20 @@ class Worker:
         self.request_task = None
         self.send_results_task = None
 
-        # add schedule
-        self._schedule = Schedule(worker=self)
+        # add SearchSystem
+        self._search_system = SearchSystem(
+            worker=self,
+            config_path=config_path
+        )
 
     async def start(self):
         logger.debug("start worker coroutine")
         # all unit things must be handled by schedule object
-        await self._schedule.start()
+        await self._search_system.start()
         # then create periodic tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
         self.schedule_task = PeriodicCoro(
-            self.check_schedule,
+            self.check_search_system,
             self.schedule_period,
             name="schedule_task"
         )
@@ -152,7 +151,7 @@ class Worker:
     async def stop(self):
         # stop all units and event loop
         # shedule object must handle it
-        await self._schedule.stop()
+        await self._search_system.stop()
         # then stop tasks
         await self.schedule_task.stop()
         await self.request_task.stop()
@@ -185,19 +184,17 @@ class Worker:
     async def start_ventilation(self):
         # start ventilation forever
         logger.info("MANUAL COMMAND: start ventilation")
-        return await self._schedule.start_ventilation()
+        return await self._search_system.start_ventilation()
 
     async def stop_ventilation(self):
         # stop ventilation
         logger.info("MANUAL COMMAND: stop ventilation")
-        return await self._schedule.stop_ventilation()
+        return await self._search_system.stop_ventilation()
 
     async def do_calibration(self):
         # do calibration once
         logger.info("MANUAL COMMAND: do calibration once")
-        return await self._schedule.do_calibration()
-
-    # then useful commands
+        return await self._search_system.do_calibration()
 
     async def _run_main_loop(self):
         # TODO: mb here must be nothing, and we should put all things to another PeriodicCoro?
@@ -319,20 +316,20 @@ class Worker:
         # TODO: do real archiving
         pass
 
-    async def check_schedule(self):
+    async def check_search_system(self):
         """
         do read schedule
         and then put tasks to self.tickets[] (with lock)
         hehe, nope
         :return:
         """
-        await self._schedule.check_schedule()
+        await self._search_system.update_state()
 
     async def measure(self):
         """
         Get info from all sensors and write it to file
         """
-        await self._schedule.measure()
+        await self._search_system.measure()
 
     async def check_server(self):
         """

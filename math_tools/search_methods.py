@@ -53,7 +53,6 @@ class TableSearch(object):
         # TODO: finish it correctly
 
 
-
 class StupidGradientMethod(object):
     """
     This object contains abstraction of dynamical search

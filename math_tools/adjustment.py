@@ -10,6 +10,10 @@ experimental device, be careful
 
 """
 
+volume = 80  # fitotrone volume in litres
+raw_to_dry = 0.08  # conversion factor from raw plants weight to dry weight
+ppmv_to_mgCO2 = 1.8  # conversion factor from ppmv CO2 to mgCO2/m3
+
 
 def red_far_by_curr(Ir:float):
     # this constants are determined from experiment
@@ -23,6 +27,7 @@ def white_far_by_curr(Iw:float):
     a2 = 2.64379709
     b2 = -0.53008089
     return a2*Iw + b2
+
 
 def currents_from_newcoords(A: float, B: float):
     """
@@ -63,20 +68,44 @@ def currents_from_newcoords(A: float, B: float):
 
 
 # functions to calculate different Q for moon from raw -dCO2/dt
+
 def Q(dC, E, weight):
+    global volume
+    global raw_to_dry
+    global ppmv_to_mgCO2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = 1.8 * dC
+    dCC = ppmv_to_mgCO2 * dC
+    # then convert from 1m3=1000litres to our volume
+    dCC = (volume/1000) * dCC
+    # convert weight from raw to dry
+    dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
-    return ((0.28 * dCC + 0.72 * (dCC / E)) / weight)
+    return ((0.28/1.9) * dCC + (0.72/0.0038) * (dCC / E)) / dry_weight
+
 
 def FE(dC, E, weight):
+    global volume
+    global raw_to_dry
+    global ppmv_to_mgCO2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = 1.8 * dC
+    dCC = ppmv_to_mgCO2 * dC
+    # then convert from 1m3 to our volume
+    dCC = (volume/1000) * dCC
+    # convert weight from raw to dry
+    dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
-    return ((dCC / E) / weight)
+    return (dCC / E) / (dry_weight * 0.0038)
+
 
 def F(dC, weight):
+    global volume
+    global raw_to_dry
+    global ppmv_to_mgCO2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = 1.8 * dC
+    dCC = ppmv_to_mgCO2 * dC
+    # then convert from 1m3 to our volume
+    dCC = (volume/1000) * dCC
+    # convert weight from raw to dry
+    dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
-    return (dCC / weight)
+    return dCC / dry_weight
