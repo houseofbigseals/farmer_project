@@ -7,4 +7,3 @@ data
 *.csv
 *.config
 __pycache__
-*.txt
