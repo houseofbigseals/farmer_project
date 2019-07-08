@@ -174,12 +174,12 @@ async def test_tunnel():
         ctype="single"
     )
 
-    # com = Command(
-    #     cunit="led_unit",
-    #     cfunc="set_current",
-    #     cargs={"red": 10, "white": 200},
-    #     ctype="single"
-    # )
+    com = Command(
+        cunit="led_unit",
+        cfunc="set_current",
+        cargs={"red": 10, "white": 200},
+        ctype="single"
+    )
     # com = Command(
     #     cunit="gpio_unit",PP
     #     cfunc="start_coolers",

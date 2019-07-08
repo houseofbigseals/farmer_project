@@ -187,8 +187,8 @@ class SearchSystem:
                     self.just_started = False
                     # its time to do measures for first search point from table
                     # at first find new far and r/w coordinates
-                    new_far = int(self.current_search_table[self.current_search_point].x1)
-                    new_rw = int(self.current_search_table[self.current_search_point].x2)
+                    new_far = self.current_search_table[self.current_search_point].x1
+                    new_rw = self.current_search_table[self.current_search_point].x2
                     # then lets convert them to Ired and Iwhite
                     new_red, new_white = currents_from_newcoords(new_far, new_rw)
                     # then create coro for measure new search point
@@ -257,8 +257,8 @@ class SearchSystem:
 
                     # its time to do measures for next search point from table
                     # at first find new far and r/w coordinates
-                    new_far = int(self.current_search_table[self.current_search_point].x1)
-                    new_rw = int(self.current_search_table[self.current_search_point].x2)
+                    new_far = self.current_search_table[self.current_search_point].x1
+                    new_rw = self.current_search_table[self.current_search_point].x2
                     # then lets convert them to Ired and Iwhite
                     new_red, new_white = currents_from_newcoords(new_far, new_rw)
                     # then create coro for measure new search point
@@ -273,9 +273,9 @@ class SearchSystem:
 
     async def reconfiguration(
             self,
-            red: int,
-            white: int,
-            period: int
+            red,
+            white,
+            period
     ):
         await self.calibration_lock.acquire()
         logger.info("Airflow and calibration started")
@@ -283,7 +283,7 @@ class SearchSystem:
         res = ""
         logger.info(await self.gpio_unit.start_draining())
         logger.info(await self.led_unit.set_current(red=int(red), white=int(white)))
-        logger.info("New red and white currents is {} and {}".format(red, white))
+        logger.info("New red and white currents is {} and {}".format(int(red), int(white)))
         logger.info(await self.gpio_unit.start_ventilation())
         await self.worker.measure_task.stop()
         logger.info("self.gpio_unit.start_calibration")
