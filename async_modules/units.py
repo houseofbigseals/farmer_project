@@ -134,8 +134,8 @@ class LedUnit(Unit):
         res = ""
         res += self.uart_wrapper.STOP()[1]
         res += self.uart_wrapper.START_CONFIGURE()[1]
-        res += self.uart_wrapper.SET_CURRENT(0, red)[1]
-        res += self.uart_wrapper.SET_CURRENT(1, white)[1]
+        res += self.uart_wrapper.SET_CURRENT(0, self._red)[1]
+        res += self.uart_wrapper.SET_CURRENT(1, self._white)[1]
         res += self.uart_wrapper.FINISH_CONFIGURE_WITH_SAVING()[1]
         res += self.uart_wrapper.START()[1]
         self.logger.debug(res)
