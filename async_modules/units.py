@@ -873,6 +873,15 @@ class SystemUnit(Unit):
         else:
             return result
 
+    async def do_reconfiguration(self, tick: Ticket = None):
+        self.logger.info("manual do_reconfiguration")
+        await self.worker.do_reconfiguration()
+        result = "worker do_reconfiguration"
+        if tick:
+            tick.result = result
+        else:
+            return result
+
     async def continue_(self, tick: Ticket = None):
         self.logger.info("manual continue")
         await self.worker.continue_()
@@ -981,6 +990,14 @@ class SystemUnit(Unit):
                 new_single_coro = SingleCoro(
                     self.do_measure,
                     "SystemUnit.do_measure_task",
+                    tick
+                )
+                return new_single_coro
+
+            elif command.func == "do_reconfiguration":
+                new_single_coro = SingleCoro(
+                    self.do_reconfiguration,
+                    "SystemUnit.do_reconfiguration",
                     tick
                 )
                 return new_single_coro

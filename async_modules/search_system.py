@@ -159,6 +159,21 @@ class SearchSystem:
         res += await self.gpio_unit.stop_calibration()
         return res
 
+    async def manual_reconfiguration(self):
+        new_far = self.current_search_table[self.current_search_point].x1
+        new_rw = self.current_search_table[self.current_search_point].x2
+        # then lets convert them to Ired and Iwhite
+        new_red, new_white = currents_from_newcoords(new_far, new_rw)
+        # then create coro for measure new search point
+        reconfiguration_coro = SingleCoro(
+            self.reconfiguration,
+            "reconfiguration_task",
+            red=new_red,
+            white=new_white,
+            period=10  # TODO: fix that thing somehow but with beauty
+        )
+        await reconfiguration_coro.start()
+
     async def update_state(self):
         logger.debug("update_state")
         if not self.calibration_lock.locked():
@@ -286,7 +301,7 @@ class SearchSystem:
         await asyncio.sleep(period*60)
         res += await self.gpio_unit.stop_ventilation()
         res += await self.gpio_unit.stop_draining()
-        logger.debug("Result of calibration coro : " + res)
+        logger.info("Result of calibration coro : " + res)
         self.calibration_lock.release()
         return res
 

@@ -196,6 +196,10 @@ class Worker:
         logger.info("MANUAL COMMAND: do calibration once")
         return await self._search_system.do_calibration()
 
+    async def do_reconfiguration(self):
+        logger.info("MANUAL COMMAND: do reconfiguration")
+        return await self._search_system.manual_reconfiguration()
+
     async def _run_main_loop(self):
         # TODO: mb here must be nothing, and we should put all things to another PeriodicCoro?
         while True:

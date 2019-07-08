@@ -167,21 +167,21 @@ async def test_tunnel():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
-    com = Command(
-        cunit="system_unit",
-        cfunc="pause",
-        cargs=None,
-        ctype="single"
-    )
-
     # com = Command(
-    #     cunit="led_unit",
-    #     cfunc="set_current",
-    #     cargs={"red": 10, "white": 200},
+    #     cunit="system_unit",
+    #     cfunc="continue",
+    #     cargs=None,
     #     ctype="single"
     # )
+
+    com = Command(
+        cunit="led_unit",
+        cfunc="set_current",
+        cargs={"red": 10, "white": 200},
+        ctype="single"
+    )
     # com = Command(
-    #     cunit="gpio_unit",
+    #     cunit="gpio_unit",PP
     #     cfunc="start_coolers",
     #     cargs=None,
     #     ctype="single"
