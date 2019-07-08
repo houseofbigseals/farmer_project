@@ -126,9 +126,9 @@ class LedUnit(Unit):
         else:
             return res
 
-    async def set_current(self, tick: Ticket = None, red: int = 10, white: int = 10):
-        self._red = red
-        self._white = white
+    async def set_current(self, tick: Ticket = None, red = 10, white = 10):
+        self._red = int(red)
+        self._white = int(white)
         # TODO: handle incorrect current values such as (10000, 0) or smth
         self.logger.info("Trying to set red current to {}, white - to {}".format(red, white))
         res = ""
