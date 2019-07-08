@@ -12,7 +12,7 @@ from math_tools.adjustment import currents_from_newcoords
 from math_tools.math_methods import differentiate_one_point
 import csv
 
-logger = logging.getLogger("Worker.Schedule")
+logger = logging.getLogger("Worker.SearchSystem")
 
 
 class SearchSystem:
@@ -132,7 +132,7 @@ class SearchSystem:
         # do async init for some units
         await self.co2_sensor_unit.init()  # for time
         # we really dont need measures until search started
-        await self.worker.measure_task.stop()
+        # await self.worker.measure_task.stop()
 
     async def stop(self):
         await self.gpio_unit.stop()
