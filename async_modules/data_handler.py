@@ -1,7 +1,9 @@
 import os
 import csv
 import pandas as pd
+import logging
 
+logger = logging.getLogger("Worker.DataHandler")
 
 class DataHandler(object):
     """
@@ -24,13 +26,23 @@ class DataHandler(object):
         # and if there is data_{session_id} table on sql server)
         # if no, we have to create them both
 
-        # at first lets check file on disc
-        local_data_path = os.path.abspath('./data/data_{}'.format(self.session))
+        # lets check if we have directory
+        data_path = os.path.abspath('./data')
+        if not os.path.exists(data_path):
+            os.mkdir(data_path)
+            logger.info("Directory {} created ".format(data_path))
+            print()
+        else:
+            logger.info("Directory {} found ".format(data_path))
+
+        # then lets check file on disc
+        local_data_path = os.path.join(data_path, 'data_{}'.format(self.session))
+
         if os.path.isfile(local_data_path):
             self.data_path = local_data_path
         else:
             # add header to new empty csv file
-            with open(local_data_path, "a", newline='') as out_file:
+            with open(local_data_path, "w", newline='') as out_file:
                 writer = csv.DictWriter(out_file, delimiter=',', fieldnames=self.fields)
                 writer.writeheader()
             self.data_path = local_data_path
