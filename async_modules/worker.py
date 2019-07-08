@@ -141,7 +141,7 @@ class Worker:
         await self.schedule_task.start()
         await self.request_task.start()
         await self.send_results_task.start()
-        # await self.measure_task.start()
+        await self.measure_task.start()
         self._started = True
         logger.info("worker totally started")
 

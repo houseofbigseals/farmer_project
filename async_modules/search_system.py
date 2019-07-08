@@ -308,9 +308,12 @@ class SearchSystem:
             "point": point,
             "label": self.current_comment
         }
-        async with self.datafile_lock:
-            with open(self.datafile, "a", newline='') as out_file:
-                writer = csv.DictWriter(out_file, delimiter=',', fieldnames=fieldnames)
-                writer.writerow(data)
+
+        self.data_handler.add_measure(data)
+
+        # async with self.datafile_lock:
+        #     with open(self.datafile, "a", newline='') as out_file:
+        #         writer = csv.DictWriter(out_file, delimiter=',', fieldnames=fieldnames)
+        #         writer.writerow(data)
 
         return data
