@@ -187,8 +187,8 @@ class SearchSystem:
                     self.just_started = False
                     # its time to do measures for first search point from table
                     # at first find new far and r/w coordinates
-                    new_far = self.current_search_table[self.current_search_point].x1
-                    new_rw = self.current_search_table[self.current_search_point].x2
+                    new_far = int(self.current_search_table[self.current_search_point].x1)
+                    new_rw = int(self.current_search_table[self.current_search_point].x2)
                     # then lets convert them to Ired and Iwhite
                     new_red, new_white = currents_from_newcoords(new_far, new_rw)
                     # then create coro for measure new search point
@@ -257,8 +257,8 @@ class SearchSystem:
 
                     # its time to do measures for next search point from table
                     # at first find new far and r/w coordinates
-                    new_far = self.current_search_table[self.current_search_point].x1
-                    new_rw = self.current_search_table[self.current_search_point].x2
+                    new_far = int(self.current_search_table[self.current_search_point].x1)
+                    new_rw = int(self.current_search_table[self.current_search_point].x2)
                     # then lets convert them to Ired and Iwhite
                     new_red, new_white = currents_from_newcoords(new_far, new_rw)
                     # then create coro for measure new search point
@@ -281,27 +281,27 @@ class SearchSystem:
         logger.info("Airflow and calibration started")
         self.current_comment = "ventilation"
         res = ""
-        res += await self.gpio_unit.start_draining()
-        res += await self.led_unit.set_current(red=red, white=white)
+        logger.info(await self.gpio_unit.start_draining())
+        logger.info(await self.led_unit.set_current(red=int(red), white=int(white)))
         logger.info("New red and white currents is {} and {}".format(red, white))
-        res += await self.gpio_unit.start_ventilation()
+        logger.info(await self.gpio_unit.start_ventilation())
         await self.worker.measure_task.stop()
-        res += await self.gpio_unit.start_calibration()
-        res += await self.co2_sensor_unit.do_calibration()
+        logger.info("self.gpio_unit.start_calibration")
+        logger.info(await self.gpio_unit.start_calibration())
+        logger.info(await self.co2_sensor_unit.do_calibration())
         await asyncio.sleep(self.calibration_time)
-        res += await self.gpio_unit.stop_calibration()
+        logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
         await asyncio.sleep(400)
         await self.worker.measure_task.stop()
-        res += await self.gpio_unit.start_calibration()
-        res += await self.co2_sensor_unit.do_calibration()
+        logger.info(await self.gpio_unit.start_calibration())
+        logger.info(await self.co2_sensor_unit.do_calibration())
         await asyncio.sleep(self.calibration_time)
-        res += await self.gpio_unit.stop_calibration()
+        logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
         await asyncio.sleep(period*60)
-        res += await self.gpio_unit.stop_ventilation()
-        res += await self.gpio_unit.stop_draining()
-        logger.info("Result of calibration coro : " + res)
+        logger.info(await self.gpio_unit.stop_ventilation())
+        logger.info(await self.gpio_unit.stop_draining())
         self.calibration_lock.release()
         return res
 

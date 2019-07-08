@@ -85,24 +85,24 @@ async def test_co2():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
-    com = Command(
-        cunit="led_unit",
-        cfunc="set_current",
-        cargs={"red":115, "white":58},
-        ctype="single"
-    )
+    # com = Command(
+    #     cunit="led_unit",
+    #     cfunc="set_current",
+    #     cargs={"red":115, "white":58},
+    #     ctype="single"
+    # )
     # com = Command(
     #     cunit="co2_sensor_unit",
     #     cfunc="do_command",
     #     cargs={"com": "M\r\n"},
     #     ctype="single"
     # )
-    # com = Command(
-    #     cunit="system_unit",
-    #     cfunc="get_info",
-    #     cargs=None,
-    #     ctype="single"
-    # )
+    com = Command(
+        cunit="system_unit",
+        cfunc="do_reconfiguration",
+        cargs=None,
+        ctype="single"
+    )
     tick = Ticket(
         tfrom=10,
         tto=155167253286217647024261323245457212920,
@@ -167,19 +167,19 @@ async def test_tunnel():
     print(ans.header)
     print(ans.body)
     print("Now we have {} tickets on server".format(json.loads(ans.body)["tickets_number"]))
-    # com = Command(
-    #     cunit="system_unit",
-    #     cfunc="continue",
-    #     cargs=None,
-    #     ctype="single"
-    # )
-
     com = Command(
-        cunit="led_unit",
-        cfunc="set_current",
-        cargs={"red": 10, "white": 200},
+        cunit="system_unit",
+        cfunc="do_reconfiguration",
+        cargs=None,
         ctype="single"
     )
+
+    # com = Command(
+    #     cunit="led_unit",
+    #     cfunc="set_current",
+    #     cargs={"red": 10, "white": 200},
+    #     ctype="single"
+    # )
     # com = Command(
     #     cunit="gpio_unit",PP
     #     cfunc="start_coolers",
