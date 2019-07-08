@@ -60,8 +60,7 @@ class DataHandler(object):
         )
         # filter it by step and airflow
         # TODO: add here filtering by label in future
-        pd_point = pd_data[pd_data.step == step][pd_data.point == point]\
-        [pd_data.airflow == 0][pd_data.label != 'loading']
+        pd_point = pd_data[pd_data.step == step][pd_data.point == point][pd_data.airflow == 0][pd_data.label != 'loading']
         return pd_point
 
     def get_full_data(self):

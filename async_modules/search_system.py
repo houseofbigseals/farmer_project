@@ -113,6 +113,7 @@ class SearchSystem:
         self.datafile_lock = asyncio.Lock()
         self.calibration_lock = asyncio.Lock()
         self.current_comment = "loading"
+        self.just_started = True
 
         # add units from worker
         self.system_unit = getattr(worker, 'system_unit')
@@ -123,7 +124,9 @@ class SearchSystem:
         self.k30_unit = getattr(worker, 'k30_unit')
         self.temp_sensor_unit = getattr(worker, 'temp_sensor_unit')
 
+
     async def start(self):
+        self.just_started = True
         # start all things, those need to be done once
         await self.gpio_unit.start_coolers()
         # await self._gpio_unit.start_draining()
@@ -163,75 +166,95 @@ class SearchSystem:
             # we do not need to do anything now
             t = time.localtime()
             if t.tm_min % self.measure_period == 0:
-                # here we need to put result of finished previous
-                # measuring to appropriate point in self.current_search_table
-
-                # firstly lets get current measured interval
-                point_data = self.data_handler.get_one_point(
-                    self.current_search_step,
-                    self.current_search_point
-                )
-                # then lets calculate Q on this data
-                f, q, fe = differentiate_one_point(data=point_data,
-                                                   mass_of_pipe=self.pipe_mass,
-                                                   cut_number=100,
-                                                   points_low_limit=100
-                                                   )
-                # then put results to current_search_table
-                self.current_search_table[self.current_search_point].result = q
-
-                # then check if we do all current table
-                if self.current_search_point + 1 >= len(self.current_search_table):
-                    # it means that we have collected all data for current step
-                    # and we can start new search step
-
-                    # we have to write all old search table to special csv
-                    # for simplification of the search visualization process later
-                    for p in self.current_search_table:
-                        rowdict = {
-                            'date': time.strftime("%x", time.localtime()),
-                            'time': time.strftime("%X", time.localtime()),
-                            'x1': p.x1,
-                            'x2': p.x2,
-                            'Q': p.result,
-                            'step': self.current_search_step,
-                            'label': p.name
-                        }
-                        with open(self.search_method_log, "a") as f:
-                            # f.write("{}".format(self.current_search_step))
-                            writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
-                            writer.writerow(rowdict)
-
-                    # lets do search step
-                    self.search_method.do_search_step()
-                    # then lets calculate new search table
-                    self.current_search_table = self.search_method.search_table
-                    # then lets update counters
-                    self.current_search_point = 0
-                    self.current_search_step += 1
-                    # then write number of new step to file
-                    logger.info("Writing data to search steps config")
-                    with open(self.search_params_file, "w") as f:
-                        f.write("{}".format(self.current_search_step))
-
+                if self.just_started:
+                    # we have to wait until we got real measure data
+                    logger.info("Avoid first data period, because it is unreliable")
+                    self.just_started = False
+                    # its time to do measures for first search point from table
+                    # at first find new far and r/w coordinates
+                    new_far = self.current_search_table[self.current_search_point].x1
+                    new_rw = self.current_search_table[self.current_search_point].x2
+                    # then lets convert them to Ired and Iwhite
+                    new_red, new_white = currents_from_newcoords(new_far, new_rw)
+                    # then create coro for measure new search point
+                    reconfiguration_coro = SingleCoro(
+                        self.reconfiguration,
+                        "reconfiguration_task",
+                        red=new_red,
+                        white=new_white,
+                        period=10  # TODO: fix that thing somehow but with beauty
+                    )
+                    await reconfiguration_coro.start()
                 else:
-                    self.current_search_point += 1
+                    # here we need to put result of finished previous
+                    # measuring to appropriate point in self.current_search_table
 
-                # its time to do measures for next search point from table
-                # at first find new far and r/w coordinates
-                new_far = self.current_search_table[self.current_search_point].x1
-                new_rw = self.current_search_table[self.current_search_point].x2
-                # then lets convert them to Ired and Iwhite
-                new_red, new_white = currents_from_newcoords(new_far, new_rw)
-                # then create coro for measure new search point
-                reconfiguration_coro = SingleCoro(
-                    self.reconfiguration,
-                    "reconfiguration_task",
-                    red=new_red,
-                    white=new_white,
-                    period=10  # TODO: fix that thing somehow but with beauty
-                )
-                await reconfiguration_coro.start()
+                    # firstly lets get current measured interval
+                    point_data = self.data_handler.get_one_point(
+                        self.current_search_step,
+                        self.current_search_point
+                    )
+                    # then lets calculate Q on this data
+                    f, q, fe = differentiate_one_point(data=point_data,
+                                                       mass_of_pipe=self.pipe_mass,
+                                                       cut_number=100,
+                                                       points_low_limit=100
+                                                       )
+                    # then put results to current_search_table
+                    self.current_search_table[self.current_search_point].result = q
+
+                    # then check if we do all current table
+                    if self.current_search_point + 1 >= len(self.current_search_table):
+                        # it means that we have collected all data for current step
+                        # and we can start new search step
+
+                        # we have to write all old search table to special csv
+                        # for simplification of the search visualization process later
+                        for p in self.current_search_table:
+                            rowdict = {
+                                'date': time.strftime("%x", time.localtime()),
+                                'time': time.strftime("%X", time.localtime()),
+                                'x1': p.x1,
+                                'x2': p.x2,
+                                'Q': p.result,
+                                'step': self.current_search_step,
+                                'label': p.name
+                            }
+                            with open(self.search_method_log, "a") as f:
+                                # f.write("{}".format(self.current_search_step))
+                                writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
+                                writer.writerow(rowdict)
+
+                        # lets do search step
+                        self.search_method.do_search_step()
+                        # then lets calculate new search table
+                        self.current_search_table = self.search_method.search_table
+                        # then lets update counters
+                        self.current_search_point = 0
+                        self.current_search_step += 1
+                        # then write number of new step to file
+                        logger.info("Writing data to search steps config")
+                        with open(self.search_params_file, "w") as f:
+                            f.write("{}".format(self.current_search_step))
+
+                    else:
+                        self.current_search_point += 1
+
+                    # its time to do measures for next search point from table
+                    # at first find new far and r/w coordinates
+                    new_far = self.current_search_table[self.current_search_point].x1
+                    new_rw = self.current_search_table[self.current_search_point].x2
+                    # then lets convert them to Ired and Iwhite
+                    new_red, new_white = currents_from_newcoords(new_far, new_rw)
+                    # then create coro for measure new search point
+                    reconfiguration_coro = SingleCoro(
+                        self.reconfiguration,
+                        "reconfiguration_task",
+                        red=new_red,
+                        white=new_white,
+                        period=10  # TODO: fix that thing somehow but with beauty
+                    )
+                    await reconfiguration_coro.start()
 
     async def reconfiguration(
             self,

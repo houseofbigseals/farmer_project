@@ -413,7 +413,7 @@ class GpioUnit(Unit):
                 self.gpio.write(i, True)
 
     async def get_info(self, tick: Ticket = None):
-        self.logger.info("Gpio get_info")
+        self.logger.debug("Gpio get_info")
         res = self.pins
         if tick:
             tick.result = res

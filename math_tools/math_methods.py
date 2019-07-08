@@ -3,6 +3,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 from math_tools.adjustment import Q, FE, F
 from math_tools.adjustment import red_far_by_curr, white_far_by_curr
+import logging
 
 
 # here we have to keep all methods to do all needed operations in nsearch methods
@@ -10,6 +11,8 @@ from math_tools.adjustment import red_far_by_curr, white_far_by_curr
 # but
 # there must be only that methods, those parameters not changable by new experimental data
 # e g no adjustment coefficients or other rude things
+
+logger = logging.getLogger("Worker.MathMethods")
 
 
 def differentiate_one_point(
@@ -29,7 +32,7 @@ def differentiate_one_point(
     # check if there is to few measure points
     if len(cut_co2) < points_low_limit:
         # TODO: lets do it more beautiful
-        print("Error: too few points after cutting, be careful")
+        logger.error("Error: too few points after cutting, be careful")
         cut_co2 = data['CO2'][int(cut_number/2)::dc]
 
     # approximation functions
@@ -48,7 +51,7 @@ def differentiate_one_point(
     # TODO: we have to use pcov to know how bad was approximation
     b = popt[1]
     a = popt[0]
-    print("half approx a = {}, b = {}".format(a, b))
+    logger.info("half approx a = {}, b = {}".format(a, b))
 
     # photosynthesis function F = - dCO2 / dt
     def F_func(tt, a, b):
@@ -69,6 +72,7 @@ def differentiate_one_point(
     current_q = Q(F_func(x0, a, b), far, current_mean_weight)
     current_fe = FE(F_func(x0, a, b), far, current_mean_weight)
     current_f = F(F_func(x0, a, b), current_mean_weight)
+    logger.info("we got F = {}\n Q = {}\n F/E = {}".format(current_f, current_q, current_fe))
 
     return current_f, current_q, current_fe
 
