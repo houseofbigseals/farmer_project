@@ -7,12 +7,10 @@ from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, Single
 from math_tools.search_methods import StupidGradientMethod
 from math_tools.math_methods import Q
 from async_modules.data_handler import DataHandler
-from async_modules.worker import Worker
+# from async_modules.worker import Worker
 from math_tools.adjustment import currents_from_newcoords
 from math_tools.math_methods import differentiate_one_point
 import csv
-import pandas as pd
-import numpy as np
 
 logger = logging.getLogger("Worker.Schedule")
 
@@ -25,7 +23,7 @@ class SearchSystem:
     """
     def __init__(
             self,
-            worker: Worker = None,  # TODO is this correct way or not
+            worker: Any = None,  # TODO is this correct way or not
             config_path: str = "worker.config"
     ):
         self.loop = asyncio.get_event_loop()
