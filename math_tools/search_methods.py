@@ -15,7 +15,7 @@ class SearchPoint(object):
     ):
         self.x1 = x1
         self.x2 = x2
-        self.x3 =
+        # self.x3 = None
         self.result = result
         self.name = name
 
