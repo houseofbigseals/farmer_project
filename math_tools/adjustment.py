@@ -80,7 +80,8 @@ def Q(dC, E, weight):
     # convert weight from raw to dry
     dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
-    return ((0.28/1.9) * dCC + (0.72/0.0038) * (dCC / E)) / dry_weight
+    # return ((0.28/1.9) * dCC + (0.72/0.0038) * (dCC / E)) / dry_weight
+    return ((0.28 / 1.9) * dCC + (0.72 / 0.0038) * (dCC / E))
 
 
 def FE(dC, E, weight):
@@ -94,7 +95,8 @@ def FE(dC, E, weight):
     # convert weight from raw to dry
     dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
-    return (dCC / E) / (dry_weight * 0.0038)
+    # return (dCC / E) / (dry_weight * 0.0038)
+    return (dCC / E) / (0.0038)
 
 
 def F(dC, weight):
@@ -108,4 +110,5 @@ def F(dC, weight):
     # convert weight from raw to dry
     dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
-    return dCC / dry_weight
+    # return dCC / dry_weight
+    return dCC

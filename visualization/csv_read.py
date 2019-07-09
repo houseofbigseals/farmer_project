@@ -3,6 +3,27 @@ import numpy as np
 import pylab as pl
 from math_tools.adjustment import red_far_by_curr, white_far_by_curr
 
+
+def make_cool_far_rw(far, rw):
+    # i know, its dumb
+    cfar = 0
+    crw = 0
+    if far > 600:
+        cfar = 700
+    elif far > 300:
+        cfar = 450
+    else:
+        cfar = 200
+
+    if rw > 1.25:
+        crw = 1.5
+    elif rw > 0.7:
+        crw = 1
+    else:
+        crw = 0
+    return cfar, crw
+
+
 def main():
 
     # old fields
@@ -23,8 +44,10 @@ def main():
     print(pd_data.tail())
 
     # plotting
+    # tmin = 42000
     tmin = 0
     tmax = len(pd_data['time'])
+    # tmax = 82000
     dt = 1
     ir = np.array(pd_data['Ired'][tmin:tmax:dt])
     iw = np.array(pd_data['Iwhite'][tmin:tmax:dt])
@@ -41,8 +64,9 @@ def main():
     # creating new coordinates
 
     for i in range(len(far)):
-        fr_fw[i] = red_far_by_curr(ir[i])/white_far_by_curr(iw[i])
-        far[i] = red_far_by_curr(ir[i]) + white_far_by_curr(iw[i])
+        fr_fw_ = red_far_by_curr(ir[i])/white_far_by_curr(iw[i])
+        far_ = red_far_by_curr(ir[i]) + white_far_by_curr(iw[i])
+        far[i], fr_fw[i] = make_cool_far_rw(far_, fr_fw_)
 
     # # 2D plot of f_r and f_w by I
     # fig = pl.figure()
@@ -62,13 +86,13 @@ def main():
     # 2D plot
     fig = pl.figure()
     t = range(len(times))
-    pl.xticks(t[0::3000], dates[0::3000], rotation='vertical')
+    pl.xticks(t[0::1000], times[0::1000], rotation='vertical')
     pl.plot(t, co2, '-g', label="CO2, ppm")
     pl.plot(t, fr_fw*300, '-b', label="FARred/FARwhite")
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")
     pl.plot(t,  air*400, '-k', label="Airflow ON")
-    pl.plot(t, co2K30, '-c', label="CO2 outside")
-    pl.plot(t, weight, '-y', label="Raw weight, g")
+    # pl.plot(t, co2K30, '-c', label="CO2 outside")
+    # pl.plot(t, weight, '-y', label="Raw weight, g")
     # pl.ylabel('CO2, ppm')
     pl.xlabel('time')
     pl.title("CO2 ppm with FARred/FARwhite and FAR summ, mkmoles")
@@ -120,6 +144,26 @@ def main():
     # pl.legend()
     # pl.grid()
     # pl.show()
+
+    # lets plot only one index by time in one day
+    t1 = 5749
+    t2 = 40999
+
+    weight_ = np.array(pd_data['weight'][t1:t2:dt])
+    times_ = np.array(pd_data['time'][t1:t2:dt])
+    fig = pl.figure()
+    t_ = range(len(times_))
+    pl.xticks(t_[0::1000], times_[0::1000], rotation='vertical')
+    pl.plot(t_, weight_, '-g', label="Weight, g")
+    # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
+    # pl.plot(t, far/10, '-r', label="FAR summ, mkmoles")
+    pl.ylabel('Weight, g')
+    pl.ylim(bottom=300, top=550)
+    pl.xlabel('Time')
+    pl.title("System raw weight by time")
+    pl.legend()
+    pl.grid()
+    pl.show()
 
 
     # lets plot mean values by days

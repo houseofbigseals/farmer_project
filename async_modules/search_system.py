@@ -175,7 +175,7 @@ class SearchSystem:
         await reconfiguration_coro.start()
 
     async def update_state(self):
-        logger.debug("update_state")
+        logger.info("update_state coro started")
         if not self.calibration_lock.locked():
             # if it locked, it means that there is calibration now and
             # we do not need to do anything now
@@ -203,7 +203,7 @@ class SearchSystem:
                 else:
                     # here we need to put result of finished previous
                     # measuring to appropriate point in self.current_search_table
-
+                    logger.info("update_state trying to find current point data")
                     # firstly lets get current measured interval
                     point_data = self.data_handler.get_one_point(
                         self.current_search_step,
@@ -215,6 +215,9 @@ class SearchSystem:
                                                        cut_number=100,
                                                        points_low_limit=100
                                                        )
+                    logger.info("F = {}, Q = {}, F/E = {}".format(
+                        f, q, fe
+                    ))
                     # then put results to current_search_table
                     self.current_search_table[self.current_search_point].result = q
 
@@ -222,6 +225,7 @@ class SearchSystem:
                     if self.current_search_point + 1 >= len(self.current_search_table):
                         # it means that we have collected all data for current step
                         # and we can start new search step
+                        logger.info("update_state found that we can start new search step")
 
                         # we have to write all old search table to special csv
                         # for simplification of the search visualization process later
@@ -235,25 +239,46 @@ class SearchSystem:
                                 'step': self.current_search_step,
                                 'label': p.name
                             }
+                            logger.info("update_state search p = {}, x1 = {}, x2= {}, q = {}".format(
+                                p.name, p.x1, p.x2, p.result
+                            ))
                             with open(self.search_method_log, "a") as f:
                                 # f.write("{}".format(self.current_search_step))
                                 writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
                                 writer.writerow(rowdict)
 
                         # lets do search step
-                        self.search_method.do_search_step()
+                        x1, x2 = self.search_method.do_search_step()
+                        logger.info("update_state new x1 = {}, new x2 = {}".format(
+                            x1, x2
+                        ))
                         # then lets calculate new search table
                         self.current_search_table = self.search_method.search_table
+                        logger.info("update_state creates new search table")
+                        for p in self.current_search_table:
+                            logger.info("name = {} x1 = {} x2 = {}".format(
+                                p.name, p.x1, p.x2
+                            ))
+
                         # then lets update counters
                         self.current_search_point = 0
                         self.current_search_step += 1
+                        logger.info("update_state new search_point = {}".format(
+                            self.current_search_point
+                        ))
+                        logger.info("update_state new search_step = {}".format(
+                            self.current_search_step
+                        ))
                         # then write number of new step to file
-                        logger.info("Writing data to search steps config")
+                        logger.info("update_state Writing data to search steps config")
                         with open(self.search_params_file, "w") as f:
                             f.write("{}".format(self.current_search_step))
 
                     else:
                         self.current_search_point += 1
+                        logger.info("update_state new search_point = {}".format(
+                            self.current_search_point
+                        ))
 
                     # its time to do measures for next search point from table
                     # at first find new far and r/w coordinates
@@ -261,6 +286,9 @@ class SearchSystem:
                     new_rw = self.current_search_table[self.current_search_point].x2
                     # then lets convert them to Ired and Iwhite
                     new_red, new_white = currents_from_newcoords(new_far, new_rw)
+                    logger.info("update_state new red and white".format(
+                        new_red, new_white
+                    ))
                     # then create coro for measure new search point
                     reconfiguration_coro = SingleCoro(
                         self.reconfiguration,
@@ -303,6 +331,7 @@ class SearchSystem:
         logger.info(await self.gpio_unit.stop_ventilation())
         logger.info(await self.gpio_unit.stop_draining())
         self.calibration_lock.release()
+        self.current_comment = "measure"
         return res
 
     async def measure(self):
