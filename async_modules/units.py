@@ -431,7 +431,7 @@ class GpioUnit(Unit):
             return res
 
     async def start_draining(self, tick: Ticket = None):
-        self.logger.info("Gpio start_ventilation")
+        self.logger.info("Gpio start_draining")
         res = ""
         for i in self.drain_pins:
             res += self.gpio.write(i, False)
@@ -444,7 +444,7 @@ class GpioUnit(Unit):
             return res
 
     async def stop_draining(self, tick: Ticket = None):
-        self.logger.info("Gpio start_ventilation")
+        self.logger.info("Gpio stop_draining")
         res = ""
         for i in self.drain_pins:
             res += self.gpio.write(i, True)

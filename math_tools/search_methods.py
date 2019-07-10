@@ -78,11 +78,7 @@ class StupidGradientMethod(object):
         # F(x1i, x2i), F(x1i + h, x2i), F(x1i, x2i + h)
         # x1 is summ FAR intensity and is about 200-700
         # x2 is intensity of red lite to intensity of white lite and is about 0-1.5 (0-3?)
-        # F is quality coefficient for moon base Q taken with a minus sign
-        # because we want to find maximum of Q
-        # but gradient search finds only minimum
-        # Q = ((0.28 * dCO2 + 0.72 * (dCO2/E))/current_mean_weight)
-        # F = -Q, but we dont control it anywhere
+        # F is quality coefficient for moon base Q
         # logger
         self.logger = logging.getLogger("Worker.SearchMethods.StupidGradientMethod")
         # search constant parameters

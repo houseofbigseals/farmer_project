@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger("Worker.DataHandler")
 
+
 class DataHandler(object):
     """
     This class must contain all methods and objects
@@ -27,7 +28,7 @@ class DataHandler(object):
         # if no, we have to create them both
 
         # lets check if we have directory
-        data_path = os.path.abspath('./data')
+        data_path = os.path.abspath('../data')
         if not os.path.exists(data_path):
             os.mkdir(data_path)
             logger.info("Directory {} created ".format(data_path))
@@ -43,8 +44,11 @@ class DataHandler(object):
         else:
             # add header to new empty csv file
             with open(local_data_path, "w", newline='') as out_file:
-                writer = csv.DictWriter(out_file, delimiter=',', fieldnames=self.fields)
-                writer.writeheader()
+                # writer = csv.DictWriter(out_file, delimiter=',', fieldnames=self.fields)
+                # writer.writeheader()
+
+                # we have not to write header !!!!
+                pass
             self.data_path = local_data_path
 
         # then check if this table exists in db
@@ -55,18 +59,32 @@ class DataHandler(object):
     def get_one_point(self, step, point):
         pd_data = pd.read_csv(
             self.data_path,
-            # header=None,
+            header=None,
             names=self.fields
         )
         # filter it by step and airflow
         # TODO: add here filtering by label in future
-        pd_point = pd_data[pd_data.step == step][pd_data.point == point][pd_data.airflow == 0][pd_data.label != 'loading']
+        # pd_point = pd_data[pd_data.step == step][pd_data.point == point][pd_data.airflow == 0][pd_data.label != 'loading']
+        # print(pd_data['step'])
+        pd_point = pd_data.loc[(pd_data['step'] == step)
+                              & (pd_data['point'] == point)
+                              & (pd_data.airflow == 0)
+                              & (pd_data.label == 'measure')
+              ]
+        print(pd_point)
+        # print(pd_data.loc[pd_data['step'] == 0])
+
+        # print(type(pd_data.))
+        # [pd_data.point == point][pd_data.airflow == 0]
+        # [
+        #     pd_data.label != 'loading']
+
         return pd_point
 
     def get_full_data(self):
         pd_data = pd.read_csv(
             self.data_path,
-            # header=None,
+            header=None,
             names=self.fields
         )
         # mb add here some filtering or smth

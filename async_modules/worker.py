@@ -9,7 +9,7 @@ import async_modules.units as units
 import logging
 import sys
 import localconfig
-from async_modules.search_system import SearchSystem
+from async_modules.control_system import SearchSystem
 
 logger = None
 

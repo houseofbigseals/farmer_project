@@ -175,7 +175,7 @@ class SearchSystem:
         await reconfiguration_coro.start()
 
     async def update_state(self):
-        logger.info("update_state coro started")
+        logger.debug("update_state coro started")
         if not self.calibration_lock.locked():
             # if it locked, it means that there is calibration now and
             # we do not need to do anything now

@@ -84,6 +84,21 @@ def Q(dC, E, weight):
     return ((0.28 / 1.9) * dCC + (0.72 / 0.0038) * (dCC / E))
 
 
+def rQ(dC, E, weight):
+    global volume
+    global raw_to_dry
+    global ppmv_to_mgCO2
+    # convert from ppmv/sec to mg CO2/(m3*sec)
+    dCC = ppmv_to_mgCO2 * dC
+    # then convert from 1m3=1000litres to our volume
+    dCC = (volume/1000) * dCC
+    # convert weight from raw to dry
+    # dry_weight = weight*raw_to_dry
+    # then calculate Q and divide it to mean weight
+    # return ((0.28/1.9) * dCC + (0.72/0.0038) * (dCC / E)) / dry_weight
+    return (0.28 / dCC) + (0.72 * (E / dCC))
+
+
 def FE(dC, E, weight):
     global volume
     global raw_to_dry

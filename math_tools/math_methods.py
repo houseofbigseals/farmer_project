@@ -1,7 +1,7 @@
 import pandas as pd
 from scipy.optimize import curve_fit
 import numpy as np
-from math_tools.adjustment import Q, FE, F
+from math_tools.adjustment import Q, FE, F, rQ
 from math_tools.adjustment import red_far_by_curr, white_far_by_curr
 import logging
 
@@ -66,13 +66,58 @@ def differentiate_one_point(
     )
 
     # get current far
-    far = red_far_by_curr(data['Ired'][0]) + white_far_by_curr(data['Iwhite'][0])
+    # TODO error is here data['Ired'][0] - !!!
+    far = red_far_by_curr(data['Ired'].iloc[0]) + white_far_by_curr(data['Iwhite'].iloc[0])
 
     # calculating Q from raw dCO2/dt in point x0
-    current_q = Q(F_func(x0, a, b), far, current_mean_weight)
+    current_q = rQ(F_func(x0, a, b), far, current_mean_weight)
     current_fe = FE(F_func(x0, a, b), far, current_mean_weight)
     current_f = F(F_func(x0, a, b), current_mean_weight)
-    logger.info("we got F = {}\n Q = {}\n F/E = {}".format(current_f, current_q, current_fe))
+    logger.info("we got F = {}\n rQ = {}\n F/E = {}".format(current_f, current_q, current_fe))
 
     return current_f, current_q, current_fe
+
+
+# if __name__ == "__main__":
+#     from async_modules import data_handler
+#     # firstly lets get current measured interval
+#     current_search_step = 0
+#     current_search_point = 0
+#     data_fields = [
+#         "date",
+#         "time",
+#         "Ired",
+#         "Iwhite",
+#         "temp",
+#         "humid",
+#         "CO2",
+#         "weight",
+#         "airflow",
+#         "K30CO2",
+#         "step",
+#         "point",
+#         "label"
+#     ]
+#     dh = data_handler.DataHandler(
+#         worker= 100,
+#         session = 1234,
+#         fields=data_fields
+#     )
+#     data = dh.get_full_data()
+#     print(data.tail())
+#     print(dh.data_path)
+#     point_data = dh.get_one_point(
+#         current_search_step,
+#         current_search_point
+#     )
+#     print(point_data.head())
+#
+#     print(point_data['Ired'].iloc[0])
+#     # then lets calculate Q on this data
+#     print(differentiate_one_point(data=point_data,
+#                                        mass_of_pipe=370,
+#                                        cut_number=100,
+#                                        points_low_limit=100
+#                                        )
+#           )
 

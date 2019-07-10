@@ -6,7 +6,7 @@ from matplotlib import cm
 from scipy import interpolate
 from scipy.optimize import curve_fit
 from visualization.csv_read import red_far_by_curr, white_far_by_curr
-from math_tools.math_methods import Q, F, FE
+from math_tools.adjustment import rQ, F, FE
 
 
 mass_of_pipe = 370  # in grams
@@ -218,10 +218,10 @@ def test_parse_csv():
                     #     # then calculate Q and divide it to mean weight
                     #     return (dCC/weight)*1000
 
-                    current_q = Q(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
+                    current_q = rQ(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
                     current_fe = FE(Ffunc(x0, a3, b3), cool_far, current_mean_weight)
                     current_f = F(Ffunc(x0, a3, b3), current_mean_weight)
-                    print("Q = {}, F = {}, F/E = {}".format(current_q, current_f, current_fe))
+                    print("rQ = {}, F = {}, F/E = {}".format(current_q, current_f, current_fe))
 
                     if cur_cycle > old_cycle:
                         debugs.append((old_cycle, incycle_counter))
@@ -278,16 +278,20 @@ def test_parse_csv():
     print(np.shape(final_data))
     print(np.shape(final_data[0]))
     print(final_data)
-    datafile = "recalculated_new_data.csv"
+    datafile = "eeeeeeeee_data.csv"
     # now print it to new csv file
     old_pd = pd.DataFrame(final_data)
     # new_pd.columns = ['FAR', 'red/white', 'F', 'Q', 'F/E', 'point_number', 'cycle_number']
     old_pd.columns = ['x1', 'x2', 'y1', 'y2', 'y3', 'point_number', 'cycle_number']
-    # new_pd = old_pd.loc[:, ['x1', 'x2','y2', 'point_number', 'cycle_number']]
-    new_pd = old_pd
-    # new_pd.columns = ['x1', 'x2','y2', 'point_number', 'cycle_number']
-    new_pd.to_csv(datafile, index=False, float_format='%g')
+    new_pd = old_pd.loc[:, ['x1', 'x2','y2', 'point_number', 'cycle_number']]
+    # new_pd = old_pd
+    new_pd.columns = ['x1', 'x2','y2', 'point_number', 'cycle_number']
 
+    # gapminder_years = gapminder[gapminder.year.isin(years)]
+    useful_rows = [1, 3, 6, 8, 11, 12, 14, 16, 17, 19]
+    filtered_pd = new_pd[new_pd['cycle_number'].isin(useful_rows)]
+
+    filtered_pd.to_csv(datafile, index=False, float_format='%g')
 
     # for i in range(0, len(new_data)):
     #     with open(datafile, "a", newline='') as out_file:
