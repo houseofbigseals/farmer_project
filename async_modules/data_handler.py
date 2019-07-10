@@ -101,3 +101,7 @@ class DataHandler(object):
             writer.writerow(data)
         # then add row to sql table
         # SQLHandler.add_measure(data)
+
+
+if __name__ == "__main__":
+    print(os.path.abspath('../data'))
