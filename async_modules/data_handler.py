@@ -28,7 +28,10 @@ class DataHandler(object):
         # if no, we have to create them both
 
         # lets check if we have directory
-        data_path = os.path.abspath('../data')
+        # it looks  like if we start program from here ../data wil be different then
+        # when we starts all worker
+        # so you have to be careful
+        data_path = os.path.abspath('./data')
         if not os.path.exists(data_path):
             os.mkdir(data_path)
             logger.info("Directory {} created ".format(data_path))
