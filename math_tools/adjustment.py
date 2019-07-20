@@ -57,6 +57,13 @@ def currents_from_newcoords(A: float, B: float):
         Ir = ((A*B)/(B+1) - b1)/a1
         Iw = (A/(B+1) - b2)/a2
 
+        # check if currents less then 10:
+        # TODO check if it really good decision
+        if Ir < 10:
+            Ir = 10
+        if Iw < 10:
+            Iw = 10
+
         return Ir, Iw
 
     else:
@@ -111,7 +118,7 @@ def FE(dC, E, weight):
     dry_weight = weight*raw_to_dry
     # then calculate Q and divide it to mean weight
     # return (dCC / E) / (dry_weight * 0.0038)
-    return (dCC / E) / (0.0038)
+    return dCC / E
 
 
 def F(dC, weight):

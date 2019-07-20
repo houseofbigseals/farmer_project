@@ -210,14 +210,22 @@ class SearchSystem:
                         self.current_search_point
                     )
                     # then lets calculate Q on this data
-                    f, q, fe = differentiate_one_point(data=point_data,
-                                                       mass_of_pipe=self.pipe_mass,
-                                                       cut_number=100,
-                                                       points_low_limit=100
-                                                       )
-                    logger.info("F = {}, Q = {}, F/E = {}".format(
-                        f, q, fe
-                    ))
+                    try:
+                        f, q, fe = differentiate_one_point(data=point_data,
+                                                           mass_of_pipe=self.pipe_mass,
+                                                           cut_number=100,
+                                                           points_low_limit=100
+                                                           )
+                        logger.info("F = {}, Q = {}, F/E = {}".format(
+                            f, q, fe
+                        ))
+                    except Exception as e:
+                        logger.error("Error while fit: {}".format(e))
+                        logging.error("The search is broken")
+                        logging.error("We will use fake Q because "
+                                      "of that error to keep plants alive")
+                        fake_q = 1000 # TODO fix that
+                        q = fake_q
                     # then put results to current_search_table
                     self.current_search_table[self.current_search_point].result = q
 

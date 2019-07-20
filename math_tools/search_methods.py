@@ -11,11 +11,12 @@ class SearchPoint(object):
             x1: float,
             x2: float,
             result: float,
-            name: str
+            name: str,
+            time: float = None
     ):
         self.x1 = x1
         self.x2 = x2
-        # self.x3 = None
+        self.time = time
         self.result = result
         self.name = name
 
@@ -30,28 +31,51 @@ class TableSearch(object):
             self,
             delay_after_search: int
     ):
+        # logger
+        self.logger = logging.getLogger("Worker.SearchMethods.TableSearchMethod")
         self.schedule = [
-            [10, 258, 10],  # 700, 0
-            [10, 69, 10],  # 200, 0
-            [10, 163, 10],  # 450, 0
-            [166, 133, 10],  # 700, 1
-            [46, 38, 10],  # 200, 1
-            [106, 85, 10],  # 450, 1
-            [199, 106, 10],  # 700, 1.5
-            [56, 30, 10],  # 200, 1.5
-            [128, 68, 10],  # 450, 1.5
-            [166, 133, 10],  # 700, 1  ------------------- repeating
-            [106, 85, 10],  # 450, 1
-            [46, 38, 10],  # 200, 1
-            [128, 68, 10],  # 450, 1.5
-            [199, 106, 10],  # 700, 1.5
-            [56, 30, 10],  # 200, 1.5
-            [10, 258, 10],  # 700, 0
-            [10, 163, 10],  # 450, 0
-            [10, 69, 10]  # 200, 0
+            [700, 0, "1", 10],
+            [200, 0, "2", 10],
+            [450, 0, "3", 10],
+            [700, 1, "4", 10],
+            [200, 1, "5", 10],
+            [450, 1, "6", 10],
+            [700, 1.5, "7", 10],
+            [200, 1.5, "8", 10],
+            [450, 1.5, "9", 10],
+            [700, 1, "4", 10],   #  ------------------- repeating
+            [450, 1, "6", 10],
+            [200, 1, "5", 10],
+            [450, 1.5, "9", 10],
+            [700, 1.5, "7", 10],
+            [200, 1.5, "8", 10],
+            [700, 0, "1", 10],
+            [450, 0, "3", 10],
+            [200, 0, "2", 10]
         ]
+        self.search_table = []
+        # lets reformat schedule table to SearchPoint
+        for i in self.schedule:
+            new_point = SearchPoint(
+                x1=i[0],
+                x2=i[1],
+                name=i[3],
+                time=i[4],
+                result=0
+            )
+            self.search_table.append(new_point)
 
-        # TODO: finish it correctly
+        self.logger.info("Method started")
+
+    def do_search_step(self):
+        """
+        unlike real search methods, this method just clears search table and starts again
+        :return:
+        """
+        for p in self.search_table:
+            p.result = 0
+
+        return self.search_table[0].x1, self.search_table[0].x2
 
 
 class StupidGradientMethod(object):

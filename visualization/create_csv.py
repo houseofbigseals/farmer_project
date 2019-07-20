@@ -232,7 +232,7 @@ def test_parse_csv():
                         final_data = np.append(
                             final_data,
                             [[cool_far, cool_rw,
-                              current_f, current_q, current_fe, incycle_counter, cdata]],
+                              current_f*1000, current_q, current_fe*1000, incycle_counter, cdata]],
                             axis=0
                         )
                         incycle_counter = 0
@@ -241,7 +241,7 @@ def test_parse_csv():
                         final_data = np.append(
                             final_data,
                             [[cool_far, cool_rw,
-                              current_f, current_q, current_fe, incycle_counter, cdata]],
+                              current_f*1000, current_q, current_fe*1000, incycle_counter, cdata]],
                             axis=0
                         )
 
@@ -278,14 +278,14 @@ def test_parse_csv():
     print(np.shape(final_data))
     print(np.shape(final_data[0]))
     print(final_data)
-    datafile = "eeeeeeeee_data.csv"
+    datafile = "last_data.csv"
     # now print it to new csv file
     old_pd = pd.DataFrame(final_data)
     # new_pd.columns = ['FAR', 'red/white', 'F', 'Q', 'F/E', 'point_number', 'cycle_number']
     old_pd.columns = ['x1', 'x2', 'y1', 'y2', 'y3', 'point_number', 'cycle_number']
-    new_pd = old_pd.loc[:, ['x1', 'x2','y2', 'point_number', 'cycle_number']]
+    new_pd = old_pd.loc[:, ['x1', 'x2', 'y1', 'y3', 'point_number', 'cycle_number']]
     # new_pd = old_pd
-    new_pd.columns = ['x1', 'x2','y2', 'point_number', 'cycle_number']
+    new_pd.columns = ['x1', 'x2', 'yF', 'yFE', 'point_number', 'cycle_number']
 
     # gapminder_years = gapminder[gapminder.year.isin(years)]
     useful_rows = [1, 3, 6, 8, 11, 12, 14, 16, 17, 19]

@@ -44,6 +44,7 @@ def differentiate_one_point(
 
     # we will use approximation on first half of data interval
     # to reduce supposed influence of CO2 concentration at shape of that exp curve
+
     more_cut_co2 = cut_co2[:int(len(cut_co2) / 2):dc]
     y = np.array(more_cut_co2, dtype=float)
     x = np.arange(0, len(y))

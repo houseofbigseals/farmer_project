@@ -32,12 +32,28 @@ def main():
 
     # new fields
 
-    fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                   "CO2", "weight", "airflow", "cycle", "K30CO2"]
+    # fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+    #                "CO2", "weight", "airflow", "cycle", "K30CO2"]
 
-    # pd_data = pd.read_csv("../data/data.csv", header=None, names=fieldnames)
+    fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+                  "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
+    # "date": date_,
+    # "time": time_,
+    # "Ired": ired,
+    # "Iwhite": iwhite,
+    # "temp": temp,
+    # "humid": hum,
+    # "CO2": co2,
+    # "weight": weight,
+    # "airflow": air,
+    # "K30CO2": k30_co2,
+    # "step": step,
+    # "point": point,
+    # "label": self.current_comment
+
+    pd_data = pd.read_csv("../data/data_1235", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("../data/another_test_prepared_data_3.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/another_test_prepared_data_3.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
     print(pd_data.head())
@@ -91,7 +107,7 @@ def main():
     pl.plot(t, fr_fw*300, '-b', label="FARred/FARwhite")
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")
     pl.plot(t,  air*400, '-k', label="Airflow ON")
-    # pl.plot(t, co2K30, '-c', label="CO2 outside")
+    pl.plot(t, co2K30, '-c', label="CO2 outside")
     # pl.plot(t, weight, '-y', label="Raw weight, g")
     # pl.ylabel('CO2, ppm')
     pl.xlabel('time')
@@ -158,7 +174,7 @@ def main():
     # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
     # pl.plot(t, far/10, '-r', label="FAR summ, mkmoles")
     pl.ylabel('Weight, g')
-    pl.ylim(bottom=300, top=550)
+    # pl.ylim(bottom=300, top=550)
     pl.xlabel('Time')
     pl.title("System raw weight by time")
     pl.legend()
