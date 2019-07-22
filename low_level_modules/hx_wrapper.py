@@ -1,6 +1,9 @@
 # Just install by pip3 install HX711. A basic usage example is given below:
+try:
+    from low_level_modules.hx711 import HX711
+except:
+    from .hx711 import HX711
 
-from low_level_modules.hx711 import HX711
 from RPi import GPIO
 
 
@@ -59,7 +62,6 @@ def new_test():
 
     if data == False:  # always check if you get correct value or only False
         print('invalid data')
-        print("Server stopped! Thank you for using!")
         GPIO.cleanup()
         exit(1)
 
