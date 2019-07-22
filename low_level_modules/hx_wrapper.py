@@ -2,7 +2,7 @@
 try:
     from low_level_modules.hx711 import HX711
 except:
-    from .hx711 import HX711
+    from hx711 import HX711
 
 from RPi import GPIO
 
@@ -58,6 +58,7 @@ def new_test():
         print('Weight not ready')
     hx.set_gain_A(gain=64)
     hx.select_channel(channel='A')
+    hx.set_debug_mode(True)
     data = hx.get_raw_data_mean()
 
     if data == False:  # always check if you get correct value or only False
