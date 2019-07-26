@@ -51,9 +51,9 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    pd_data = pd.read_csv("../data/data_1235", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/data_1237", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
-    # pd_data = pd.read_csv("../data/another_test_prepared_data_3.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
     print(pd_data.head())
@@ -82,9 +82,11 @@ def main():
     for i in range(len(far)):
         fr_fw_ = red_far_by_curr(ir[i])/white_far_by_curr(iw[i])
         far_ = red_far_by_curr(ir[i]) + white_far_by_curr(iw[i])
-        far[i], fr_fw[i] = make_cool_far_rw(far_, fr_fw_)
+        # far[i], fr_fw[i] = make_cool_far_rw(far_, fr_fw_) # - please stop use it
+        far[i]= far_
+        fr_fw[i] = fr_fw_
 
-    # # 2D plot of f_r and f_w by I
+        # # 2D plot of f_r and f_w by I
     # fig = pl.figure()
     # t = range(len(times))
     # # pl.xticks(t, times, rotation='vertical')
@@ -102,7 +104,8 @@ def main():
     # 2D plot
     fig = pl.figure()
     t = range(len(times))
-    pl.xticks(t[0::1000], times[0::1000], rotation='vertical')
+    # pl.xticks(t[0::1000], times[0::1000], rotation='vertical')
+    pl.xticks(t[0::3500], dates[0::3500], rotation='vertical')
     pl.plot(t, co2, '-g', label="CO2, ppm")
     pl.plot(t, fr_fw*300, '-b', label="FARred/FARwhite")
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")

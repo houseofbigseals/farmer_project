@@ -13,6 +13,7 @@ experimental device, be careful
 volume = 80  # fitotrone volume in litres
 raw_to_dry = 0.08  # conversion factor from raw plants weight to dry weight
 ppmv_to_mgCO2 = 1.8  # conversion factor from ppmv CO2 to mgCO2/m3
+surface = 0.18  # in m2 - surface of lighted crops
 
 
 def red_far_by_curr(Ir:float):
@@ -134,3 +135,21 @@ def F(dC, weight):
     # then calculate Q and divide it to mean weight
     # return dCC / dry_weight
     return dCC
+
+
+def intQ(dC, E, dT):
+    # dC - first derivative of co2 concentration in ppnmv/sec
+    # E - light intencity im mkmoles/m2*sec
+    # dT - time period of measure im sec
+    global volume
+    global surface
+    global ppmv_to_mgCO2
+    # convert from ppmv/sec to mg CO2/(m3*sec)
+    dCC = ppmv_to_mgCO2 * dC
+    # then convert from 1m3 to our volume
+    dCC = (volume/1000) * dCC
+    V = (0.45 * surface)  # effective volume of crop in m3
+    Prod = 0.000001 * (8.5*0.001*dC*dT)  # productivity of crops in kg/m2
+    I = E*0.2*0.001  # light power converted to kW
+    Qi = 0.28 * V / Prod + 0.72 * I / Prod
+    return Qi

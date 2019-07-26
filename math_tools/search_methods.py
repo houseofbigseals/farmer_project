@@ -188,3 +188,61 @@ class StupidGradientMethod(object):
         # return new x1 and x2 for exposed logging or smth
         # its not necessary
         return x1_new, x2_new
+
+
+class NelderMeadSearch(object):
+
+    def __init__(self):
+        pass
+
+    def triangle_step(self, p1, p2, p3, t, alpha, beta, gamma):
+        # print("triangle step")
+        dt = self.param['dt']
+        # print("noized functional values calculation")
+        f1 = self.scalar_calc_functional(p1[0], p1[1], t)
+        f2 = self.scalar_calc_functional(p2[0], p2[1], t + dt)
+        f3 = self.scalar_calc_functional(p3[0], p3[1], t + 2 * dt)
+        # print("calculated values are {} {} {}".format( f1, f2, f3))
+        # lets make them numpy vectors
+        x1 = np.array(p1)
+        x2 = np.array(p2)
+        x3 = np.array(p3)
+        xs = [x1, x2, x3]
+        n_min = int(np.argmin([f1, f2, f3]))
+        # print("n min is {}".format(n_min))
+        n_max = int(np.argmax([f1, f2, f3]))
+        # print("n max is {}".format(n_max))
+        num = [0, 1, 2]
+        num.remove(n_min)
+        # print(num)
+        num.remove(n_max)
+        n_av = num[0]
+        # print(num)
+        # print("n av is {}".format(n_av))
+        x_min = xs[n_min]
+        x_max = xs[n_max]
+        # find middlepoint of triangle
+        x_mid = 0.5 * (x1 + x2 + x3 - x_max)
+        # reflection
+        x5 = x_mid + alpha * (x_mid - x_max)
+        # stretching
+        f5 = self.scalar_calc_functional(x5[0], x5[1], t + 3 * dt)
+        if (f5 <= min([f1, f2, f3])):
+            x6 = x_mid + gamma * (x5 - x_mid)
+            f6 = self.scalar_calc_functional(x6[0], x6[1], t + 4 * dt)
+            if (f6 < min([f1, f2, f3])):
+                return x6, xs[n_min], xs[n_av], x_mid
+            else:
+                return x5, xs[n_min], xs[n_av], x_mid
+        # compression
+        if (f5 > [f1, f2, f3][n_min] and f5 > [f1, f2, f3][n_av] and f5 < [f1, f2, f3][n_max]):
+            x6 = x_mid + beta * (x_max - x_mid)
+            return x6, xs[n_min], xs[n_av], x_mid
+        # reduction
+        if (f5 >= [f1, f2, f3][n_max]):
+            x11 = x_min + 0.5 * (x1 - x_min)
+            x21 = x_min + 0.5 * (x2 - x_min)
+            x31 = x_min + 0.5 * (x3 - x_min)
+            return x11, x21, x31, x_mid
+
+        return x5, xs[n_min], xs[n_av], x_mid

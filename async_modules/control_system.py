@@ -5,14 +5,12 @@ from typing import Any
 import localconfig
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from math_tools.search_methods import StupidGradientMethod
-from math_tools.math_methods import Q
 from async_modules.data_handler import DataHandler
-# from async_modules.worker import Worker
 from math_tools.adjustment import currents_from_newcoords
 from math_tools.math_methods import differentiate_one_point
 import csv
 
-logger = logging.getLogger("Worker.SearchSystem")
+logger = logging.getLogger("Worker.ControlSystem")
 
 
 class SearchSystem:
@@ -37,6 +35,7 @@ class SearchSystem:
         self.start_red = config.get('search_system', 'start_red')
         self.start_white = config.get('search_system', 'start_white')
         self.datafile = config.get('search_system', 'datafile')
+        self.time_of_measure_period = config.get('search_system', 'time_of_measure_period')
 
         self.measure_period = config.get('search_system', 'measure_time')
         self.pipe_mass = config.get('search_system', 'mass_of_pipe')
@@ -214,7 +213,8 @@ class SearchSystem:
                         f, q, fe = differentiate_one_point(data=point_data,
                                                            mass_of_pipe=self.pipe_mass,
                                                            cut_number=100,
-                                                           points_low_limit=100
+                                                           points_low_limit=100,
+                                                           len_of_measure_period=self.time_of_measure_period
                                                            )
                         logger.info("F = {}, Q = {}, F/E = {}".format(
                             f, q, fe
