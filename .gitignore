@@ -7,4 +7,5 @@ data
 *.csv
 *.config
 *.png
+*.ods
 __pycache__

@@ -115,7 +115,7 @@ class ArdWrapper(object):
             0x02 - invalid command - not from available list
             0x03 - invalid argument for correct command
             0x04 - error during command execution
-            0xBB - unknown error, something went wrong
+            0xAA - unknown error, something went wrong
 
 
 

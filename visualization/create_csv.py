@@ -278,7 +278,7 @@ def test_parse_csv():
     print(np.shape(final_data))
     print(np.shape(final_data[0]))
     print(final_data)
-    datafile = "last_data.csv"
+    datafile = "last_data_check.csv"
     # now print it to new csv file
     old_pd = pd.DataFrame(final_data)
     # new_pd.columns = ['FAR', 'red/white', 'F', 'Q', 'F/E', 'point_number', 'cycle_number']
@@ -288,8 +288,9 @@ def test_parse_csv():
     new_pd.columns = ['x1', 'x2', 'yF', 'yFE', 'point_number', 'cycle_number']
 
     # gapminder_years = gapminder[gapminder.year.isin(years)]
-    useful_rows = [1, 3, 6, 8, 11, 12, 14, 16, 17, 19]
-    filtered_pd = new_pd[new_pd['cycle_number'].isin(useful_rows)]
+    # useful_rows = [1, 3, 6, 8, 11, 12, 14, 16, 17, 19]
+    # filtered_pd = new_pd[new_pd['cycle_number'].isin(useful_rows)]
+    filtered_pd = new_pd
 
     filtered_pd.to_csv(datafile, index=False, float_format='%g')
 

@@ -32,11 +32,11 @@ def main():
 
     # new fields
 
-    # fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-    #                "CO2", "weight", "airflow", "cycle", "K30CO2"]
-
     fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                  "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
+                   "CO2", "weight", "airflow", "cycle", "K30CO2"]
+
+    # fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+    #               "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
     # "date": date_,
     # "time": time_,
     # "Ired": ired,
@@ -51,9 +51,9 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    pd_data = pd.read_csv("../data/data_1237", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/data_1238", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
-    # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
     print(pd_data.head())
@@ -169,11 +169,16 @@ def main():
     t2 = 40999
 
     weight_ = np.array(pd_data['weight'][t1:t2:dt])
+
+    ## TODO warning tube weight added here !
+
+    tube_weight = 375
+    tube_weight_ = np.ones(len(weight_))*tube_weight
     times_ = np.array(pd_data['time'][t1:t2:dt])
     fig = pl.figure()
     t_ = range(len(times_))
     pl.xticks(t_[0::1000], times_[0::1000], rotation='vertical')
-    pl.plot(t_, weight_, '-g', label="Weight, g")
+    pl.plot(t_, weight_ - tube_weight_, '-g', label="Weight, g")
     # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
     # pl.plot(t, far/10, '-r', label="FAR summ, mkmoles")
     pl.ylabel('Weight, g')
@@ -196,7 +201,7 @@ def main():
         if dates[i] != dates[i-1] or i == len(times) -1:
             print(dates[i-1])
             stop_pointer = i - 1
-            mean_day_weights.append(np.mean(weight[start_pointer:stop_pointer]))
+            mean_day_weights.append(np.mean(weight[start_pointer:stop_pointer]) - tube_weight)
             date.append(dates[i-1])
             start_pointer = i
 
