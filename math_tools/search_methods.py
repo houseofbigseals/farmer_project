@@ -217,7 +217,7 @@ class SimpleGradientMethod(object):
         # x2 is intensity of red lite to intensity of white lite and is about 0-1.5 (0-3?)
         # F is quality coefficient for moon base Q
         # logger
-        self.logger = logging.getLogger("Worker.SearchMethods.StupidGradientMethod")
+        self.logger = logging.getLogger("Worker.SearchMethods.SimpleGradientMethod")
         # search constant parameters
         self.lamb1 = lamb1
         self.lamb2 = lamb2
@@ -304,7 +304,7 @@ class SimpleGradientMethod(object):
 
         if x1_new + self.h1 > self.max_x1:
             # lets set x2 as lower acceptable limit
-            x1_new = self.max_x2 - self.h1
+            x1_new = self.max_x1 - self.h1
             self.logger.info("x1_new + dh1 > self.max_x1 so new x1 is {}".format(
                 x1_new
             ))
