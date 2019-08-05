@@ -32,11 +32,11 @@ def main():
 
     # new fields
 
-    fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-                   "CO2", "weight", "airflow", "cycle", "K30CO2"]
-
     # fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
-    #               "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
+    #                "CO2", "weight", "airflow", "cycle", "K30CO2"]
+
+    fieldnames = ["date", "time", "Ired", "Iwhite", "temp", "humid",
+                  "CO2", "weight", "airflow", "K30CO2", "step", "point", "label"]
     # "date": date_,
     # "time": time_,
     # "Ired": ired,
@@ -51,9 +51,9 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    # pd_data = pd.read_csv("../data/data_1238", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/data_1241", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
-    pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/test_prepared_data_3.csv", header=None, names=fieldnames)
     print(pd_data.head())
