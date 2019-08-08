@@ -6,7 +6,7 @@ import localconfig
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod
 from async_modules.data_handler import DataHandler
-from math_tools.adjustment import currents_from_newcoords
+from math_tools.adjustment import currents_from_newcoords, red_far_by_curr, white_far_by_curr
 from math_tools.math_methods import differentiate_one_point
 import csv
 

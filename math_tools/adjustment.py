@@ -13,7 +13,7 @@ experimental device, be careful
 volume = 80  # fitotrone volume in litres
 raw_to_dry = 0.08  # conversion factor from raw plants weight to dry weight
 ppmv_to_mgCO2 = 1.8  # conversion factor from ppmv CO2 to mgCO2/m3
-surface = 0.18  # in m2 - surface of lighted crops
+surface = 0.19  # in m2 - surface of lighted crops
 
 
 def red_far_by_curr(Ir:float):
