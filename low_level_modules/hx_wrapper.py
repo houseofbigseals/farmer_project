@@ -1,4 +1,5 @@
 # Just install by pip3 install HX711. A basic usage example is given below:
+import numpy as np
 try:
     from low_level_modules.hx711 import HX711
 except:
@@ -58,7 +59,7 @@ def new_test():
         print('Weight not ready')
     hx.set_gain_A(gain=64)
     hx.select_channel(channel='A')
-    hx.set_debug_mode(True)
+    # hx.set_debug_mode(True)
     data = hx.get_raw_data_mean()
 
     if data == False:  # always check if you get correct value or only False
@@ -72,6 +73,7 @@ def new_test():
     ws.append(hx.get_weight_mean(5) - TARA)
     ws.append(hx.get_weight_mean(5) - TARA)
     print(ws)
+    print(np.mean(ws))
     # rw = sps.medfilt(ws)
     # weight = rw[1]
 
