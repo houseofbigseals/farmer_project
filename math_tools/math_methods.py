@@ -68,7 +68,6 @@ def differentiate_one_point(
     )
 
     # get current far
-    # TODO error is here data['Ired'][0] - !!!
     far = red_far_by_curr(data['Ired'].iloc[0]) + white_far_by_curr(data['Iwhite'].iloc[0])
 
     # calculating Q from raw dCO2/dt in point x0

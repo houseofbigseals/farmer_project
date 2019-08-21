@@ -32,7 +32,7 @@ raw_results = [371, 381, 390, 399, 408.5, 416.5, 426, 438, 448, 457.5, 467,
 
 # at start
 full_tube_weight = 405 # 405 - 410
-full_plants = 35 # 40
+full_plants = 13
 
 # with weight parameters
 # dout_pin = 5,
@@ -51,4 +51,5 @@ raw_results = [432, 444, 452, 464, 475, 486,
                493, 502, 511, 522, 532, 554, 574, 595, 618,
                636, 661, 681, 700, 712
                ]
+
 # d_weight = +- 1 gramm at each point
