@@ -67,8 +67,8 @@ class TableSearch(object):
             new_point = SearchPoint(
                 x1=i[0],
                 x2=i[1],
-                name=i[3],
-                time=i[4],
+                name=i[2],
+                time=i[3],
                 result=0
             )
             self.search_table.append(new_point)
