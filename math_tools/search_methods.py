@@ -86,6 +86,45 @@ class TableSearch(object):
         return self.search_table[0].x1, self.search_table[0].x2
 
 
+class StaticSearch(object):
+    """
+    This object contains table with only one point
+    to search with with predetermined coordinates
+    After search the worker must wait delay_after_search time
+    """
+    def __init__(
+            self
+    ):
+        # logger
+        self.logger = logging.getLogger("Worker.SearchMethods.StaticSearchMethod")
+        self.schedule = [
+            [500, 1.5, 'the_only_one', 10]
+        ]
+        self.search_table = []
+        # lets reformat schedule table to SearchPoint
+        for i in self.schedule:
+            new_point = SearchPoint(
+                x1=i[0],
+                x2=i[1],
+                name=i[2],
+                time=i[3],
+                result=0
+            )
+            self.search_table.append(new_point)
+
+        self.logger.info("Method started")
+
+    def do_search_step(self):
+        """
+        unlike real search methods, this method just clears search table and starts again
+        :return:
+        """
+        for p in self.search_table:
+            p.result = 0
+
+        return self.search_table[0].x1, self.search_table[0].x2
+
+
 class StupidGradientMethod(object):
     """
     This object contains abstraction of dynamical search

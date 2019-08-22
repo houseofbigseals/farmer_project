@@ -51,7 +51,7 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    pd_data = pd.read_csv("../data/data_1266", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/data_1270", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)

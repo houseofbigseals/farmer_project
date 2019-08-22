@@ -4,7 +4,7 @@ import asyncio
 from typing import Any
 import localconfig
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch
+from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch, StaticSearch
 from async_modules.data_handler import DataHandler
 from math_tools.adjustment import currents_from_newcoords, red_far_by_curr, white_far_by_curr
 from math_tools.math_methods import differentiate_one_point
@@ -65,7 +65,7 @@ class SearchSystem:
         # default search parameters
         # skwargs = dict(config.items("SimpleGradientMethod"))
         # self.search_method = SimpleGradientMethod(**skwargs)
-        self.search_method = TableSearch()
+        self.search_method = StaticSearch()
         self.current_search_step = 0
         self.current_search_point = 0
 
@@ -123,7 +123,6 @@ class SearchSystem:
         self.weight_unit = getattr(worker, 'weight_unit')
         self.k30_unit = getattr(worker, 'k30_unit')
         self.temp_sensor_unit = getattr(worker, 'temp_sensor_unit')
-
 
     async def start(self):
         self.just_started = True
