@@ -9,7 +9,7 @@ import async_modules.units as units
 import logging
 import sys
 import localconfig
-from async_modules.control_system import SearchSystem
+from async_modules.control_system import ControlSystem
 
 logger = None
 
@@ -106,8 +106,8 @@ class Worker:
         self.request_task = None
         self.send_results_task = None
 
-        # add SearchSystem
-        self._search_system = SearchSystem(
+        # add ControlSystem
+        self._search_system = ControlSystem(
             worker=self,
             config_path=config_path
         )

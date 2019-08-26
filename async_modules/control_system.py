@@ -13,7 +13,7 @@ import csv
 logger = logging.getLogger("Worker.ControlSystem")
 
 
-class SearchSystem:
+class ControlSystem:
     """
     This is search system object
     It rules all experimental things
