@@ -179,3 +179,20 @@ def dry_intQ(dC, E, dT):
     I = E * ppfd_to_kW  # light power converted to kW
     Qi = 0.28 * V / Prod + 0.72 * I / Prod
     return Qi
+
+
+def final_intQ(E, Prod):
+    # Prod  - is dM in grams
+    # E - light intencity im mkmoles/m2*sec
+    global volume
+    global surface
+    global ppmv_to_mgCO2
+    global surface_to_volume
+    global ppfd_to_kW
+    Prod = Prod*0.001  # translate to kg
+    # now dCC is mgCO2/sec in our volume
+    V = (surface_to_volume * surface)  # effective volume of crop in m3
+
+    I = E * ppfd_to_kW  # light power converted to kW
+    Qf = 0.28 * V / Prod + 0.72 * I / Prod
+    return Qf
