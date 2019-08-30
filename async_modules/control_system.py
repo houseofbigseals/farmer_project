@@ -65,7 +65,7 @@ class ControlSystem:
         # default search parameters
         # skwargs = dict(config.items("SimpleGradientMethod"))
         # self.search_method = SimpleGradientMethod(**skwargs)
-        self.search_method = StaticSearch()
+        self.search_method = TableSearch()
         self.current_search_step = 0
         self.current_search_point = 0
 
@@ -224,10 +224,12 @@ class ControlSystem:
                         logging.error("The search is broken")
                         logging.error("We will use fake Q because "
                                       "of that error to keep plants alive")
-                        fake_q = 1000 # TODO fix that
+                        fake_q = -1000 # TODO fix that
                         q = fake_q
+                        f = fake_q
                     # then put results to current_search_table
                     self.current_search_table[self.current_search_point].result = q
+                    self.current_search_table[self.current_search_point].raw_f = f
 
                     # then check if we do all current table
                     if self.current_search_point + 1 >= len(self.current_search_table):
@@ -244,6 +246,7 @@ class ControlSystem:
                                 'x1': p.x1,
                                 'x2': p.x2,
                                 'Q': p.result,
+                                'F': p.raw_f,
                                 'step': self.current_search_step,
                                 'label': p.name
                             }

@@ -68,7 +68,7 @@ class DHTWrapper:
         temperature = None
         try:
             humidity, temperature = Adafruit_DHT.read_retry(
-                sensor=self.DHTTYPE, pin=self.pin, retries=15, delay_seconds=0.2
+                sensor=self.DHTTYPE, pin=self.pin, retries=10, delay_seconds=0.05
             )
         except Exception as e:
             log = "We got error {} \n when read DHT{} from pin {} \n"\

@@ -40,11 +40,14 @@ def Q_calculation():
     dM_12_22_exp = 162  # grams
     dM_12_22_control = 140  # grams
     E_12_22_control = 500  # mkmoles/m2sec
+    print(x1_sum/x1_len)
 
     Q_12_22_exp = final_intQ(x1_sum/x1_len, dM_12_22_exp)
     print("Q_12_22_exp", Q_12_22_exp)
     Q_12_22_control = final_intQ(E_12_22_control, dM_12_22_control)
     print("Q_12_22_control", Q_12_22_control)
+    result = (Q_12_22_control - Q_12_22_exp)/Q_12_22_control
+    print(result)
 
 
 

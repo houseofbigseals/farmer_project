@@ -16,6 +16,8 @@ ppmv_to_mgCO2 = 1.8  # conversion factor from ppmv CO2 to mgCO2/m3
 surface = 0.19  # in m2 - surface of lighted crops
 surface_to_volume = 0.45  # in m3/m2
 mg_CO2_to_kg_dry_mass = 0.68*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
+mg_CO2_to_kg_raw_mass = 8.5*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
+# when water coefficient is 0.08
 ppfd_to_kW = 0.2*0.001  # kW / (mkmol/m2*sec)
 
 
@@ -140,7 +142,7 @@ def F(dC, weight):
     return dCC
 
 
-def intQ(dC, E, dT):
+def raw_intQ(dC, E, dT):
     # dC - first derivative of co2 concentration in ppnmv/sec
     # E - light intencity im mkmoles/m2*sec
     # dT - time period of measure im sec
@@ -151,11 +153,12 @@ def intQ(dC, E, dT):
     dCC = ppmv_to_mgCO2 * dC
     # then convert from 1m3 to our volume
     dCC = (volume/1000) * dCC
-    V = (0.45 * surface)  # effective volume of crop in m3
+    # now dCC is mgCO2/sec in our volume
+    V = (surface_to_volume * surface)  # effective volume of crop in m3
     # TODO: we need to change dC to dCC because [dC] in ppmv/sec but [dCC] in  mgCO2/sec
-    Prod = 0.000001 * (8.5*0.001*dC*dT)  # productivity of crops in kg/m2
-    I = E*0.2*0.001  # light power converted to kW
-    Qi = 0.28 * V / Prod + 0.72 * I / Prod
+    Prod = 0.000001 * (8.5*dCC*dT)  # productivity of crops in kg
+    I = E* ppfd_to_kW   # light power converted to kW
+    Qi = 0.28 * V / Prod + 0.72 * I * surface / Prod
     return Qi
 
 
@@ -177,7 +180,7 @@ def dry_intQ(dC, E, dT):
     Prod = mg_CO2_to_kg_dry_mass*dCC*dT  # productivity of crops in kg
     # dT must be in sec
     I = E * ppfd_to_kW  # light power converted to kW
-    Qi = 0.28 * V / Prod + 0.72 * I / Prod
+    Qi = 0.28 * V / Prod + 0.72 * I * surface / Prod
     return Qi
 
 
@@ -194,5 +197,20 @@ def final_intQ(E, Prod):
     V = (surface_to_volume * surface)  # effective volume of crop in m3
 
     I = E * ppfd_to_kW  # light power converted to kW
-    Qf = 0.28 * V / Prod + 0.72 * I / Prod
+    Qf = 0.28 * V / Prod + 0.72 * I * surface / Prod
     return Qf
+
+
+if __name__ == "__main__":
+    print(currents_from_newcoords(500, 0))
+    print(currents_from_newcoords(500, 0.125))
+    print(currents_from_newcoords(500, 0.25))
+    print(currents_from_newcoords(500, 0.5))
+    print(currents_from_newcoords(500, 0.75))
+    print(currents_from_newcoords(500, 1))
+    print(currents_from_newcoords(500, 1.5))
+    print(currents_from_newcoords(500, 1.75))
+    print(currents_from_newcoords(500, 2))
+    print(currents_from_newcoords(500, 2.25))
+    print(currents_from_newcoords(500, 6))
+    print(currents_from_newcoords(500, 40))

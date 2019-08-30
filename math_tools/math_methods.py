@@ -1,7 +1,7 @@
 import pandas as pd
 from scipy.optimize import curve_fit
 import numpy as np
-from math_tools.adjustment import Q, FE, F, rQ, intQ
+from math_tools.adjustment import Q, FE, F, rQ, raw_intQ
 from math_tools.adjustment import red_far_by_curr, white_far_by_curr
 import logging
 
@@ -71,7 +71,7 @@ def differentiate_one_point(
     far = red_far_by_curr(data['Ired'].iloc[0]) + white_far_by_curr(data['Iwhite'].iloc[0])
 
     # calculating Q from raw dCO2/dt in point x0
-    current_q = intQ(F_func(x0, a, b), far, len_of_measure_period)
+    current_q = raw_intQ(F_func(x0, a, b), far, len_of_measure_period)
     current_fe = FE(F_func(x0, a, b), far, current_mean_weight)
     current_f = F(F_func(x0, a, b), current_mean_weight)
     logger.info("we got F = {}\n intQ = {}\n F/E = {}".format(current_f, current_q, current_fe))

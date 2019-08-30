@@ -11,6 +11,7 @@ class SearchPoint(object):
             x1: float,
             x2: float,
             result: float,
+            raw_f: float,
             name: str,
             time: float = None
     ):
@@ -18,6 +19,7 @@ class SearchPoint(object):
         self.x2 = x2
         self.time = time
         self.result = result
+        self.raw_f = raw_f
         self.name = name
 
 
@@ -52,15 +54,31 @@ class TableSearch(object):
         #     [450, 0, "3", 10],
         #     [200, 0, "2", 10]
         # ]
+        # self.schedule = [
+        #     [500, 1.25, '6', 10],
+        #     [500, 0, '1', 10],
+        #     [500, 1, '5', 10],
+        #     [500, 0.5, '3', 10],
+        #     [500, 0.75, '4', 10],
+        #     [500, 0.25, '2', 10],
+        #     [500, 1.5, '7', 10]
+        # ]
+
         self.schedule = [
-            [500, 1.25, '6', 10],
-            [500, 0, '1', 10],
-            [500, 1, '5', 10],
-            [500, 0.5, '3', 10],
-            [500, 0.75, '4', 10],
-            [500, 0.25, '2', 10],
-            [500, 1.5, '7', 10]
+            [500, 0.25, '3', 10],
+            [500, 1.75, '8', 10],
+            [500, 0.5, '4', 10],
+            [500, 0, '1', 10],  # full white
+            [500, 0.75, '5', 10],
+            [500, 1, '6', 10],
+            [500, 2, '9', 10],
+            [500, 0.125, '2', 10],
+            [500, 2.25, '10', 10],
+            [500, 40, '12', 10],  # full red
+            [500, 1.5, '7', 10],
+            [500, 6, '11', 10],
         ]
+
         self.search_table = []
         # lets reformat schedule table to SearchPoint
         for i in self.schedule:
@@ -69,7 +87,8 @@ class TableSearch(object):
                 x2=i[1],
                 name=i[2],
                 time=i[3],
-                result=0
+                result=0,
+                raw_f=0
             )
             self.search_table.append(new_point)
 
@@ -82,6 +101,7 @@ class TableSearch(object):
         """
         for p in self.search_table:
             p.result = 0
+            p.raw_f = 0
 
         return self.search_table[0].x1, self.search_table[0].x2
 
@@ -108,7 +128,8 @@ class StaticSearch(object):
                 x2=i[1],
                 name=i[2],
                 time=i[3],
-                result=0
+                result=0,
+                raw_f=0
             )
             self.search_table.append(new_point)
 
@@ -121,6 +142,7 @@ class StaticSearch(object):
         """
         for p in self.search_table:
             p.result = 0
+            p.raw_f = 0
 
         return self.search_table[0].x1, self.search_table[0].x2
 
@@ -161,9 +183,9 @@ class StupidGradientMethod(object):
         self.h1 = h1
         self.h2 = h2
         # points for calculating derivative in finite difference form
-        self.dF = SearchPoint(self.x1, self.x2, 0, 'dF')
-        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 'dFx1')
-        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 'dFx2')
+        self.dF = SearchPoint(self.x1, self.x2, 0, 0, 'dF')
+        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 0, 'dFx1')
+        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 0, 'dFx2')
         # search area borders
         self.max_x1 = max_x1
         self.max_x2 = max_x2
@@ -220,9 +242,9 @@ class StupidGradientMethod(object):
         self.x1 = x1_new
         self.x2 = x2_new
         # recalculate all dF things
-        self.dF = SearchPoint(self.x1, self.x2, 0, 'dF')
-        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 'dFx1')
-        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 'dFx2')
+        self.dF = SearchPoint(self.x1, self.x2, 0, 0, 'dF')
+        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 0, 'dFx1')
+        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 0, 'dFx2')
         # recalculate search table
         self.search_table = [
             self.dF,
@@ -275,9 +297,9 @@ class SimpleGradientMethod(object):
         self.h1 = h1
         self.h2 = h2
         # points for calculating derivative in finite difference form
-        self.dF = SearchPoint(self.x1, self.x2, 0, 'dF')
-        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 'dFx1')
-        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 'dFx2')
+        self.dF = SearchPoint(self.x1, self.x2, 0, 0, 'dF')
+        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 0, 'dFx1')
+        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 0, 'dFx2')
         # search area borders
         self.max_x1 = max_x1
         self.max_x2 = max_x2
@@ -366,9 +388,9 @@ class SimpleGradientMethod(object):
         self.x1 = x1_new
         self.x2 = x2_new
         # recalculate all dF things
-        self.dF = SearchPoint(self.x1, self.x2, 0, 'dF')
-        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 'dFx1')
-        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 'dFx2')
+        self.dF = SearchPoint(self.x1, self.x2, 0, 0, 'dF')
+        self.dFx1 = SearchPoint(self.x1 + self.h1, self.x2, 0, 0, 'dFx1')
+        self.dFx2 = SearchPoint(self.x1, self.x2 + self.h2, 0, 0, 'dFx2')
         # recalculate search table
         self.search_table = [
             self.dF,
