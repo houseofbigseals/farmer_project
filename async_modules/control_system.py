@@ -91,6 +91,7 @@ class ControlSystem:
             'x1',
             'x2',
             'Q',
+            'F',
             'step',
             'label'
         ]
