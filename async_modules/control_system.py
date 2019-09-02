@@ -63,9 +63,9 @@ class ControlSystem:
         )
 
         # default search parameters
-        # skwargs = dict(config.items("SimpleGradientMethod"))
-        # self.search_method = SimpleGradientMethod(**skwargs)
-        self.search_method = TableSearch()
+        skwargs = dict(config.items("SimpleGradientMethod"))
+        self.search_method = SimpleGradientMethod(**skwargs)
+        # self.search_method = TableSearch()
         self.current_search_step = 0
         self.current_search_point = 0
 

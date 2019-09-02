@@ -177,7 +177,7 @@ async def test_tunnel():
     # com = Command(
     #     cunit="led_unit",
     #     cfunc="set_current",
-    #     cargs={"red": 100.12, "white": 100},
+    #     cargs={"red": 10, "white": 182},
     #     ctype="single"
     # )
     # com = Command(

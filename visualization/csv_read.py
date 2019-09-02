@@ -53,7 +53,7 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    raw_pd_data = pd.read_csv("../data/data_1280", header=None, names=fieldnames)
+    raw_pd_data = pd.read_csv("../data/data_1290", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
@@ -64,66 +64,69 @@ def main():
     # check if there is any nan values in columns
     print(raw_pd_data.isna().sum())
 
-    # lets write report about every step
-    # how many nan`s, how many points, etc
-    for step in raw_pd_data['step']:
-
-        pd_step = raw_pd_data.loc[(raw_pd_data['step'] == step)]
-        for point in pd_step['point']:
-            print("step is {}".format(step))
-            print("point is {}".format(point))
-            pd_step_point = pd_step.loc[(raw_pd_data['step'] == step)]
-            print(pd_step_point.head())
-            # check if there is any nan values in columns
-            print("step {} point {} nans".format(step, point))
-            print(pd_step_point.isna().sum())
-            print("step {} point {} summary".format(step, point))
-            print(pd_step_point.shape)
-
-            pd_step_point_clear = pd_step_point.loc[
-            (pd_step_point.airflow == 0)
-            & (pd_step_point.label == 'measure')
-            ]
-
-            f, q, fe = differentiate_one_point(data=pd_step_point_clear,
-                                               mass_of_pipe=400,
-                                               cut_number=100,
-                                               points_low_limit=100,
-                                               len_of_measure_period=1800
-                                               )
-
-            print("f = {}, q = {} \n".format(f, q))
-
-            # TODO: add writing to report
-
-
-    # fill nan with unique value for any column
-    fillvalues = {
-    "date": "broken_date",
-    "time": "broken_time",
-    "Ired": 10,
-    "Iwhite": 10,
-    "temp": -100,
-    "humid": -100,
-    "CO2": 0,
-    "weight": -100,
-    "airflow": 1,
-    "K30CO2": -100,
-    "step": -1,
-    "point": -1,
-    "label": "broken_comment"
-    }
-    pd_data = raw_pd_data.fillna(value=fillvalues)
-    # TODO mb in future we have to mark every step in which
-    #  too much empty co2 values, e g more than some threshold
-    #  and print report about every step
-
-
-    # plotting
-    # tmin = 42000
+    # # lets write report about every step
+    # # how many nan`s, how many points, etc
+    # for step in raw_pd_data['step']:
+    #
+    #     pd_step = raw_pd_data.loc[(raw_pd_data['step'] == step)]
+    #     for point in pd_step['point']:
+    #         print("step is {}".format(step))
+    #         print("point is {}".format(point))
+    #         pd_step_point = pd_step.loc[(raw_pd_data['step'] == step)]
+    #         print(pd_step_point.head())
+    #         # check if there is any nan values in columns
+    #         print("step {} point {} nans".format(step, point))
+    #         print(pd_step_point.isna().sum())
+    #         print("step {} point {} summary".format(step, point))
+    #         print(pd_step_point.shape)
+    #
+    #         pd_step_point_clear = pd_step_point.loc[
+    #         (pd_step_point.airflow == 0)
+    #         & (pd_step_point.label == 'measure')
+    #         ]
+    #
+    #         f, q, fe = differentiate_one_point(data=pd_step_point_clear,
+    #                                            mass_of_pipe=400,
+    #                                            cut_number=100,
+    #                                            points_low_limit=100,
+    #                                            len_of_measure_period=1800
+    #                                            )
+    #
+    #         print("f = {}, q = {} \n".format(f, q))
+    #
+    #         # TODO: add writing to report
+    #
+    #
+    # # fill nan with unique value for any column
+    # fillvalues = {
+    # "date": "broken_date",
+    # "time": "broken_time",
+    # "Ired": 10,
+    # "Iwhite": 10,
+    # "temp": -100,
+    # "humid": -100,
+    # "CO2": 0,
+    # "weight": -100,
+    # "airflow": 1,
+    # "K30CO2": -100,
+    # "step": -1,
+    # "point": -1,
+    # "label": "broken_comment"
+    # }
+    # pd_data = raw_pd_data.fillna(value=fillvalues)
+    # # TODO mb in future we have to mark every step in which
+    # #  too much empty co2 values, e g more than some threshold
+    # #  and print report about every step
+    #
+    #
+    # # plotting
+    # # tmin = 42000
+    pd_data = raw_pd_data
     tmin = 0
     tmax = len(pd_data['time'])
-    # tmax = 82000
+
+
+    # # tmax = 82000
     dt = 1
     ir = np.array(pd_data['Ired'][tmin:tmax:dt])
     iw = np.array(pd_data['Iwhite'][tmin:tmax:dt])
@@ -145,20 +148,20 @@ def main():
         # far[i], fr_fw[i] = make_cool_far_rw(far_, fr_fw_) # - please stop use it
         far[i]= far_
         fr_fw[i] = fr_fw_
-
-        # # 2D plot of f_r and f_w by I
-    # fig = pl.figure()
-    # t = range(len(times))
-    # # pl.xticks(t, times, rotation='vertical')
-    # pl.plot(t, co2, '-g', label="CO2, ppm")
-    # pl.plot(t, iw, '-b', label="I_white, mA")
-    # pl.plot(t, ir, '-r', label="I_red, mA")
-    # # pl.ylabel('CO2, ppm')
-    # pl.xlabel('time')
-    # pl.title("CO2 ppm with red and white currents")
-    # pl.legend()
-    # pl.grid()
-    # pl.show()
+    #
+    #     # # 2D plot of f_r and f_w by I
+    # # fig = pl.figure()
+    # # t = range(len(times))
+    # # # pl.xticks(t, times, rotation='vertical')
+    # # pl.plot(t, co2, '-g', label="CO2, ppm")
+    # # pl.plot(t, iw, '-b', label="I_white, mA")
+    # # pl.plot(t, ir, '-r', label="I_red, mA")
+    # # # pl.ylabel('CO2, ppm')
+    # # pl.xlabel('time')
+    # # pl.title("CO2 ppm with red and white currents")
+    # # pl.legend()
+    # # pl.grid()
+    # # pl.show()
 
 
     # lets plot only one index by time in one day
