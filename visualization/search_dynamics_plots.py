@@ -13,10 +13,11 @@ def plot_dynamics_of_search():
         'x1',
         'x2',
         'Q',
+        'F',
         'step',
         'label'
     ]
-    pd_data = pd.read_csv("../data/simple_gradient_method_1267.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/simple_gradient_method_1300.csv", header=None, names=fieldnames)
     print(pd_data.shape)
     # print(pd_data.head())
     useful_rows = ['dF']
@@ -29,8 +30,10 @@ def plot_dynamics_of_search():
 
     x1 = pd.to_numeric(filtered_pd['x1'])
     x2 = pd.to_numeric(filtered_pd['x2'])
+    F = pd.to_numeric(filtered_pd['F'])
     Q = pd.to_numeric(filtered_pd['Q'])
-    Q_true = Q/(0.08*1.8*1000) # TODO corrected due to error in adjustment module (remove after)
+    # Q_true = Q/(0.08*1.8*1000) # TODO corrected due to error in adjustment module (remove after)
+    Q_true = Q
     # for
     step = pd.to_numeric(filtered_pd['step'])
     dates = filtered_pd['date']
@@ -38,7 +41,7 @@ def plot_dynamics_of_search():
     t_ticks = np.linspace(0, len(dates)-1, 20)
     # pl.xticks(t[0::1000], times[0::1000], rotation='vertical')
 
-    fig, axs = pl.subplots(3, sharex=True)
+    fig, axs = pl.subplots(4, sharex=True)
     # fig.suptitle('Search dynamics')
     pl.xticks(t[0::11], dates[0::11], rotation='vertical')
     axs[0].plot(t, x1, '-r', label="x1 coordinates of search steps")
@@ -51,6 +54,9 @@ def plot_dynamics_of_search():
     axs[2].plot(t, Q_true, '-g', label="Q values for search steps")
     axs[2].set_ylabel("Q, kg ESM / kg biomass")
     axs[2].grid()
+    axs[3].plot(t, F, '-c', label="F values for search steps")
+    axs[3].set_ylabel("F, mgCO2/sec")
+    axs[3].grid()
     pl.show()
 
 if __name__ == "__main__":

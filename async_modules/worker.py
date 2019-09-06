@@ -107,7 +107,7 @@ class Worker:
         self.send_results_task = None
 
         # add ControlSystem
-        self._search_system = ControlSystem(
+        self._control_system = ControlSystem(
             worker=self,
             config_path=config_path
         )
@@ -115,11 +115,11 @@ class Worker:
     async def start(self):
         logger.debug("start worker coroutine")
         # all unit things must be handled by schedule object
-        await self._search_system.start()
+        await self._control_system.start()
         # then create periodic tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
         self.schedule_task = PeriodicCoro(
-            self.check_search_system,
+            self.check_control_system,
             self.schedule_period,
             name="schedule_task"
         )
@@ -151,7 +151,7 @@ class Worker:
     async def stop(self):
         # stop all units and event loop
         # shedule object must handle it
-        await self._search_system.stop()
+        await self._control_system.stop()
         # then stop tasks
         await self.schedule_task.stop()
         await self.request_task.stop()
@@ -184,21 +184,21 @@ class Worker:
     async def start_ventilation(self):
         # start ventilation forever
         logger.info("MANUAL COMMAND: start ventilation")
-        return await self._search_system.start_ventilation()
+        return await self._control_system.start_ventilation()
 
     async def stop_ventilation(self):
         # stop ventilation
         logger.info("MANUAL COMMAND: stop ventilation")
-        return await self._search_system.stop_ventilation()
+        return await self._control_system.stop_ventilation()
 
     async def do_calibration(self):
         # do calibration once
         logger.info("MANUAL COMMAND: do calibration once")
-        return await self._search_system.do_calibration()
+        return await self._control_system.do_calibration()
 
     async def do_reconfiguration(self):
         logger.info("MANUAL COMMAND: do reconfiguration")
-        return await self._search_system.manual_reconfiguration()
+        return await self._control_system.manual_reconfiguration()
 
     async def _run_main_loop(self):
         # TODO: mb here must be nothing, and we should put all things to another PeriodicCoro?
@@ -320,20 +320,20 @@ class Worker:
         # TODO: do real archiving
         pass
 
-    async def check_search_system(self):
+    async def check_control_system(self):
         """
         do read schedule
         and then put tasks to self.tickets[] (with lock)
         hehe, nope
         :return:
         """
-        await self._search_system.update_state()
+        await self._control_system.update_state()
 
     async def measure(self):
         """
         Get info from all sensors and write it to file
         """
-        await self._search_system.measure()
+        await self._control_system.measure()
 
     async def check_server(self):
         """

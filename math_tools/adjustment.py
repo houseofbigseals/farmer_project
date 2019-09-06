@@ -196,7 +196,7 @@ def final_intQ(E, Prod):
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
 
-    I = E * ppfd_to_kW  # light power converted to kW
+    I = E * ppfd_to_kW  # light power converted to kW / m2
     Qf = 0.28 * V / Prod + 0.72 * I * surface / Prod
     return Qf
 

@@ -53,7 +53,7 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    raw_pd_data = pd.read_csv("../data/data_1290", header=None, names=fieldnames)
+    raw_pd_data = pd.read_csv("../data/data_1300", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
@@ -174,7 +174,7 @@ def main():
 
     ## TODO warning tube weight added here !
 
-    tube_weight = 375
+    tube_weight = 0
     tube_weight_ = np.ones(len(weight_))*tube_weight
     times_ = np.array(pd_data['time'][t1:t2:dt])
     fig = pl.figure()

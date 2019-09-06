@@ -3,6 +3,7 @@ import logging
 import asyncio
 from typing import Any
 import localconfig
+from reports.config_handler import ConfigHandler
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch, StaticSearch
 from async_modules.data_handler import DataHandler
@@ -29,16 +30,16 @@ class ControlSystem:
         config = localconfig.config
         config.read(config_path)
         self.worker = worker
-        self.calibration_time = config.get('search_system', 'calibration_time')
-        self.search_params_file = config.get('search_system', 'search_point_file')
+        self.calibration_time = config.get('control_system', 'calibration_time')
+        self.search_params_file = config.get('control_system', 'search_point_file')
         # start red and white for time where no search
-        self.start_red = config.get('search_system', 'start_red')
-        self.start_white = config.get('search_system', 'start_white')
-        self.datafile = config.get('search_system', 'datafile')
-        self.time_of_measure_period = config.get('search_system', 'time_of_measure_period')
+        self.start_red = config.get('control_system', 'start_red')
+        self.start_white = config.get('control_system', 'start_white')
+        self.datafile = config.get('control_system', 'datafile')
+        self.time_of_measure_period = config.get('control_system', 'time_of_measure_period')
 
-        self.measure_period = config.get('search_system', 'measure_time')
-        self.pipe_mass = config.get('search_system', 'mass_of_pipe')
+        self.measure_period = config.get('control_system', 'measure_time')
+        self.pipe_mass = config.get('control_system', 'mass_of_pipe')
         # add fields for our data tables
         self.data_fields = [
             "date",
@@ -84,7 +85,7 @@ class ControlSystem:
                 f.write("{}".format(self.current_search_step))
 
         # find search table and check it
-        self.search_method_log = config.get('search_system', 'search_logfile')
+        self.search_method_log = config.get('control_system', 'search_logfile')
         self.search_log_fields = [
             'date',
             'time',
