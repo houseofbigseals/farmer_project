@@ -19,7 +19,14 @@ mg_CO2_to_kg_dry_mass = 0.68*0.001*0.001 # in kg of dry mass / mg CO2 assimilate
 mg_CO2_to_kg_raw_mass = 8.5*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
 # when water coefficient is 0.08
 ppfd_to_kW = 0.2*0.001  # kW / (mkmol/m2*sec)
-
+price_of_volume = 45.2  # kg_of_equiv_mass / m3
+price_of_power = 114  # kg_of_equiv_mass / kW
+old_price_of_volume = 0.28
+old_price_of_power = 0.72
+a1 = 2.0877467
+b1 = 3.6243109
+a2 = 2.64379709
+b2 = -0.53008089
 
 def red_far_by_curr(Ir:float):
     # this constants are determined from experiment
@@ -156,9 +163,9 @@ def raw_intQ(dC, E, dT):
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
     # TODO: we need to change dC to dCC because [dC] in ppmv/sec but [dCC] in  mgCO2/sec
-    Prod = 0.000001 * (8.5*dCC*dT)  # productivity of crops in kg
+    Prod = mg_CO2_to_kg_raw_mass*dCC*dT  # productivity of crops in kg
     I = E* ppfd_to_kW   # light power converted to kW
-    Qi = 0.28 * V / Prod + 0.72 * I * surface / Prod
+    Qi = price_of_volume * V / Prod + price_of_power * I * surface / Prod
     return Qi
 
 

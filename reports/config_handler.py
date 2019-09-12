@@ -45,6 +45,12 @@ class ConfigHandler(object):
         # when water coefficient is 0.08
         self.ppfd_to_kW = self.config.get('adjustment', 'ppfd_to_kW')
         # kW / (mkmol/m2*sec)
+        self.price_of_volume = self.config.get('adjustment', 'price_of_volume')
+        # kg_of_equiv_mass / m3
+        self.price_of_power = self.config.get('adjustment', 'price_of_power')
+        # kg_of_equiv_mass / kW
+
+        # TODO: add here unstable constants from I mA to ppfd conversion for leds
 
         # asdasd
 
