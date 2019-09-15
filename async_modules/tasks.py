@@ -3,7 +3,10 @@
 import asyncio
 from contextlib import suppress
 import time
+import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+logger = logging.getLogger("Worker.async_tasks")
 
 
 class PeriodicTask:
@@ -31,7 +34,7 @@ class PeriodicTask:
     async def _run(self):
         while True:
             await asyncio.sleep(self.time)
-            print("{} at work !".format(self._name))
+            logger.debug("{} at work !".format(self._name))
             self.func()
 
 
@@ -48,7 +51,7 @@ class PeriodicCoro:
     async def _repeat_forever(self):
         while True:
             await asyncio.sleep(self.time)
-            print("{} at work !".format(self._name))
+            logger.debug("{} at work !".format(self._name))
             await self.coro(*self.coro_args, **self.coro_kwargs)
 
     async def start(self):
@@ -85,7 +88,7 @@ class LongSingleTask:
             self.is_started = True
             # Start task to call func once
             self._task = self.loop.run_in_executor(self.executor, self.func)
-            print("{} at work !".format(self._name))
+            logger.debug("{} at work !".format(self._name))
             self.done = True
             await self.stop()
 
@@ -137,7 +140,7 @@ class SingleTask:
 
     async def _run(self):
             await asyncio.sleep(0)
-            print("{} at work !".format(self._name))
+            logger.debug("{} at work !".format(self._name))
             self.func()
             self.done = True
             # await self.stop()
@@ -175,7 +178,7 @@ class SingleCoro:
                     await self._task
 
     async def _run(self):
-            print("{} at work !".format(self._name))
+            logger.debug("{} at work !".format(self._name))
             await self.coro(*self.coro_args, **self.coro_kwargs)
             self.done = True
 

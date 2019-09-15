@@ -34,6 +34,7 @@ class TableSearch(object):
     ):
         # logger
         self.logger = logging.getLogger("Worker.SearchMethods.TableSearchMethod")
+        self.logger2 = logging.getLogger("SearchLog.TableSearchMethod")
         # self.schedule = [
         #     [700, 0, "1", 10],
         #     [200, 0, "2", 10],
@@ -93,6 +94,7 @@ class TableSearch(object):
             self.search_table.append(new_point)
 
         self.logger.info("Method started")
+        self.logger2.info("Method started")
 
     def do_search_step(self):
         """
@@ -117,6 +119,7 @@ class StaticSearch(object):
     ):
         # logger
         self.logger = logging.getLogger("Worker.SearchMethods.StaticSearchMethod")
+        self.logger2 = logging.getLogger("SearchLog.StaticSearchMethod")
         self.schedule = [
             [500, 1.5, 'the_only_one', 10]
         ]
@@ -134,6 +137,7 @@ class StaticSearch(object):
             self.search_table.append(new_point)
 
         self.logger.info("Method started")
+        self.logger2.info("Method started")
 
     def do_search_step(self):
         """
@@ -174,6 +178,7 @@ class StupidGradientMethod(object):
         # F is quality coefficient for moon base Q
         # logger
         self.logger = logging.getLogger("Worker.SearchMethods.StupidGradientMethod")
+        self.logger2 = logging.getLogger("SearchLog.StupidGradientMethod")
         # search constant parameters
         self.lamb = lamb
         # start points
@@ -201,6 +206,7 @@ class StupidGradientMethod(object):
             self.dFx2
         ]
         self.logger.info("Method started")
+        self.logger2.info("Method started")
 
     def do_search_step(self):
         """
@@ -254,6 +260,9 @@ class StupidGradientMethod(object):
         self.logger.info("done search step from x1 = {} x2 = {} to x1 = {} x2 = {}".format(
             x1_old, x2_old, x1_new, x2_new
         ))
+        self.logger2.info("done search step from x1 = {} x2 = {} to x1 = {} x2 = {}".format(
+            x1_old, x2_old, x1_new, x2_new
+        ))
         # return new x1 and x2 for exposed logging or smth
         # its not necessary
         return x1_new, x2_new
@@ -287,6 +296,7 @@ class SimpleGradientMethod(object):
         # F is quality coefficient for moon base Q
         # logger
         self.logger = logging.getLogger("Worker.SearchMethods.SimpleGradientMethod")
+        self.logger2 = logging.getLogger("SearchLog.SimpleGradientMethod")
         # search constant parameters
         self.lamb1 = lamb1
         self.lamb2 = lamb2
@@ -315,6 +325,7 @@ class SimpleGradientMethod(object):
             self.dFx2
         ]
         self.logger.info("Method started")
+        self.logger2.info("Method started")
 
     def do_search_step(self):
         """
@@ -339,19 +350,29 @@ class SimpleGradientMethod(object):
         self.logger.info("raw new search coordinates is x1 = {} x2 = {}".format(
             x1_new, x2_new
         ))
+        self.logger2.info("raw new search coordinates is x1 = {} x2 = {}".format(
+            x1_new, x2_new
+        ))
         # then lets do some security checks
         # for example, lets check if we are outside the range of acceptable values
         self.logger.info("check new coords if they are out of the range of permissible values")
+        self.logger2.info("check new coords if they are out of the range of permissible values")
         if x1_new < self.min_x1:
             # lets set x1 as lower acceptable limit
             x1_new = self.min_x1
             self.logger.info("x1_new < self.min_x1 so new x1 is {}".format(
                 x1_new
             ))
+            self.logger2.info("x1_new < self.min_x1 so new x1 is {}".format(
+                x1_new
+            ))
         elif x1_new > self.max_x1:
             # lets set x1 as higher acceptable limit
             x1_new = self.max_x1
             self.logger.info("x1_new > self.max_x1 so new x1 is {}".format(
+                x1_new
+            ))
+            self.logger2.info("x1_new > self.max_x1 so new x1 is {}".format(
                 x1_new
             ))
 
@@ -361,14 +382,22 @@ class SimpleGradientMethod(object):
             self.logger.info("x2_new < self.min_x2 so new x2 is {}".format(
                 x2_new
             ))
+            self.logger2.info("x2_new < self.min_x2 so new x2 is {}".format(
+                x2_new
+            ))
         elif x2_new > self.max_x2:
             # lets set x2 as higher acceptable limit
             x2_new = self.max_x2
             self.logger.info("x2_new > self.max_x2 so new x2 is {}".format(
                 x2_new
             ))
+            self.logger2.info("x2_new > self.max_x2 so new x2 is {}".format(
+                x2_new
+            ))
 
         self.logger.info("check new coords if they with added dx1 and dx2 are "
+                         "out of the range of permissible values")
+        self.logger2.info("check new coords if they with added dx1 and dx2 are "
                          "out of the range of permissible values")
 
         if x1_new + self.h1 > self.max_x1:
@@ -377,10 +406,16 @@ class SimpleGradientMethod(object):
             self.logger.info("x1_new + dh1 > self.max_x1 so new x1 is {}".format(
                 x1_new
             ))
+            self.logger2.info("x1_new + dh1 > self.max_x1 so new x1 is {}".format(
+                x1_new
+            ))
         if x2_new + self.h2 > self.max_x2:
             # lets set x2 as lower acceptable limit
             x2_new = self.max_x2 - self.h2
             self.logger.info("x2_new + dh2 > self.max_x2 so new x2 is {}".format(
+                x2_new
+            ))
+            self.logger2.info("x2_new + dh2 > self.max_x2 so new x2 is {}".format(
                 x2_new
             ))
 
@@ -399,6 +434,10 @@ class SimpleGradientMethod(object):
         ]
         self.logger.info("new search table recalculated")
         self.logger.info("done search step from x1 = {} x2 = {} to x1 = {} x2 = {}".format(
+            x1_old, x2_old, x1_new, x2_new
+        ))
+        self.logger2.info("new search table recalculated")
+        self.logger2.info("done search step from x1 = {} x2 = {} to x1 = {} x2 = {}".format(
             x1_old, x2_old, x1_new, x2_new
         ))
         # return new x1 and x2 for exposed logging or smth

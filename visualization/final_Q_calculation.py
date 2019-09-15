@@ -16,7 +16,7 @@ def Q_calculation():
         'step',
         'label'
     ]
-    pd_data = pd.read_csv("../data/simple_gradient_method_1267.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/simple_gradient_method_1300.csv", header=None, names=fieldnames)
     print(pd_data.shape)
     # print(pd_data.head())
     # print(pd_data.tail())
@@ -37,15 +37,15 @@ def Q_calculation():
     x1_len = len(x1.index)
     print(x1_sum, x1_len)
 
-    dM_12_22_exp = 162  # grams
-    dM_12_22_control = 140  # grams
+    dM_12_22_exp = 151  # grams
+    dM_12_22_control = 240   # grams
     E_12_22_control = 500  # mkmoles/m2sec
     print(x1_sum/x1_len)
 
     Q_12_22_exp = final_intQ(x1_sum/x1_len, dM_12_22_exp)
-    print("Q_12_22_exp", Q_12_22_exp)
+    print("G_02_12_exp", Q_12_22_exp)
     Q_12_22_control = final_intQ(E_12_22_control, dM_12_22_control)
-    print("Q_12_22_control", Q_12_22_control)
+    print("G_02_12_control", Q_12_22_control)
     result = (Q_12_22_control - Q_12_22_exp)/Q_12_22_control
     print(result)
 

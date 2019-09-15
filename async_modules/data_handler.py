@@ -17,11 +17,13 @@ class DataHandler(object):
             self,
             worker: int,  # really its id
             session: int,  # really its id
-            fields: list  # list of fields in data table
+            fields: list,  # list of fields in data table
+            data_path: str  # path to data file
     ):
         self.session = session
         self.worker = worker
         self.fields = fields
+        self.data_path = data_path
         # here we must check if there is table, that corresponds
         # to current session (i e if there is csv file data_{session_id} on disc
         # and if there is data_{session_id} table on sql server)
@@ -31,16 +33,16 @@ class DataHandler(object):
         # it looks  like if we start program from here ../data wil be different then
         # when we starts all worker
         # so you have to be careful
-        data_path = os.path.abspath('./data')
-        if not os.path.exists(data_path):
-            os.mkdir(data_path)
-            logger.info("Directory {} created ".format(data_path))
-            print()
-        else:
-            logger.info("Directory {} found ".format(data_path))
+        # data_path = os.path.abspath(self.data_path)
+        # if not os.path.exists(data_path):
+        #     os.mkdir(data_path)
+        #     logger.info("Directory {} created ".format(data_path))
+        #     print()
+        # else:
+        #     logger.info("Directory {} found ".format(data_path))
 
         # then lets check file on disc
-        local_data_path = os.path.join(data_path, 'data_{}'.format(self.session))
+        local_data_path = os.path.join(data_path, 'data_{}.csv'.format(self.session))
 
         if os.path.isfile(local_data_path):
             self.data_path = local_data_path

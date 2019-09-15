@@ -2,6 +2,7 @@ import csv
 import pandas as pd
 import numpy as np
 import pylab as pl
+from scipy import stats
 # from adjustment import
 from math_tools.adjustment import final_intQ
 
@@ -15,7 +16,8 @@ def plot_dynamics_of_search():
         'Q',
         'F',
         'step',
-        'label'
+        'label',
+        'dick'
     ]
     pd_data = pd.read_csv("../data/simple_gradient_method_1300.csv", header=None, names=fieldnames)
     print(pd_data.shape)
@@ -33,7 +35,16 @@ def plot_dynamics_of_search():
     F = pd.to_numeric(filtered_pd['F'])
     Q = pd.to_numeric(filtered_pd['Q'])
     # Q_true = Q/(0.08*1.8*1000) # TODO corrected due to error in adjustment module (remove after)
+
     Q_true = Q
+    Qmax = Q_true.max()
+    Q_true = Q_true/Qmax
+
+    # Q_true = Q_true[np.abs(Q_true - Q_true.mean()) <= (3 * Q_true.std())]
+    # keep only the ones that are within +3 to -3 standard deviations in the column 'Data'.
+
+    # Q_true = Q_true[~(np.abs(Q_true - Q_true.mean()) > (3 * Q_true.std()))]
+    print(Q_true)
     # for
     step = pd.to_numeric(filtered_pd['step'])
     dates = filtered_pd['date']
@@ -52,12 +63,30 @@ def plot_dynamics_of_search():
     axs[1].grid()
     axs[1].set_ylabel("Red/White")
     axs[2].plot(t, Q_true, '-g', label="Q values for search steps")
-    axs[2].set_ylabel("Q, kg ESM / kg biomass")
+    axs[2].set_ylabel("Q_search, kg ESM / kg biomass")
     axs[2].grid()
     axs[3].plot(t, F, '-c', label="F values for search steps")
+    # axs[3].plot(t, Q_true, '-c', label="F values for search steps")
     axs[3].set_ylabel("F, mgCO2/sec")
     axs[3].grid()
     pl.show()
+
+    # only Q
+    fig = pl.figure()
+    pl.xticks(t[0::11], dates[0::11], rotation='vertical')
+
+    # pl.plot(t, Q_true, '-g', label="Q_search, kg ESM / kg biomass ")
+    pl.plot(t, Q_true, '-g', label="G_search, отн. ед.")
+    # pl.plot(t, fr_fw, '-b', label="FARred/FARwhite")
+    # pl.plot(t, far/10, '-r', label="FAR summ, mkmoles")
+    pl.ylabel('G / Gmax')
+    # pl.ylim(bottom=300, top=550)
+    pl.xlabel('Time')
+    # pl.title("Q, kg ESM / kg biomass")
+    pl.legend()
+    pl.grid()
+    pl.show()
+
 
 if __name__ == "__main__":
     plot_dynamics_of_search()

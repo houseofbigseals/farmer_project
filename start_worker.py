@@ -10,16 +10,17 @@ import logging
 
 async def start_check():
 
-    # parser = argparse.ArgumentParser(
-    #     description="Worker, that can parse tickets from server",
-    #     epilog="Do not forget to print &, to start process in the background."
-    # )
+    parser = argparse.ArgumentParser(
+        description="Worker, that can parse tickets from server",
+        epilog="Do not forget to print &, to start process in the background."
+    )
     # parser.add_argument('-H', '--host', type=str, default="83.220.174.247", help='server host ipv4 such as 127.0.0.1')
     # parser.add_argument('-P', '--port', type=int, default=8888, help='server port number such as 8888')
     # parser.add_argument('-I', '--id', type=int, default=155167253286217647024261323245457212920
     #                     , help='int UUID number for worker')
     # parser.add_argument('-D', '--debug', action='store_true', help='set debug output to worker.log')
-    # ns = parser.parse_args()
+    parser.add_argument('-C', '--config', type=str, default="worker.conf", help='start configuration file')
+    ns = parser.parse_args()
 
 
 
@@ -42,7 +43,7 @@ async def start_check():
     #     except Exception as e:
     #         print(e)
     #         logger.error(e)
-    await main()
+    await main(ns.config)
 
 
 

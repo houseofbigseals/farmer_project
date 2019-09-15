@@ -3,6 +3,7 @@ import logging
 import asyncio
 from typing import Any
 import localconfig
+import os
 from reports.config_handler import ConfigHandler
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch, StaticSearch
@@ -10,8 +11,10 @@ from async_modules.data_handler import DataHandler
 from math_tools.adjustment import currents_from_newcoords, red_far_by_curr, white_far_by_curr
 from math_tools.math_methods import differentiate_one_point
 import csv
+import async_modules.units as units
 
 logger = logging.getLogger("Worker.ControlSystem")
+logger2 = logging.getLogger("SearchLog")
 
 
 class ControlSystem:
@@ -22,8 +25,9 @@ class ControlSystem:
     """
     def __init__(
             self,
+            data_path: str,
             worker: Any = None,  # TODO is this correct way or not
-            config_path: str = "worker.config"
+            config_path: str = "worker.conf"
     ):
         self.loop = asyncio.get_event_loop()
         # read config
@@ -31,7 +35,7 @@ class ControlSystem:
         config.read(config_path)
         self.worker = worker
         self.calibration_time = config.get('control_system', 'calibration_time')
-        self.search_params_file = config.get('control_system', 'search_point_file')
+        # self.search_params_file = config.get('control_system', 'search_point_file')
         # start red and white for time where no search
         self.start_red = config.get('control_system', 'start_red')
         self.start_white = config.get('control_system', 'start_white')
@@ -40,6 +44,8 @@ class ControlSystem:
 
         self.measure_period = config.get('control_system', 'measure_time')
         self.pipe_mass = config.get('control_system', 'mass_of_pipe')
+        self._session_id = config.get('session', 'session_id')
+        self.worker_id = config.get('worker', 'worker_id')
         # add fields for our data tables
         self.data_fields = [
             "date",
@@ -56,33 +62,52 @@ class ControlSystem:
             "point",
             "label"
         ]
+        data_data_path = data_path
         # add data_handler
         self.data_handler = DataHandler(
-            worker=self.worker._id,
-            session=self.worker._session_id,
-            fields=self.data_fields
+            worker=self.worker_id,
+            session=self._session_id,
+            fields=self.data_fields,
+            data_path=data_data_path
         )
+
+        # init search logger
+        logger2.setLevel(logging.DEBUG)
+        log2_path = os.path.join(data_path, 'search_{}.log'.format(self._session_id))
+        fh = logging.FileHandler(log2_path)
+        formatter = logging.Formatter('%(asctime)s;%(name)s;%(levelname)s;%(message)s',
+                                      "%Y-%m-%d;%H:%M:%S;%z")
+        fh.setFormatter(formatter)
+        # add handler to logger object
+        logger2.addHandler(fh)
+
 
         # default search parameters
         skwargs = dict(config.items("SimpleGradientMethod"))
         self.search_method = SimpleGradientMethod(**skwargs)
         # self.search_method = TableSearch()
-        self.current_search_step = 0
+
+        # load current search step
+        self.current_search_step = config.get('control_system', 'search_start_step')
+        # TODO: in future we will add some image of search system last condition
+        #  to automatically start with this parameters after power shutdown or smth unexpected
+        # set current search point 0 as default, because we need to
+        # restart measure in current step if smth broken
         self.current_search_point = 0
 
-        # find search_point_config and check it
-        try:
-            with open(self.search_params_file) as f:
-                # we have to read one number from this file
-                raw_data = f.read()
-                data = int(raw_data)
-                self.current_search_step = data
-                logger.info("Search_point_config file found, current_search_step loaded")
-        except Exception as e:
-            logger.error("Error while reading search_point_config: {}".format(e))
-            logger.error("Creating new default search_point_config")
-            with open(self.search_params_file, "w") as f:
-                f.write("{}".format(self.current_search_step))
+        # # find search_point_config and check it
+        # try:
+        #     with open(self.search_params_file) as f:
+        #         # we have to read one number from this file
+        #         raw_data = f.read()
+        #         data = int(raw_data)
+        #         self.current_search_step = data
+        #         logger.info("Search_point_config file found, current_search_step loaded")
+        # except Exception as e:
+        #     logger.error("Error while reading search_point_config: {}".format(e))
+        #     logger.error("Creating new default search_point_config")
+        #     with open(self.search_params_file, "w") as f:
+        #         f.write("{}".format(self.current_search_step))
 
         # find search table and check it
         self.search_method_log = config.get('control_system', 'search_logfile')
@@ -96,17 +121,19 @@ class ControlSystem:
             'step',
             'label'
         ]
+        self.search_method_log_path = os.path.join(data_path,
+                                                   self.search_method_log+'_{}.log'.format(self._session_id))
         try:
-            with open(self.search_method_log) as f:
+            with open(self.search_method_log_path) as f:
                 pass  # TODO change to isfile construction
                 logger.info("search_method_log file found")
         except Exception as e:
             logger.error("Error while reading search_method_log: {}".format(e))
             logger.error("Creating new default search_method_log")
-            with open(self.search_method_log, "w") as f:
-                # f.write("{}".format(self.current_search_step))
+            with open(self.search_method_log_path, "w") as f:
                 writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
                 writer.writeheader()
+                # f.write('')
 
         # add table with search points of current step
         self.current_search_table = self.search_method.search_table
@@ -117,14 +144,43 @@ class ControlSystem:
         self.current_comment = "loading"
         self.just_started = True
 
-        # add units from worker
-        self.system_unit = getattr(worker, 'system_unit')
-        self.led_unit = getattr(worker, 'led_unit')
-        self.co2_sensor_unit = getattr(worker, 'co2_sensor_unit')
-        self.gpio_unit = getattr(worker, 'gpio_unit')
-        self.weight_unit = getattr(worker, 'weight_unit')
-        self.k30_unit = getattr(worker, 'k30_unit')
-        self.temp_sensor_unit = getattr(worker, 'temp_sensor_unit')
+        # append units
+        # read list list_of_available_units from units.py
+        # go through it and find if some unit name is in config
+        # then add it and create its object with parameters from config
+        # then dynamically add it to self attributes
+        units_units = units.list_of_available_units
+        self.unitnames = []
+
+        # here is dynamical loading units
+        # its not simple to understand that painful thing
+        for u in units_units:
+            # we have to check all units from library if they in use
+            if u[0] in config and config.get(u[0], 'use') is True:
+                # u[0] is unit name in config
+                # u[1] is real unit name
+                self.unitnames.append(u[0])
+                kwargs = dict(config.items(u[0])) # get all params of unit
+                kwargs.pop('use')  # we dont need that key as argument of unit
+                unit_obj = getattr(units, u[1])  # units module has unit name (u[1]) as attribute
+                setattr(self, u[0], unit_obj(**kwargs))  # we want to set that attribute to self
+                logger.debug("{} added to control system".format(u[0]))
+
+        # system unit not in config because we always use it
+        # so we have to add it manually
+        self.system_unit = units.SystemUnit(worker=worker)
+        self.unitnames.append('system_unit')
+        logger.debug("system_unit added to control system")
+
+        # TODO fix that its stupid
+
+        # self.system_unit = getattr(self, 'system_unit')  # we already add it
+        self.led_unit = getattr(self, 'led_unit')
+        self.co2_sensor_unit = getattr(self, 'co2_sensor_unit')
+        self.gpio_unit = getattr(self, 'gpio_unit')
+        self.weight_unit = getattr(self, 'weight_unit')
+        self.k30_unit = getattr(self, 'k30_unit')
+        self.temp_sensor_unit = getattr(self, 'temp_sensor_unit')
 
     async def start(self):
         self.just_started = True
@@ -221,10 +277,17 @@ class ControlSystem:
                         logger.info("F = {}, Q = {}, F/E = {}".format(
                             f, q, fe
                         ))
+                        logger2.info("F = {}, Q = {}, F/E = {}".format(
+                            f, q, fe
+                        ))
                     except Exception as e:
                         logger.error("Error while fit: {}".format(e))
-                        logging.error("The search is broken")
-                        logging.error("We will use fake Q because "
+                        logger.error("The search is broken")
+                        logger.error("We will use fake Q because "
+                                      "of that error to keep plants alive")
+                        logger2.error("Error while fit: {}".format(e))
+                        logger2.error("The search is broken")
+                        logger2.error("We will use fake Q because "
                                       "of that error to keep plants alive")
                         fake_q = -1000 # TODO fix that
                         q = fake_q
@@ -238,6 +301,7 @@ class ControlSystem:
                         # it means that we have collected all data for current step
                         # and we can start new search step
                         logger.info("update_state found that we can start new search step")
+                        logger2.info("update_state found that we can start new search step")
 
                         # we have to write all old search table to special csv
                         # for simplification of the search visualization process later
@@ -255,6 +319,9 @@ class ControlSystem:
                             logger.info("update_state search p = {}, x1 = {}, x2= {}, q = {}".format(
                                 p.name, p.x1, p.x2, p.result
                             ))
+                            logger2.info("update_state search p = {}, x1 = {}, x2= {}, q = {}".format(
+                                p.name, p.x1, p.x2, p.result
+                            ))
                             with open(self.search_method_log, "a") as f:
                                 # f.write("{}".format(self.current_search_step))
                                 writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
@@ -262,14 +329,17 @@ class ControlSystem:
 
                         # lets do search step
                         x1, x2 = self.search_method.do_search_step()
-                        logger.info("update_state new x1 = {}, new x2 = {}".format(
-                            x1, x2
-                        ))
+                        logger.info("update_state new x1 = {}, new x2 = {}".format(x1, x2))
+                        logger2.info("update_state new x1 = {}, new x2 = {}".format(x1, x2))
                         # then lets calculate new search table
                         self.current_search_table = self.search_method.search_table
                         logger.info("update_state creates new search table")
+                        logger2.info("update_state creates new search table")
                         for p in self.current_search_table:
                             logger.info("name = {} x1 = {} x2 = {}".format(
+                                p.name, p.x1, p.x2
+                            ))
+                            logger2.info("name = {} x1 = {} x2 = {}".format(
                                 p.name, p.x1, p.x2
                             ))
 
@@ -282,14 +352,23 @@ class ControlSystem:
                         logger.info("update_state new search_step = {}".format(
                             self.current_search_step
                         ))
+                        logger2.info("update_state new search_point = {}".format(
+                            self.current_search_point
+                        ))
+                        logger2.info("update_state new search_step = {}".format(
+                            self.current_search_step
+                        ))
                         # then write number of new step to file
-                        logger.info("update_state Writing data to search steps config")
-                        with open(self.search_params_file, "w") as f:
-                            f.write("{}".format(self.current_search_step))
+                        # logger.info("update_state Writing data to search steps config")
+                        # with open(self.search_params_file, "w") as f:
+                        #     f.write("{}".format(self.current_search_step))
 
                     else:
                         self.current_search_point += 1
                         logger.info("update_state new search_point = {}".format(
+                            self.current_search_point
+                        ))
+                        logger2.info("update_state new search_point = {}".format(
                             self.current_search_point
                         ))
 
@@ -300,6 +379,9 @@ class ControlSystem:
                     # then lets convert them to Ired and Iwhite
                     new_red, new_white = currents_from_newcoords(new_far, new_rw)
                     logger.info("update_state new red and white".format(
+                        new_red, new_white
+                    ))
+                    logger2.info("update_state new red and white".format(
                         new_red, new_white
                     ))
                     # then create coro for measure new search point
@@ -326,6 +408,8 @@ class ControlSystem:
         logger.info(await self.led_unit.set_current(red=int(red), white=int(white)))
         logger.info("New red and white currents is {} and {}".format(int(red), int(white)))
         logger.info(await self.gpio_unit.start_ventilation())
+        # TODO remove all worker calls from control system
+
         await self.worker.measure_task.stop()
         logger.info("self.gpio_unit.start_calibration")
         logger.info(await self.gpio_unit.start_calibration())

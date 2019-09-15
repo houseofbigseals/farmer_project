@@ -1,13 +1,13 @@
 import asyncio
 import json
-
+import shutil
 from network_modules.command import Command, Ticket
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from network_modules.raw_client import command_request_ticket\
     , command_set_ticket_result
-import async_modules.units as units
 import logging
 import sys
+import os
 import localconfig
 from async_modules.control_system import ControlSystem
 
@@ -25,7 +25,6 @@ class Worker:
             config_path: str = "worker.conf"
     ):
         # do some init things
-        # init units, test  connection with server and some other things
 
         # at first parse config
 
@@ -34,15 +33,36 @@ class Worker:
 
         # create logger
         global logger
-        self.debug_mode = config.get('worker', 'debug_mode')
-        logger = logging.getLogger("Worker")
-        if self.debug_mode:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
+        # self.debug_mode = config.get('worker', 'debug_mode')
+        logger = logging.getLogger('Worker')
+        # if self.debug_mode:
+        #     logger.setLevel(logging.DEBUG)
+        # else:
+        #     logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)  # all info must be in journal
+
+        self._session_id = config.get('session', 'session_id')
+
+        # create a path for data file
+        self._data_path = 'data_{}'.format(self._session_id)
+
+        # lets find a way to data directory
+        # lets check if we have directory
+        # it looks  like if we start program from here ../data wil be different then
+        # when we starts all worker
+        # so you have to be careful
+        data_path = os.path.abspath(self._data_path)
+        if not os.path.exists(data_path):
+            os.mkdir(data_path)
+            # logger.info("Directory {} created ".format(data_path))
+        # else:
+        #     # logger.info("Directory {} found ".format(data_path))
+
         # create the logging file handler
-        fh = logging.FileHandler("worker.log")
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        log_path = os.path.join(data_path, 'worker_{}.log'.format(self._session_id))
+        fh = logging.FileHandler(log_path)
+        formatter = logging.Formatter('%(asctime)s;%(name)s;%(levelname)s;%(message)s',
+                                      "%Y-%m-%d;%H:%M:%S;%z")
         fh.setFormatter(formatter)
         # add handler to logger object
         logger.addHandler(fh)
@@ -53,7 +73,7 @@ class Worker:
         self._port = config.get('network', 'port')
 
         # parameters for db session
-        self._session_id = config.get('session', 'session_id')
+        # self._session_id = config.get('session', 'session_id')
         self._session_descr = config.get('session', 'session_description')
         self._main_loop_task = None
         self._started = False
@@ -72,33 +92,15 @@ class Worker:
         self._done_tickets = []  # list with Ticket objects, those already done
         self._done_tickets_lock = asyncio.Lock()
 
-        # append units
-        # read list list_of_available_units from units.py
-        # go through it and find if some unit name is in config
-        # then add it and create its object with parameters from config
-        # then dynamically add it to self attributes
-        units_units = units.list_of_available_units
-        self._unitnames = []
         logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         logger.info("New epoch started!")
         logger.info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-        # here is dynamical loading loading units
-        # its not simple to understand that painful thing
-        for u in units_units:
-            if u[0] in config and config.get(u[0], 'use') is True:
-                self._unitnames.append(u[0])
-                kwargs = dict(config.items(u[0]))
-                kwargs.pop('use')  # we dont need that key as argument of unit
-                unit_obj = getattr(units, u[1])
-                setattr(self, u[0], unit_obj(**kwargs))
-                logger.debug("{} added to worker".format(u[0]))
-
-        # system unit not in config because we always use it
-        # so we have to add it manually
-        self.system_unit = units.SystemUnit(worker=self)
-        self._unitnames.append('system_unit')
-        logger.debug("system_unit added to worker")
+        # copy config file to data_path if it is not there already
+        copy_conf_path = os.path.join(data_path, 'worker.conf'.format(self._session_id))
+        if not os.path.exists(copy_conf_path):
+            shutil.copy(config_path, data_path)
+            logger.info("config file copied to data folder {}".format(data_path))
 
         # create stubs for periodic tasks
         self.measure_task = None
@@ -108,13 +110,14 @@ class Worker:
 
         # add ControlSystem
         self._control_system = ControlSystem(
+            data_path=data_path,
             worker=self,
             config_path=config_path
         )
 
     async def start(self):
         logger.debug("start worker coroutine")
-        # all unit things must be handled by schedule object
+        # all unit things must be handled by control system object
         await self._control_system.start()
         # then create periodic tasks
         self._main_loop_task = asyncio.ensure_future(self._run_main_loop())
@@ -227,9 +230,9 @@ class Worker:
                 for nt in self._tasks:
                     if not nt.is_started:
                         await nt.start()
-                    if isinstance(nt, (SingleTask, LongSingleTask, SingleCoro)):
+                    if isinstance(nt, (SingleTask, LongSingleTask, SingleCoro)): # TODO wtf is that
                         if nt.done:
-                            # do we need any logging for done tasks?
+                            # TODO  do we need any logging for done tasks?
                             self._tasks.remove(nt)
 
             # check _at_work_tickets and if they have result - push them to _done_tickets
@@ -247,12 +250,12 @@ class Worker:
         new_task = None
         logger.debug("parse_ticket started!")
         com = Command(**tick.command)
-        if com.unit not in self._unitnames:
+        if com.unit not in self._control_system.unitnames:
             raise ValueError("No such unit {}".format(com.unit))
         # checking what unit it is
-        for u in self._unitnames:
+        for u in self._control_system.unitnames:
             if u == com.unit:
-                unit_obj = getattr(self, u)
+                unit_obj = getattr(self._control_system, u)
                 new_task = await unit_obj.handle_ticket(tick)
         # add new task in list to handle
         if new_task:
@@ -371,10 +374,10 @@ class Worker:
             logger.debug("check_server: done")
 
 
-async def main():
+async def main(config_path: str = 'worker.conf'):
     # example uuid wid=155167253286217647024261323245457212920
     # server host 83.220.174.247:8888
-    worker = Worker(config_path='worker.conf')
+    worker = Worker(config_path)
     await worker.start()
 
 
