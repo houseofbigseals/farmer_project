@@ -7,7 +7,10 @@ import serial
 import asyncio
 import time
 import csv
-# TODO: add logging, its important
+import logging
+
+logger = logging.getLogger("Worker.Units.CO2Sensor.SBA5Wrapper")
+
 
 class SBAWrapper(object):
     """
@@ -53,7 +56,7 @@ class SBAWrapper(object):
             bcom = command.encode('utf-8')
             ser.write(bcom)
         except Exception as e:
-            print("SBAWrapper error while send command: {}".format(e))
+            logger.error("SBAWrapper error while send command: {}".format(e))
         # then try to read answer
         # it must be two messages, ended with \r\n
         try:
@@ -66,7 +69,7 @@ class SBAWrapper(object):
             status = (ser.readline()).decode('utf-8')
             return echo+status
         except Exception as e:
-            print("SBAWrapper error while read answer from command: {}".format(e))
+            logger.error("SBAWrapper error while read answer from command: {}".format(e))
 
     async def get_periodic_data(self):
         try:
@@ -78,7 +81,7 @@ class SBAWrapper(object):
             ans = (ser.readline()).decode('utf-8')
             return ans
         except Exception as e:
-            print("SBAWrapper error while read: {}".format(e))
+            logger.error("SBAWrapper error while read: {}".format(e))
 
 
 def read():

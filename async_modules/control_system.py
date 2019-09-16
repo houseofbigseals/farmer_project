@@ -323,7 +323,7 @@ class ControlSystem:
                             logger2.info("update_state search p = {}, x1 = {}, x2= {}, q = {}".format(
                                 p.name, p.x1, p.x2, p.result
                             ))
-                            with open(self.search_method_log, "a") as f:
+                            with open(self.search_method_log_path, "a") as f:
                                 # f.write("{}".format(self.current_search_step))
                                 writer = csv.DictWriter(f, delimiter=',', fieldnames=self.search_log_fields)
                                 writer.writerow(rowdict)

@@ -74,7 +74,7 @@ def differentiate_one_point(
     current_q = raw_intQ(F_func(x0, a, b), far, len_of_measure_period)
     current_fe = FE(F_func(x0, a, b), far, current_mean_weight)
     current_f = F(F_func(x0, a, b), current_mean_weight)
-    logger.info("we got F = {}\n intQ = {}\n F/E = {}".format(current_f, current_q, current_fe))
+    logger.info("we got F = {} intQ = {} F/E = {}".format(current_f, current_q, current_fe))
 
     return current_f, current_q, current_fe
 

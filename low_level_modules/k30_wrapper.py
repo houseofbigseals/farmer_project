@@ -1,8 +1,10 @@
 
 import serial
 import time
+import logging
 from asyncio import sleep as asleep
 
+logger = logging.getLogger('Worker.Units.K30.K30Wrapper')
 
 class K30(object):
     """
@@ -30,18 +32,19 @@ class K30(object):
         :return:
         """
         read_co2_modbus = (b"\x68\x04\x00\x03\x00\x01\xC8\xF3")
-        res = "Get data from K-30 via UART\n"
+
+        logger.debug("Get data from K-30 via UART")
         self.ser.write(read_co2_modbus)
-        res += "Sent: {} \n".format(read_co2_modbus.hex())
+        logger.debug("Sent: {}".format(read_co2_modbus.hex()))
         # asleep(1)
         resp = self.ser.read(7)
-        res += "This is resp : {} \n".format(resp.hex())
+        logger.debug("This is resp : {}".format(resp.hex()))
         high = resp[3]
         low = resp[4]
         co2 = (high * 256) + low
-        res += "CO2 = {}".format(co2)
+        logger.debug("CO2 = {}".format(co2))
+        res = "co2 = {}".format(co2)
         return co2, res
-
 
 
 def old_main():

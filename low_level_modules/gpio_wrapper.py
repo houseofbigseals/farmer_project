@@ -10,7 +10,10 @@
 from typing import Any, Optional
 from RPi import GPIO
 from time import sleep
+import logging
 import argparse
+
+logger = logging.getLogger("Worker.Units.Gpio.GpioWrapper")
 
 
 class GPIOWrapper(object):
@@ -40,16 +43,19 @@ class GPIOWrapper(object):
             return "There is GPIO error: {}".format(e)
 
     def write(self, pin: int, state: bool) -> str:
-        res = "Trying to set pin {} to state {} \n".format(pin, str(state))
+        logger.debug("Trying to set pin {} to state {}".format(pin, str(state)))
+        res = ""
         try:
             GPIO.output(pin, state)
-            res += "OK \n"
+            logger.debug("OK")
+            res = "OK"
         except Exception as e:
-            res += "\nThere is GPIO error: {}".format(e)
+            logger.debug("There is GPIO error: {}".format(e))
+            res = str(e)
         return res
 
     def info(self) -> str:
-        return str(GPIO.RPI_INFO) + "\n" + str(GPIO.VERSION) + "\n"
+        return str(GPIO.RPI_INFO) + " " + str(GPIO.VERSION)
 
     def __del__(self):
         GPIO.cleanup()

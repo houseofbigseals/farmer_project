@@ -1,5 +1,6 @@
 from typing import Tuple, Optional
 import serial
+import logging
 import six
 from time import sleep
 
@@ -11,6 +12,8 @@ from time import sleep
 # using the following command-line:
 #
 # ./pycrc.py --model=ccitt --generate table
+
+logger = logging.getLogger('Worker.Units.Led_wrapper.LedUartWrapper')
 
 
 CRC16_CCITT_TAB = \
@@ -80,57 +83,57 @@ class UartWrapper:
     def send_command(self,
                      com: bytearray,
                      log_comment: str = None
-                     ) -> Tuple[Optional[bytearray], str]:
+                     ) -> Optional[bytearray]:
         ans = None
-        logstring = "-------------------------------\n"
+        logger.debug("-------------------------------")
         if(log_comment):
-            logstring += "Sending {}\n".format(log_comment)
+            logger.debug("Sending {}".format(log_comment))
         else:
-            logstring += "We want to send this:\n"
-        logstring += self.parse_command(com)
+            logger.debug("We want to send this:")
+        logger.debug(self.parse_command(com))
         try:
             ser = serial.Serial(port=self.dev, baudrate=self.baud, timeout=self.timeout)
             ser.write(com)
         except Exception as e:
-            logstring += "Error happened while write: {}\n".format(e)
-            logstring += "-------------------------------\n"
-            return ans, logstring
+            logger.debug("Error happened while write: {}".format(e))
+            logger.debug("-------------------------------")
+            return ans
 
         try:
             ans = ser.read(len(com))
         except Exception as e:
-            logstring += "Error happened while read: {}\n".format(e)
-            logstring += "-------------------------------\n"
-            return ans, logstring
+            logger.debug("Error happened while read: {}".format(e))
+            logger.debug("-------------------------------")
+            return ans
 
         if(not ans or (len(ans) != len(com))):
-            logstring += "Broken answer from GIC: {}\n".format(ans)
-            logstring += "-------------------------------\n"
+            logger.debug("Broken answer from GIC: {}".format(ans))
+            logger.debug("-------------------------------")
         else:
-            logstring += "Succesfully got answer from GIC:\n"
-            logstring += self.parse_command(ans)
-        return ans, logstring
+            logger.debug("Succesfully got answer from GIC:")
+            logger.debug(self.parse_command(ans))
+        return ans
 
     def parse_command(self, com: bytearray) -> str:
         # parse content of command
         data_length = com[2]
         length = len(com)
         parsed_output = ""
-        parsed_output += "-------------------------------\n"
-        parsed_output += "Parsed command {} \n".format(com.hex())
-        parsed_output += "{} - header byte \n".format(hex(com[0]))
-        parsed_output += "{} - destination byte\n".format(hex(com[1]))
-        parsed_output += "{} - length of command\n".format(hex(com[2]))
-        parsed_output += "{} - type of command\n".format(hex(com[3]))
+        logger.debug("-------------------------------")
+        logger.debug("Parsed command {} ".format(com.hex()))
+        logger.debug("{} - header byte ".format(hex(com[0])))
+        logger.debug("{} - destination byte".format(hex(com[1])))
+        logger.debug("{} - length of command".format(hex(com[2])))
+        logger.debug("{} - type of command".format(hex(com[3])))
         if data_length > 1:
             # parse content of command
             for i in range(4, 4 + data_length - 1):
-                parsed_output += "{} - data byte\n".format(hex(com[i]))
+                logger.debug("{} - data byte".format(hex(com[i])))
         else:
             pass
-        parsed_output += "{} - last byte of CRC16 ccitt control sum\n".format(hex(com[length - 2]))
-        parsed_output += "{} - first byte of CRC16 ccitt control sum\n".format(hex(com[length - 1]))
-        parsed_output += "-------------------------------\n"
+        logger.debug("{} - last byte of CRC16 ccitt control sum".format(hex(com[length - 2])))
+        logger.debug("{} - first byte of CRC16 ccitt control sum".format(hex(com[length - 1])))
+        logger.debug("-------------------------------")
         return parsed_output
 
     def create_command(self,
@@ -203,30 +206,30 @@ class UartWrapper:
                        ctype: bytes = b'\x00',
                        data: bytes = None,
                        name: str = None
-                       ) -> Tuple[Optional[bytearray], str]:
+                       ) -> Optional[bytearray]:
         # there is a simple command template
         command = self.create_command(ctype=ctype, data=data)
-        ans, log = self.send_command(command, log_comment=name)
+        ans = self.send_command(command, log_comment=name)
         if ans:
             answer = bytearray(ans)
             if ACK in answer:
-                log += "There is ACK flag 0x{} in answer \n".format(ACK.hex())
-                log += "-------------------------------\n"
+                logger.debug("There is ACK flag 0x{} in answer ".format(ACK.hex()))
+                logger.debug("-------------------------------")
             if NACK in answer:
-                log += "There is NACK flag 0x{} in answer \n".format(NACK.hex())
-                log += "Something went wrong in GIC \n"
-                log += "-------------------------------\n"
-            return ans, log
+                logger.debug("There is NACK flag 0x{} in answer ".format(NACK.hex()))
+                logger.debug("Something went wrong in GIC")
+                logger.debug("-------------------------------")
+            return ans
         else:
-            log += "Something went wrong, we got no answer \n"
-            log += "-------------------------------\n"
-            return ans, log
+            logger.debug("Something went wrong, we got no answer")
+            logger.debug("-------------------------------")
+            return ans
 
     def PING_PONG(self):
         PING_PONG = bytearray(b'\x55\xCC\x02\x00\x00\xFC\xA2')
         pass
 
-    def GET_STATUS(self) -> Tuple[Optional[bytearray], str]:
+    def GET_STATUS(self) -> Optional[bytearray]:
         # GET_STATUS = bytearray(b'\x55\xCC\x01\x01\x1F\x3E')
         # there we must parse data in answer
         # but maybe later
@@ -238,7 +241,7 @@ class UartWrapper:
                         name="GET_STATUS"
                        )
 
-    def START(self) -> Tuple[Optional[bytearray], str]:
+    def START(self) -> Optional[bytearray]:
         # START = bytearray(b'\x55\xCC\x01\x02\x7C\x0E')
         return self.simple_command(
                         ACK= b'\x02',
@@ -248,7 +251,7 @@ class UartWrapper:
                         name="START"
                        )
 
-    def STOP(self) -> Tuple[Optional[bytearray], str]:
+    def STOP(self) -> Optional[bytearray]:
         # STOP = bytearray(b'\x55\xCC\x01\x03\x5D\x1E')
         return self.simple_command(
                         ACK= b'\x03',
@@ -258,7 +261,7 @@ class UartWrapper:
                         name="STOP"
                        )
 
-    def GET_PROFILE(self, num: bytes = b'\x01') -> Tuple[Optional[bytearray], str]:
+    def GET_PROFILE(self, num: bytes = b'\x01') -> Optional[bytearray]:
         # GET_PROFILE = bytearray(b'\x55\xCC\x02\x04\x04\xBC\x2E')
         # -> DATA – uint8_t[0...4]
         # <- DATA – uProfile[1] – вернет требуемый профайл
@@ -312,7 +315,7 @@ class UartWrapper:
     def SAVE_PROFILE_TO_EEPROM(self):
         SAVE_PROFILE_TO_EEPROM = bytearray(b'\x55\xCC\x02\x0A\x00\x00\x00')
 
-    def SET_CURRENT(self, channel: int = 0, value: int = 200) -> Tuple[Optional[bytearray], str]:
+    def SET_CURRENT(self, channel: int = 0, value: int = 200) -> Optional[bytearray]:
         # SET_CURRENT = bytearray(b'\x55\xCC\x04\x0B\x01\xE8\x03\x00\x00')
         # SET_CURRENT_200_1 = bytearray(b'\x55\xCC\x04\x0B\x01\xC8\x00\xD8\x2E')
         # SET_CURRENT_200_0 = bytearray(b'\x55\xCC\x04\x0B\x00\xC8\x00\xE8\x19')
