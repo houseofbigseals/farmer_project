@@ -12,10 +12,10 @@ def parse(path):
         # print(len(line_arr))
         # print(line)
         try:
-            if line_arr[4]=='ERROR' or line_arr[4]=='CRITICAL':
-                print(line)
-            # if line_arr[3] == 'Worker.MathMethods' and line_arr[4] == 'INFO':
+            # if line_arr[4]=='ERROR' or line_arr[4]=='CRITICAL':
             #     print(line)
+            if line_arr[3] == 'Worker.ControlSystem':# and line_arr[4] == 'INFO':
+                print(line)
         except Exception as e:
             print(line)
             # print(line_arr[3])

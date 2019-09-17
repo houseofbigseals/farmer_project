@@ -12,13 +12,13 @@ experimental device, be careful
 
 volume = 80  # fitotrone volume in litres
 raw_to_dry = 0.08  # conversion factor from raw plants weight to dry weight
-ppmv_to_mgCO2 = 1.8  # conversion factor from ppmv CO2 to mgCO2/m3
+ppmv_to_mgco2 = 1.8  # conversion factor from ppmv CO2 to mgCO2/m3
 surface = 0.19  # in m2 - surface of lighted crops
 surface_to_volume = 0.45  # in m3/m2
-mg_CO2_to_kg_dry_mass = 0.68*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
-mg_CO2_to_kg_raw_mass = 8.5*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
+mg_co2_to_kg_dry_mass = 0.68*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
+mg_co2_to_kg_raw_mass = 8.5*0.001*0.001 # in kg of dry mass / mg CO2 assimilated
 # when water coefficient is 0.08
-ppfd_to_kW = 0.2*0.001  # kW / (mkmol/m2*sec)
+ppfd_to_kw = 0.2*0.001  # kW / (mkmol/m2*sec)
 price_of_volume = 45.2  # kg_of_equiv_mass / m3
 price_of_power = 114  # kg_of_equiv_mass / kW
 old_price_of_volume = 0.28
@@ -92,9 +92,9 @@ def currents_from_newcoords(A: float, B: float):
 def Q(dC, E, weight):
     global volume
     global raw_to_dry
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = ppmv_to_mgCO2 * dC
+    dCC = ppmv_to_mgco2 * dC
     # then convert from 1m3=1000litres to our volume
     dCC = (volume/1000) * dCC
     # convert weight from raw to dry
@@ -107,9 +107,9 @@ def Q(dC, E, weight):
 def rQ(dC, E, weight):
     global volume
     global raw_to_dry
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = ppmv_to_mgCO2 * dC
+    dCC = ppmv_to_mgco2 * dC
     # then convert from 1m3=1000litres to our volume
     dCC = (volume/1000) * dCC
     # convert weight from raw to dry
@@ -122,9 +122,9 @@ def rQ(dC, E, weight):
 def FE(dC, E, weight):
     global volume
     global raw_to_dry
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = ppmv_to_mgCO2 * dC
+    dCC = ppmv_to_mgco2 * dC
     # then convert from 1m3 to our volume
     dCC = (volume/1000) * dCC
     # convert weight from raw to dry
@@ -137,9 +137,9 @@ def FE(dC, E, weight):
 def F(dC, weight):
     global volume
     global raw_to_dry
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = ppmv_to_mgCO2 * dC
+    dCC = ppmv_to_mgco2 * dC
     # then convert from 1m3 to our volume
     dCC = (volume/1000) * dCC
     # convert weight from raw to dry
@@ -155,16 +155,16 @@ def raw_intQ(dC, E, dT):
     # dT - time period of measure im sec
     global volume
     global surface
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = ppmv_to_mgCO2 * dC
+    dCC = ppmv_to_mgco2 * dC
     # then convert from 1m3 to our volume
     dCC = (volume/1000) * dCC
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
     # TODO: we need to change dC to dCC because [dC] in ppmv/sec but [dCC] in  mgCO2/sec
-    Prod = mg_CO2_to_kg_raw_mass*dCC*dT  # productivity of crops in kg
-    I = E* ppfd_to_kW   # light power converted to kW
+    Prod = mg_co2_to_kg_raw_mass*dCC*dT  # productivity of crops in kg
+    I = E* ppfd_to_kw   # light power converted to kW
     Qi = price_of_volume * V / Prod + price_of_power * I * surface / Prod
     return Qi
 
@@ -175,18 +175,18 @@ def dry_intQ(dC, E, dT):
     # dT - time period of measure im sec
     global volume
     global surface
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     global surface_to_volume
     # convert from ppmv/sec to mg CO2/(m3*sec)
-    dCC = ppmv_to_mgCO2 * dC
+    dCC = ppmv_to_mgco2 * dC
     # then convert from 1m3 to our volume
     dCC = (volume/1000) * dCC
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
     # TODO: we need to change dC to dCC because [dC] in ppmv/sec but [dCC] in mgCO2/sec
-    Prod = mg_CO2_to_kg_dry_mass*dCC*dT  # productivity of crops in kg
+    Prod = mg_co2_to_kg_dry_mass*dCC*dT  # productivity of crops in kg
     # dT must be in sec
-    I = E * ppfd_to_kW  # light power converted to kW
+    I = E * ppfd_to_kw  # light power converted to kW
     Qi = price_of_volume * V / Prod + price_of_power * I * surface / Prod
     return Qi
 
@@ -196,14 +196,14 @@ def final_intQ(E, Prod):
     # E - light intencity im mkmoles/m2*sec
     global volume
     global surface
-    global ppmv_to_mgCO2
+    global ppmv_to_mgco2
     global surface_to_volume
-    global ppfd_to_kW
+    global ppfd_to_kw
     Prod = Prod*0.001  # translate to kg
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
 
-    I = E * ppfd_to_kW  # light power converted to kW / m2
+    I = E * ppfd_to_kw  # light power converted to kW / m2
     Qf = price_of_volume * V / Prod + price_of_power * I * surface / Prod
     return Qf
 

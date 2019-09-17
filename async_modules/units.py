@@ -272,19 +272,19 @@ class CO2SensorUnit(Unit):
         #     return "CO2SensorError: {}".format(ans)
         # we need to shut down auto measurements
         ans = await self.sensor.send_command("!\r\n")
-        self.logger.info("Command !, answer: {}".format(ans))
+        self.logger.info("Command !, answer: {}".format(ans)[:-1])
         # we need to shut down auto zero operations
         ans = await self.sensor.send_command("A0\r\n")
-        self.logger.info("Command A0, answer: {}".format(ans))
+        self.logger.info("Command A0, answer: {}".format(ans)[:-1])
         # we need to set format of output
         ans = await self.sensor.send_command("F252\r\n")
-        self.logger.info("Command F252, answer: {}".format(ans))
+        self.logger.info("Command F252, answer: {}".format(ans)[:-1])
         # we need to start pump
         ans = await self.sensor.send_command("P1\r\n")
-        self.logger.info("Command P1, answer: {}".format(ans))
+        self.logger.info("Command P1, answer: {}".format(ans)[:-1])
         # set medium time of calibration
         ans = await self.sensor.send_command("EM\r\n")
-        self.logger.info("Command EM, answer: {}".format(ans))
+        self.logger.info("Command EM, answer: {}".format(ans)[:-1])
 
     async def get_info(self, tick: Ticket = None):
         ans = await self.sensor.send_command("?\r\n")
@@ -305,7 +305,7 @@ class CO2SensorUnit(Unit):
     async def do_measurement(self, tick: Ticket = None):
         ans = await self.sensor.send_command("M\r\n")
         self.logger.debug("Do measure SBA5")
-        self.logger.debug("SBA5 result is {}".format(ans))
+        self.logger.debug(("SBA5 result is {}".format(ans))[:-1])  #its try to remove last \n from here
         if tick:
             tick.result = ans
         else:

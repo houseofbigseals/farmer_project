@@ -1,4 +1,11 @@
 import localconfig
+import logging
+
+#  think about handling errors in getting values from incorrect config
+#  how our system must work in that situation?
+#  at least log it and raise
+
+logger = logging.getLogger("Worker.ConfigHandler")
 
 
 class ConfigHandler(object):
@@ -9,53 +16,64 @@ class ConfigHandler(object):
     """
     def __init__(
             self,
-            config_path: str = '../worker.conf'
+            config_path: str
     ):
-        self.config_path = config_path
-        self.config = localconfig.config
-        self.config.read(self.config_path)
-        # TODO add here some try-except or smth and logging
+        try:
+            self.config_path = config_path
+            self.config = localconfig.config
+            self.config.read(self.config_path)
+        except Exception as e:
+            logger.critical("Error while reading config: {}".format(e))
+            raise
 
-        # print little information about config
+        logger.debug("Start parsing file and creating config object")
         for section in self.config:
-            print("\n")
-            print(section)
+            # lets create a dict for all section content
+            logger.debug("Creating section {}".format(section))
+            sect_dict = dict()
             for key, value in self.config.items(section):
-                print(key, value, type(value))
+                # add values from section to dict
+                sect_dict[key] = value
+                # print(key, value, type(value))
+            setattr(self, section, sect_dict)
 
-        # after initial check we have to read values from config,
-        # parse them in correct way and add comments
-        # comments must be here, not in .conf file
 
-        # start read adjustment section
-        self.volume = self.config.get('adjustment', 'volume')
-        # fitotrone volume in m3
-        self.raw_to_dry = self.config.get('adjustment', 'raw_to_dry')
-        # conversion factor from raw plants weight to dry weight
-        self.ppmv_to_mgCO2 = self.config.get('adjustment', 'ppmv_to_mgCO2')
-        # conversion factor from ppmv CO2 to mgCO2/m3
-        self.surface = self.config.get('adjustment', 'surface')
-        # in m2 - surface of lighted crops
-        self.surface_to_volume = self.config.get('adjustment', 'surface_to_volume')
-        # in m3/m2
-        self.mg_CO2_to_kg_dry_mass = self.config.get('adjustment', 'mg_CO2_to_kg_dry_mass')
-        # in kg of dry mass / mg CO2 assimilated
-        self.mg_CO2_to_kg_raw_mass = self.config.get('adjustment', 'mg_CO2_to_kg_raw_mass')
-        # in kg of dry mass / mg CO2 assimilated
-        # when water coefficient is 0.08
-        self.ppfd_to_kW = self.config.get('adjustment', 'ppfd_to_kW')
-        # kW / (mkmol/m2*sec)
-        self.price_of_volume = self.config.get('adjustment', 'price_of_volume')
-        # kg_of_equiv_mass / m3
-        self.price_of_power = self.config.get('adjustment', 'price_of_power')
-        # kg_of_equiv_mass / kW
+        # then we need to parse some them in correct way
+        # lets transform string to list
+        adj_section = getattr(self, 'control_system')
 
-        # TODO: add here unstable constants from I mA to ppfd conversion for leds
+        df_str = adj_section["data_fields"]
+        df_list = df_str.split(' ')
+        adj_section["data_fields"] = df_list
 
-        # asdasd
+        # adj_section = getattr(self, 'adjustment')
+        dfs_str = adj_section["search_log_fields"]
+        dfs_list = dfs_str.split(' ')
+        adj_section["search_log_fields"] = dfs_list
+
+    def get_value(self, section: str, name: str):
+        try:
+            dict_ = getattr(self, section)
+            return dict_[name]
+        except Exception as e:
+            logger.critical("Error while getting {} from section {}, {}".format(name, section, e))
+            raise
+
+    def get_section(self, section: str):
+        try:
+            return getattr(self, section)
+        except Exception as e:
+            logger.critical("Error while getting section {}, {}".format(section, e))
+            raise
 
 
 if __name__ == "__main__":
-    ch = ConfigHandler()
+    ch = ConfigHandler(config_path='../worker.conf')
+    # print(ch.__dict__)
+    print(ch.get_section('led_unit'))
+    print(ch.get_section('adjustment'))
+    print(ch.get_value('adjustment', 'ppmv_to_mgco2'))
+    print(ch.get_value('control_system', 'data_fields'))
+
     # print(ch.config)
     # print(ch.calibration_time)
