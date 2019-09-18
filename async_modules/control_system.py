@@ -160,11 +160,11 @@ class ControlSystem:
         # its not simple to understand that painful thing
         for u in units_units:
             # we have to check all units from library if they in use
-            if u[0] in config and config.get_value(u[0], 'use') is True:
+            if u[0] in config.sections() and config.get_value(u[0], 'use') is True:
                 # u[0] is unit name in config
                 # u[1] is real unit name
                 self.unitnames.append(u[0])
-                kwargs = dict(config.items(u[0])) # get all params of unit
+                kwargs = config.get_section(u[0])  # get all params of unit as a dict
                 kwargs.pop('use')  # we dont need that key as argument of unit
                 unit_obj = getattr(units, u[1])  # units module has unit name (u[1]) as attribute
                 setattr(self, u[0], unit_obj(**kwargs))  # we want to set that attribute to self

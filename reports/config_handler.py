@@ -22,6 +22,7 @@ class ConfigHandler(object):
             self.config_path = config_path
             self.config = localconfig.config
             self.config.read(self.config_path)
+            self._sections = list()
         except Exception as e:
             logger.critical("Error while reading config: {}".format(e))
             raise
@@ -30,6 +31,7 @@ class ConfigHandler(object):
         for section in self.config:
             # lets create a dict for all section content
             logger.debug("Creating section {}".format(section))
+            self._sections.append(section)
             sect_dict = dict()
             for key, value in self.config.items(section):
                 # add values from section to dict
@@ -65,6 +67,9 @@ class ConfigHandler(object):
         except Exception as e:
             logger.critical("Error while getting section {}, {}".format(section, e))
             raise
+
+    def sections(self):
+        return self._sections
 
 
 if __name__ == "__main__":
