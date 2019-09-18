@@ -9,4 +9,6 @@ data
 *.png
 *.zip
 *.ods
+*_data
+data_*
 __pycache__

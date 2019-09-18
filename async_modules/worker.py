@@ -1,6 +1,7 @@
 import asyncio
 import json
 import shutil
+from reports.config_handler import ConfigHandler
 from network_modules.command import Command, Ticket
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
 from network_modules.raw_client import command_request_ticket\
@@ -28,8 +29,9 @@ class Worker:
 
         # at first parse config
 
-        config = localconfig.config
-        config.read(config_path)
+        # config = localconfig.config
+        config = ConfigHandler(config_path)
+        # config.read(config_path)
 
         # create logger
         global logger
@@ -41,7 +43,7 @@ class Worker:
         #     logger.setLevel(logging.INFO)
         logger.setLevel(logging.DEBUG)  # all info must be in journal
 
-        self._session_id = config.get('session', 'session_id')
+        self._session_id = config.get_value('session', 'session_id')
 
         # create a path for data file
         self._data_path = 'data_{}'.format(self._session_id)
@@ -68,20 +70,20 @@ class Worker:
         logger.addHandler(fh)
 
         # worker parameters
-        self._id = config.get('worker', 'worker_id')
-        self._host = config.get('network', 'host')
-        self._port = config.get('network', 'port')
+        self._id = config.get_value('worker', 'worker_id')
+        self._host = config.get_value('network', 'host')
+        self._port = config.get_value('network', 'port')
 
         # parameters for db session
         # self._session_id = config.get('session', 'session_id')
-        self._session_descr = config.get('session', 'session_description')
+        self._session_descr = config.get_value('session', 'session_description')
         self._main_loop_task = None
         self._started = False
         # time parameters for tasks
-        self.schedule_period = config.get('worker', 'schedule_period')
-        self.request_period = config.get('worker', 'request_period')
-        self.send_period = config.get('worker', 'send_period')
-        self.measure_period = config.get('worker', 'measure_period')
+        self.schedule_period = config.get_value('worker', 'schedule_period')
+        self.request_period = config.get_value('worker', 'request_period')
+        self.send_period = config.get_value('worker', 'send_period')
+        self.measure_period = config.get_value('worker', 'measure_period')
         # tasks and locks
         self._tasks = []  # list with objects from tasks.py module
         self._tasks_lock = asyncio.Lock()

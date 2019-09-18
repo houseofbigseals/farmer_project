@@ -7,17 +7,19 @@ def parse(path):
     print(len(lines))
     larr = lines[3].split(';')
     print(larr[4])
+    print(larr)
     for line in lines:
         line_arr = line.split(';')
         # print(len(line_arr))
         # print(line)
         try:
-            # if line_arr[4]=='ERROR' or line_arr[4]=='CRITICAL':
-            #     print(line)
-            if line_arr[3] == 'Worker.ControlSystem':# and line_arr[4] == 'INFO':
-                print(line)
+            if line_arr[4]=='ERROR' or line_arr[4]=='CRITICAL':
+                print(line[:-1])
+            # if line_arr[3] == 'Worker.async_tasks' and line_arr[5] == 'update_state coro started':
+            if line_arr[5] == 'Airflow and calibration started\n':
+                print(line[:-1])
         except Exception as e:
-            print(line)
+            # print(line)
             # print(line_arr[3])
             pass
     pass

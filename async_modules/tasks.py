@@ -8,6 +8,9 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 logger = logging.getLogger("Worker.async_tasks")
 
+# TODO rewrite all things here and add exception control, logging and catching
+#  especially _run in ever task !
+
 
 class PeriodicTask:
     def __init__(self, func, time, name=None):
@@ -51,8 +54,13 @@ class PeriodicCoro:
     async def _repeat_forever(self):
         while True:
             await asyncio.sleep(self.time)
-            logger.debug("{} at work !".format(self._name))
-            await self.coro(*self.coro_args, **self.coro_kwargs)
+            try:
+                await self.coro(*self.coro_args, **self.coro_kwargs)
+                logger.debug("{} done correctly".format(self._name))
+            except Exception as e:
+                logger.error("Error in {} : {} ".format(self._name, e))
+                logger.error("Periodic Coro {} will be stopped ".format(self._name))
+                await self.stop()
 
     async def start(self):
         if not self.is_started:
@@ -61,6 +69,7 @@ class PeriodicCoro:
             # Start task to call coro periodically:
             self._task = asyncio.ensure_future(self._repeat_forever())
             # loop_.run_until_complete(self._task)
+            logger.info("Periodic Coro {} started ".format(self._name))
 
     async def stop(self):
         if self.is_started:
@@ -69,6 +78,7 @@ class PeriodicCoro:
             self._task.cancel()
             with suppress(asyncio.CancelledError):
                 await self._task
+            logger.info("Periodic Coro {} stopped ".format(self._name))
 
 
 class LongSingleTask:
@@ -178,10 +188,14 @@ class SingleCoro:
                     await self._task
 
     async def _run(self):
-            logger.debug("{} at work !".format(self._name))
+        try:
             await self.coro(*self.coro_args, **self.coro_kwargs)
             self.done = True
-
+            logger.debug("{} done correctly".format(self._name))
+        except Exception as e:
+            logger.error("Error in {} : {} ".format(self._name, e))
+            logger.error("Single coro {} will be stopped ".format(self._name))
+            await self.stop()
 
 
 def long_problem(n=0, t=20):

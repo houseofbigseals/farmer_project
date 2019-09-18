@@ -31,37 +31,39 @@ class ControlSystem:
     ):
         self.loop = asyncio.get_event_loop()
         # read config
-        config = localconfig.config
-        config.read(config_path)
+        # config = localconfig.config
+        # config.read(config_path)
+        config = ConfigHandler(config_path)
         self.worker = worker
-        self.calibration_time = config.get('control_system', 'calibration_time')
-        # self.search_params_file = config.get('control_system', 'search_point_file')
+        self.calibration_time = config.get_value('control_system', 'calibration_time')
+        # self.search_params_file = config.get_value('control_system', 'search_point_file')
         # start red and white for time where no search
-        self.start_red = config.get('control_system', 'start_red')
-        self.start_white = config.get('control_system', 'start_white')
-        self.datafile = config.get('control_system', 'datafile')
-        self.time_of_measure_period = config.get('control_system', 'time_of_measure_period')
+        self.start_red = config.get_value('control_system', 'start_red')
+        self.start_white = config.get_value('control_system', 'start_white')
+        self.datafile = config.get_value('control_system', 'datafile')
+        self.time_of_measure_period = config.get_value('control_system', 'time_of_measure_period')
 
-        self.measure_period = config.get('control_system', 'measure_time')
-        self.pipe_mass = config.get('control_system', 'mass_of_pipe')
-        self._session_id = config.get('session', 'session_id')
-        self.worker_id = config.get('worker', 'worker_id')
+        self.measure_period = config.get_value('control_system', 'measure_time')
+        self.pipe_mass = config.get_value('control_system', 'mass_of_pipe')
+        self._session_id = config.get_value('session', 'session_id')
+        self.worker_id = config.get_value('worker', 'worker_id')
         # add fields for our data tables
-        self.data_fields = [
-            "date",
-            "time",
-            "Ired",
-            "Iwhite",
-            "temp",
-            "humid",
-            "CO2",
-            "weight",
-            "airflow",
-            "K30CO2",
-            "step",
-            "point",
-            "label"
-        ]
+        self.data_fields = config.get_value('control_system', 'data_fields')
+        # self.data_fields = [
+        #     "date",
+        #     "time",
+        #     "Ired",
+        #     "Iwhite",
+        #     "temp",
+        #     "humid",
+        #     "CO2",
+        #     "weight",
+        #     "airflow",
+        #     "K30CO2",
+        #     "step",
+        #     "point",
+        #     "label"
+        # ]
         data_data_path = data_path
         # add data_handler
         self.data_handler = DataHandler(
@@ -89,7 +91,7 @@ class ControlSystem:
         self.search_method = StaticSearch()
 
         # load current search step
-        self.current_search_step = config.get('control_system', 'search_start_step')
+        self.current_search_step = config.get_value('control_system', 'search_start_step')
         # TODO: in future we will add some image of search system last condition
         #  to automatically start with this parameters after power shutdown or smth unexpected
         # set current search point 0 as default, because we need to
@@ -111,17 +113,18 @@ class ControlSystem:
         #         f.write("{}".format(self.current_search_step))
 
         # find search table and check it
-        self.search_method_log = config.get('control_system', 'search_logfile')
-        self.search_log_fields = [
-            'date',
-            'time',
-            'x1',
-            'x2',
-            'Q',
-            'F',
-            'step',
-            'label'
-        ]
+        self.search_method_log = config.get_value('control_system', 'search_logfile')
+        self.search_log_fields = config.get_value('control_system', 'search_log_fields')
+        # self.search_log_fields = [
+        #     'date',
+        #     'time',
+        #     'x1',
+        #     'x2',
+        #     'Q',
+        #     'F',
+        #     'step',
+        #     'label'
+        # ]
         self.search_method_log_path = os.path.join(data_path,
                                                    self.search_method_log+'_{}.log'.format(self._session_id))
         try:
@@ -157,7 +160,7 @@ class ControlSystem:
         # its not simple to understand that painful thing
         for u in units_units:
             # we have to check all units from library if they in use
-            if u[0] in config and config.get(u[0], 'use') is True:
+            if u[0] in config and config.get_value(u[0], 'use') is True:
                 # u[0] is unit name in config
                 # u[1] is real unit name
                 self.unitnames.append(u[0])
@@ -435,18 +438,40 @@ class ControlSystem:
     async def measure(self):
         logger.debug("measure")
         # TODO: try to do this function with tickets and handle mechanism
+
         date_ = time.strftime("%x", time.localtime())
         time_ = time.strftime("%X", time.localtime())
-        ired, iwhite = await self.led_unit.get_short_info()
-        temp, hum = await self.temp_sensor_unit.get_data()
-        co2_raw = await self.co2_sensor_unit.do_measurement()
-        co2 = co2_raw.split(' ')[3]
-        k30_co2 = await self.k30_unit.get_data()
-        weight = await self.weight_unit.get_data()
+
+        try:
+            ired, iwhite = await self.led_unit.get_short_info()
+        except Exception as e:
+            logger.error("Error in led wrapper connection, {}".format(e))
+            raise
+        try:
+            temp, hum = await self.temp_sensor_unit.get_data()
+        except Exception as e:
+            logger.error("Error in temp and hum sensor connection, {}".format(e))
+            raise
+        try:
+            co2_raw = await self.co2_sensor_unit.do_measurement()
+            co2 = co2_raw.split(' ')[3]
+            k30_co2 = await self.k30_unit.get_data()
+        except Exception as e:
+            logger.error("Error in co2 sensor connection, {}".format(e))
+            raise
+        try:
+            weight = await self.weight_unit.get_data()
+        except Exception as e:
+            logger.error("Error in weight sensor connection, {}".format(e))
+            raise
         # find if it is ventilation now
         ventilation_is_now = False
-        vent_pins = self.gpio_unit.vent_pins
-        state_of_pins = await self.gpio_unit.get_info()
+        try:
+            vent_pins = self.gpio_unit.vent_pins
+            state_of_pins = await self.gpio_unit.get_info()
+        except Exception as e:
+            logger.error("Error in gpio connection, {}".format(e))
+            raise
         for vp in vent_pins:
             if state_of_pins[vp] is False:
                 ventilation_is_now = True
