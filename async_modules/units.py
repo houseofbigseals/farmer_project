@@ -381,13 +381,15 @@ class GpioUnit(Unit):
             27: True,
             13: True,
             19: True,
-            26: True
+            26: True,
+            4: True,
+            25: True
         }
         # dirty
         self.vent_pins = [10, 9, 11, 17]
         self.cooler_pin = [19]
         self.calibration_pins = [13]
-        self.drain_pins = [26, 27]
+        self.drain_pins = [26, 27, 4, 25]
         self.measure_pins = []
         # platform-dependent unit, so we need to check
         if platf != "RPi":
