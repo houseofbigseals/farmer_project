@@ -363,14 +363,6 @@ class GpioUnit(Unit):
         self.logger = logging.getLogger("Worker.Units.Gpio")
         self.logger.info("Gpio init")
         # pins and devices, connected to them
-        # 10 - pump1
-        # 9 - valve1
-        # 11 - pump2
-        # 17 - valve2
-        # 27 - drain_pump
-        # 13 - valve3
-        # 19 - 12VDC coolers
-        # 26 - drain_pump
 
         # map of pins connected to channels and their states
         self.pins = {
@@ -382,8 +374,8 @@ class GpioUnit(Unit):
             13: True,
             19: True,
             26: True,
-            4: True,
-            25: True
+            16: True,
+            20: True
         }
         # dirty
         self.vent_pins = [10, 9, 11, 17]
