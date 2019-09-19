@@ -15,8 +15,8 @@ def parse(path):
         try:
             if line_arr[4]=='ERROR' or line_arr[4]=='CRITICAL':
                 print(line[:-1])
-            # if line_arr[3] == 'Worker.async_tasks' and line_arr[5] == 'update_state coro started':
-            if line_arr[5] == 'Airflow and calibration started\n':
+            if line_arr[3] == "Worker.Units.Gpio.GpioWrapper":# and line_arr[5] == 'update_state coro started':
+                # if line_arr[5] == 'Airflow and calibration started\n':
                 print(line[:-1])
         except Exception as e:
             # print(line)
