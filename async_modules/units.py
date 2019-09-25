@@ -359,6 +359,7 @@ class GpioUnit(Unit):
     """
 
     def __init__(self):
+        # TODO: move all magic consts from here to config
         super(GpioUnit, self).__init__(name="gpio_unit")
         self.logger = logging.getLogger("Worker.Units.Gpio")
         self.logger.info("Gpio init")
@@ -381,8 +382,11 @@ class GpioUnit(Unit):
         self.vent_pins = [10, 9, 11, 17]
         self.cooler_pin = [19]
         self.calibration_pins = [13]
-        self.drain_pins = [26, 27, 16, 20]
+        self.drain_pump_pins = [26, 27]
+        self.drain_valve_pins = [16, 20]
         self.measure_pins = []
+        # very dirty
+        self.drain_valve_time = 15  # sec
         # platform-dependent unit, so we need to check
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
@@ -428,10 +432,23 @@ class GpioUnit(Unit):
     async def start_draining(self, tick: Ticket = None):
         self.logger.info("Gpio start_draining")
         res = ""
-        for i in self.drain_pins:
-            res += self.gpio.write(i, False)
+        # at first open valves
+        for pin in self.drain_valve_pins:
+            res += self.gpio.write(pin, False)
             # false - because our relay is low level trigger
-            self.pins[i] = False
+            self.pins[pin] = False
+        self.logger.info("Start opening drain valves")
+        # then wait magic time
+        await asyncio.sleep(self.drain_valve_time)
+        self.logger.info("Drain valves should be open now")
+        # then set up air pumps
+        for pin in self.drain_pump_pins:
+            res += self.gpio.write(pin, False)
+            # false - because our relay is low level trigger
+            self.pins[pin] = False
+        self.logger.info("Start drain pumps")
+
+        # results
         self.logger.debug(res)
         if tick:
             tick.result = res
@@ -441,10 +458,20 @@ class GpioUnit(Unit):
     async def stop_draining(self, tick: Ticket = None):
         self.logger.info("Gpio stop_draining")
         res = ""
-        for i in self.drain_pins:
-            res += self.gpio.write(i, True)
+        # set off air pumps
+        for pin in self.drain_pump_pins:
+            res += self.gpio.write(pin, True)
             # false - because our relay is low level trigger
-            self.pins[i] = True
+            self.pins[pin] = True
+        self.logger.info("Stop drain pumps")
+
+        # then close valves
+        for pin in self.drain_valve_pins:
+            res += self.gpio.write(pin, True)
+            # false - because our relay is low level trigger
+            self.pins[pin] = True
+        self.logger.info("Close drain valves")
+
         self.logger.debug(res)
         if tick:
             tick.result = res

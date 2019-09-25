@@ -75,16 +75,18 @@ def all_test():
         "ch6": 13,
         "ch7": 19,
         "ch8": 26,
+        "ch9": 16,
+        "ch10": 20
     }
     for i in pins.values():
         g.set_mode(i, "output")
     while(True):
         for i in pins.values():
             g.write(i, False)
-        sleep(2)
+        sleep(20)
         for i in pins.values():
             g.write(i, True)
-        sleep(2)
+        sleep(20)
 
 
 def one_test():

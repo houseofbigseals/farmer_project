@@ -404,6 +404,7 @@ class ControlSystem:
             white,
             period
     ):
+        # TODO add try-except here in unit calls
         await self.calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         self.current_comment = "ventilation"
@@ -411,7 +412,7 @@ class ControlSystem:
         logger.info(await self.gpio_unit.start_draining())
         logger.info(await self.led_unit.set_current(red=int(red), white=int(white)))
         logger.info("New red and white currents is {} and {}".format(int(red), int(white)))
-        logger.info(await self.gpio_unit.start_ventilation())
+        # logger.info(await self.gpio_unit.start_ventilation())
         # TODO remove all worker calls from control system
 
         await self.worker.measure_task.stop()
@@ -421,6 +422,7 @@ class ControlSystem:
         await asyncio.sleep(self.calibration_time)
         logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
+        # TODO remove magic
         await asyncio.sleep(400)
         await self.worker.measure_task.stop()
         logger.info(await self.gpio_unit.start_calibration())
@@ -429,7 +431,7 @@ class ControlSystem:
         logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
         await asyncio.sleep(period*60)
-        logger.info(await self.gpio_unit.stop_ventilation())
+        # logger.info(await self.gpio_unit.stop_ventilation())
         logger.info(await self.gpio_unit.stop_draining())
         self.calibration_lock.release()
         self.current_comment = "measure"

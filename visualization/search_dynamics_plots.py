@@ -19,14 +19,17 @@ def plot_dynamics_of_search():
         'label',
         'dick'
     ]
-    pd_data = pd.read_csv("../data/simple_gradient_method_1300.csv", header=None, names=fieldnames)
+    # pd_data = pd.read_csv("../data/simple_gradient_method_1300.csv", header=None, names=fieldnames)
+    pd_data = pd.read_csv("../data/data_1320/search_method_1320.log", header=None, names=fieldnames)
     print(pd_data.shape)
     # print(pd_data.head())
     useful_rows = ['dF']
+    useful_rows = ['the_only_one']
     filtered_pd = pd_data[pd_data['label'].isin(useful_rows)]
     # print(filtered_pd)
     print(filtered_pd.shape)
     print(filtered_pd.head())
+    print(filtered_pd.tail())
     print(filtered_pd['x1'].head())
     print(filtered_pd['x2'].head())
 
