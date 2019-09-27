@@ -789,8 +789,8 @@ class TempSensorUnit(Unit):
         if platf != "RPi":
             self.logger.error("We are not on RPi, so this unit will be only a stub")
         else:
-            h, t, log = self.sensor.get_data()
-            self.logger.debug((t, h, log))
+            h, t = self.sensor.get_data()
+            self.logger.debug((t, h))
             if tick:
                 tick.result = (t, h)
             else:

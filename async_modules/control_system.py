@@ -439,7 +439,8 @@ class ControlSystem:
 
     async def measure(self):
         logger.debug("measure")
-        # TODO: try to do this function with tickets and handle mechanism
+        # TODO rewrite this function using dinamical list of unit names,
+        #  or some list units to measure, that must be read from config
 
         date_ = time.strftime("%x", time.localtime())
         time_ = time.strftime("%X", time.localtime())
@@ -457,19 +458,28 @@ class ControlSystem:
         try:
             co2_raw = await self.co2_sensor_unit.do_measurement()
             co2 = co2_raw.split(' ')[3]
+
+        except Exception as e:
+            logger.error("Error in SBA5 co2 sensor connection, {}".format(e))
+            raise
+        try:
             k30_co2 = await self.k30_unit.get_data()
         except Exception as e:
-            logger.error("Error in co2 sensor connection, {}".format(e))
+            logger.error("Error in K30 co2 sensor connection, {}".format(e))
             raise
         try:
             weight = await self.weight_unit.get_data()
         except Exception as e:
-            logger.error("Error in weight sensor connection, {}".format(e))
+            # TODO its warning until we fix that annoying error with rpi gpio
+            logger.warning("Error in weight sensor connection, {}".format(e))
             raise
         # find if it is ventilation now
         ventilation_is_now = False
         try:
+            # add to one list all pins, connected to ventilation system
             vent_pins = self.gpio_unit.vent_pins
+            vent_pins.extend(self.gpio_unit.drain_pump_pins)
+            vent_pins.extend(self.gpio_unit.drain_valve_pins)
             state_of_pins = await self.gpio_unit.get_info()
         except Exception as e:
             logger.error("Error in gpio connection, {}".format(e))
@@ -485,6 +495,7 @@ class ControlSystem:
         step = self.current_search_step
         point = self.current_search_point
         fieldnames = self.data_fields
+        # TODO shame on me, fix that its magic numbers in the code
         data = {
             "date": date_,
             "time": time_,

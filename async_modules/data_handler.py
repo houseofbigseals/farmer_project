@@ -76,7 +76,7 @@ class DataHandler(object):
                               & (pd_data.airflow == 0)
                               & (pd_data.label == 'measure')
               ]
-        print(pd_point)
+        # print(pd_point)
         # print(pd_data.loc[pd_data['step'] == 0])
 
         # print(type(pd_data.))

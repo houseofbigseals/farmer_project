@@ -1,5 +1,6 @@
 import sys
 import Adafruit_DHT
+import logging
 
 # We are using DHT11 sensor and Adafruit_DHT library with only one function read_retry
 
@@ -60,24 +61,25 @@ class DHTWrapper:
     def __init__(self, pin: int = 14, DHTTYPE: int = 22):
         self.pin = pin
         self.DHTTYPE = DHTTYPE
+        self.logger = logging.getLogger("Worker.Units.TempSensor.DHTWrapper")
+        self.logger.info("TempSensor.DHTWrapper init")
 
     def get_data(self):
         """simple try to read DHT data and if not - write error in log"""
-        log = ""
         humidity = None
         temperature = None
         try:
             humidity, temperature = Adafruit_DHT.read_retry(
-                sensor=self.DHTTYPE, pin=self.pin, retries=10, delay_seconds=0.05
+                sensor=self.DHTTYPE, pin=self.pin, retries=5, delay_seconds=0.05
             )
         except Exception as e:
-            log = "We got error {} \n when read DHT{} from pin {} \n"\
-                .format(e, self.DHTTYPE, self.pin)
+            self.logger.error("We got error {}  when read DHT{} from pin {} ".format(e, self.DHTTYPE, self.pin))
+            raise
         if not humidity or not temperature:
-            log += "We got some trouble - no humidity or no temperature in sensor`s answer\n"
+            self.logger.error("We got some trouble - no humidity or no temperature in sensor`s answer")
         else:
-            log += "We successfully got humidity and temperature from sensor"
-        return humidity, temperature, log
+            self.logger.info("We successfully got humidity and temperature from sensor")
+        return humidity, temperature
 
 if __name__=="__main__":
     d = DHTWrapper()

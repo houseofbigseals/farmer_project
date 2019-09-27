@@ -8,6 +8,7 @@ data
 *.config
 *.png
 *.zip
+*.txt
 *.ods
 *_data
 data_*

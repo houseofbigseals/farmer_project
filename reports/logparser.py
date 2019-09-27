@@ -15,10 +15,12 @@ def parse(path):
             # print(len(line_arr))
             # print(line)
             try:
+                # if line_arr[3] == "Worker.Units.Gpio":
+                # if line_arr[1] == "22:42:22": #or line_arr[1] == "22:13:41" or line_arr[1] == "22:13:43":
                 if line_arr[4]=='ERROR' or line_arr[4]=='CRITICAL':
                     print(line[:-1])
                     the_file.write(line[:])
-                # if line_arr[3] == "Worker.async_tasks":# and line_arr[5] == 'update_state coro started':
+                # if line_arr[3] == "Worker.Units.Gpio":# and line_arr[5] == 'update_state coro started':
                     # if line_arr[5] == 'Airflow and calibration started\n':
                     # print(line[:-1])
             except Exception as e:
@@ -30,4 +32,4 @@ def parse(path):
 
 
 if __name__ == "__main__":
-    parse("../data/data_1320/worker_1320.log")
+    parse("../data/data_1330/worker_1330.log")
