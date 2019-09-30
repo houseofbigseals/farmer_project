@@ -44,6 +44,8 @@ class ControlSystem:
         self.time_of_measure_period = config.get_value('control_system', 'time_of_measure_period')
 
         self.measure_period = config.get_value('control_system', 'measure_time')
+        self.sleep_between_calibrations = config.get_value('control_system', 'sleep_between_calibrations')
+        self.sleep_after_calibrations = config.get_value('control_system', 'sleep_after_calibrations')
         self.pipe_mass = config.get_value('control_system', 'mass_of_pipe')
         self._session_id = config.get_value('session', 'session_id')
         self.worker_id = config.get_value('worker', 'worker_id')
@@ -258,7 +260,7 @@ class ControlSystem:
                         "reconfiguration_task",
                         red=new_red,
                         white=new_white,
-                        period=10  # TODO: fix that thing somehow but with beauty
+                        period=self.sleep_after_calibrations # TODO adadafgafgahgghb error111
                     )
                     await reconfiguration_coro.start()
                 else:
@@ -293,7 +295,7 @@ class ControlSystem:
                         logger2.error("The search is broken")
                         logger2.error("We will use fake Q because "
                                       "of that error to keep plants alive")
-                        fake_q = -1000 # TODO fix that
+                        fake_q = -1000  # TODO fix that
                         q = fake_q
                         f = fake_q
                     # then put results to current_search_table
@@ -394,7 +396,7 @@ class ControlSystem:
                         "reconfiguration_task",
                         red=new_red,
                         white=new_white,
-                        period=10  # TODO: fix that thing somehow but with beauty
+                        period=self.sleep_after_calibrations  # TODO: fix that thing somehow but with beauty
                     )
                     await reconfiguration_coro.start()
 
@@ -402,16 +404,16 @@ class ControlSystem:
             self,
             red,
             white,
-            period
+            period  # seconds
     ):
         # TODO add try-except here in unit calls
         await self.calibration_lock.acquire()
         logger.info("Airflow and calibration started")
         self.current_comment = "ventilation"
         res = ""
-        logger.info(await self.gpio_unit.start_draining())
         logger.info(await self.led_unit.set_current(red=int(red), white=int(white)))
         logger.info("New red and white currents is {} and {}".format(int(red), int(white)))
+        logger.info(await self.gpio_unit.start_draining())
         # logger.info(await self.gpio_unit.start_ventilation())
         # TODO remove all worker calls from control system
 
@@ -422,15 +424,14 @@ class ControlSystem:
         await asyncio.sleep(self.calibration_time)
         logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
-        # TODO remove magic
-        await asyncio.sleep(400)
+        await asyncio.sleep(self.sleep_between_calibrations)
         await self.worker.measure_task.stop()
         logger.info(await self.gpio_unit.start_calibration())
         logger.info(await self.co2_sensor_unit.do_calibration())
         await asyncio.sleep(self.calibration_time)
         logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
-        await asyncio.sleep(period*60)
+        await asyncio.sleep(period)
         # logger.info(await self.gpio_unit.stop_ventilation())
         logger.info(await self.gpio_unit.stop_draining())
         self.calibration_lock.release()
@@ -495,7 +496,7 @@ class ControlSystem:
         step = self.current_search_step
         point = self.current_search_point
         fieldnames = self.data_fields
-        # TODO shame on me, fix that its magic numbers in the code
+        # TODO shame on me, fix that, its magic numbers in the code
         data = {
             "date": date_,
             "time": time_,

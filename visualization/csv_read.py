@@ -53,7 +53,7 @@ def main():
     # "point": point,
     # "label": self.current_comment
 
-    raw_pd_data = pd.read_csv("../data/data_1330/data_1330.csv", header=None, names=fieldnames)
+    raw_pd_data = pd.read_csv("../data/data_1320/data_1320.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/good_transients_data.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("../data/another_test_prepared_data_4.csv", header=None, names=fieldnames)
     # pd_data = pd.read_csv("data/data.csv", header=None, names=fieldnames)
@@ -249,7 +249,7 @@ def main():
     t = range(len(times))
     # pl.xticks(t[0::1000], times[0::1000], rotation='vertical')
     pl.xticks(t[0::5000], dates[0::5000], rotation='vertical')
-    # pl.plot(t, co2, '-g', label="CO2, ppm")
+    pl.plot(t, co2, '-g', label="CO2, ppm")
     pl.plot(t, fr_fw*300, '-b', label="FARred/FARwhite")
     pl.plot(t, far, '-r', label="FAR summ, mkmoles")
     pl.plot(t,  air*400, '-k', label="Airflow ON")
