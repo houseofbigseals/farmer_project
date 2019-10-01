@@ -114,6 +114,7 @@ class StaticSearch(object):
     to search with with predetermined coordinates
     After search the worker must wait delay_after_search time
     """
+    # TODO: migrate all magic to config
     def __init__(
             self
     ):
