@@ -162,7 +162,6 @@ def raw_intQ(dC, E, dT):
     dCC = (volume/1000) * dCC
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
-    # TODO: we need to change dC to dCC because [dC] in ppmv/sec but [dCC] in  mgCO2/sec
     Prod = mg_co2_to_kg_raw_mass*dCC*dT  # productivity of crops in kg
     I = E* ppfd_to_kw   # light power converted to kW
     Qi = price_of_volume * V / Prod + price_of_power * I * surface / Prod
@@ -183,7 +182,6 @@ def dry_intQ(dC, E, dT):
     dCC = (volume/1000) * dCC
     # now dCC is mgCO2/sec in our volume
     V = (surface_to_volume * surface)  # effective volume of crop in m3
-    # TODO: we need to change dC to dCC because [dC] in ppmv/sec but [dCC] in mgCO2/sec
     Prod = mg_co2_to_kg_dry_mass*dCC*dT  # productivity of crops in kg
     # dT must be in sec
     I = E * ppfd_to_kw  # light power converted to kW
