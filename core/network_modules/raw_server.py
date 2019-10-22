@@ -6,7 +6,7 @@
 
 import asyncio
 import json
-from network_modules.command import Ticket, Message
+from core.network_modules.command import Ticket, Message
 from typing import Any
 import logging
 

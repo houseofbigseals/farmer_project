@@ -1,4 +1,6 @@
-# module with tasks - single and
+"""
+module with custom asyncronous tasks - single and periodic
+"""
 
 import asyncio
 from contextlib import suppress

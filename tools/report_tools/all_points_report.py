@@ -1,5 +1,3 @@
-from reports.config_handler import ConfigHandler
-
 def one_point_report(num: int):
     pass
 

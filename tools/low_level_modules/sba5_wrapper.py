@@ -135,13 +135,21 @@ async def main():
         time.sleep(2)
 
 
-async def test():
+async def pump_off():
     s = SBAWrapper()
     co2 = await s.send_command('M\r\n')
     print(co2)
     pump_off = await s.send_command('P0\r\n')
     print(pump_off)
 
+
+async def pump_on():
+    s = SBAWrapper()
+    co2 = await s.send_command('M\r\n')
+    print(co2)
+    pump_on = await s.send_command('P1\r\n')
+    print(pump_on)
+
 if __name__=="__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(test())
+    loop.run_until_complete()

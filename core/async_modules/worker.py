@@ -1,16 +1,15 @@
 import asyncio
 import json
 import shutil
-from reports.config_handler import ConfigHandler
-from network_modules.command import Command, Ticket
-from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from network_modules.raw_client import command_request_ticket\
+from core.async_modules.config_handler import ConfigHandler
+from core.network_modules.command import Command, Ticket
+from core.async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
+from core.network_modules.raw_client import command_request_ticket\
     , command_set_ticket_result
 import logging
 import sys
 import os
-import localconfig
-from async_modules.control_system import ControlSystem
+from core.async_modules.control_system import ControlSystem
 
 logger = None
 
@@ -26,23 +25,13 @@ class Worker:
             config_path: str = "worker.conf"
     ):
         # do some init things
-
         # at first parse config
-
-        # config = localconfig.config
         config = ConfigHandler(config_path)
-        # config.read(config_path)
 
         # create logger
         global logger
-        # self.debug_mode = config.get('worker', 'debug_mode')
         logger = logging.getLogger('Worker')
-        # if self.debug_mode:
-        #     logger.setLevel(logging.DEBUG)
-        # else:
-        #     logger.setLevel(logging.INFO)
         logger.setLevel(logging.DEBUG)  # all info must be in journal
-
         self._session_id = config.get_value('session', 'session_id')
 
         # create a path for data file
@@ -210,7 +199,7 @@ class Worker:
         while True:
             logger.debug("run_main_loop_task started!")
             # do main things in loop
-            await asyncio.sleep(1)  # ???
+            await asyncio.sleep(1)  # TODO ???
             # create tasks for new tickets
             async with self._new_tickets_lock:
                 for t in self._new_tickets:

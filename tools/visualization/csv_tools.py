@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from visualization.csv_read import red_far_by_curr, white_far_by_curr
+from tools.visualization.csv_read import red_far_by_curr, white_far_by_curr
 
 mass_of_pipe = 370  # in grams
 # mass of pipe 410 without plants

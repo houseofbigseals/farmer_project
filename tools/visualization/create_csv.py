@@ -1,12 +1,8 @@
 import pandas as pd
 import numpy as np
-import pylab as pl
-import mpl_toolkits.mplot3d.axes3d as p3
-from matplotlib import cm
-from scipy import interpolate
 from scipy.optimize import curve_fit
-from visualization.csv_read import red_far_by_curr, white_far_by_curr
-from math_tools.adjustment import rQ, F, FE
+from tools.visualization.csv_read import red_far_by_curr, white_far_by_curr
+from tools.math_tools.adjustment import rQ, F, FE
 
 
 mass_of_pipe = 370  # in grams

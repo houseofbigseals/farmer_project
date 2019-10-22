@@ -2,7 +2,7 @@
 # wrapper for correct server starting
 
 import asyncio
-from network_modules.raw_server import Server
+from core.network_modules.raw_server import Server
 import argparse
 import logging
 

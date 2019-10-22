@@ -1,9 +1,10 @@
+"""
+Module for ConfigHandler class and related things
+"""
+
 import localconfig
 import logging
 
-#  think about handling errors in getting values from incorrect config
-#  how our system must work in that situation?
-#  at least log it and raise
 
 logger = logging.getLogger("Worker.ConfigHandler")
 

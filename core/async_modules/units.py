@@ -1,12 +1,14 @@
-# units - async wrappers for low-level objects
+"""
+units - async wrappers for low-level objects
+"""
 
 import asyncio
-from low_level_modules.led_uart_wrapper import UartWrapper
-from network_modules.command import Command, Ticket
-from async_modules.tasks import SingleCoro
-from low_level_modules.sba5_wrapper import SBAWrapper
-from low_level_modules.k30_wrapper import K30
-from low_level_modules.ard_wrapper import ArdWrapper
+from tools.low_level_modules.led_uart_wrapper import UartWrapper
+from core.network_modules.command import Command, Ticket
+from core.async_modules.tasks import SingleCoro
+from tools.low_level_modules.sba5_wrapper import SBAWrapper
+from tools.low_level_modules.k30_wrapper import K30
+from tools.low_level_modules.ard_wrapper import ArdWrapper
 from typing import Any
 import logging
 
@@ -15,9 +17,9 @@ platf = None
 try:
     # platform dependent modules
     # they work correctly only on raspberry
-    from low_level_modules.dht_wrapper import DHTWrapper
-    from low_level_modules.gpio_wrapper import GPIOWrapper
-    from low_level_modules.hx_wrapper import HX711Wrapper
+    from tools.low_level_modules.dht_wrapper import DHTWrapper
+    from tools.low_level_modules.gpio_wrapper import GPIOWrapper
+    from tools.low_level_modules.hx_wrapper import HX711Wrapper
     platf = "RPi"
 except ImportError:
     logger.info("Looks like we are not on RPi")
@@ -35,6 +37,7 @@ list_of_available_units = [
     ('temp_sensor_unit', 'TempSensorUnit'),
     ('system_unit', 'SystemUnit')
 ]
+
 
 class Unit(object):
     """

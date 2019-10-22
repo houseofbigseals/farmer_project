@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 import pylab as pl
-from math_tools.adjustment import red_far_by_curr, white_far_by_curr
+from tools.math_tools.adjustment import red_far_by_curr, white_far_by_curr
 from scipy.stats import linregress
-from math_tools.math_methods import differentiate_one_point
 
 
 def make_cool_far_rw(far, rw):

@@ -2,16 +2,15 @@ import time
 import logging
 import asyncio
 from typing import Any
-import localconfig
 import os
-from reports.config_handler import ConfigHandler
-from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch, StaticSearch
-from async_modules.data_handler import DataHandler
-from math_tools.adjustment import currents_from_newcoords, red_far_by_curr, white_far_by_curr
-from math_tools.math_methods import differentiate_one_point
+from core.async_modules.config_handler import ConfigHandler
+from core.async_modules.tasks import SingleCoro
+from tools.math_tools.search_methods import StaticSearch
+from core.async_modules.data_handler import DataHandler
+from tools.math_tools.adjustment import currents_from_newcoords
+from tools.math_tools.math_methods import differentiate_one_point
 import csv
-import async_modules.units as units
+import core.async_modules.units as units
 
 logger = logging.getLogger("Worker.ControlSystem")
 logger2 = logging.getLogger("SearchLog")
