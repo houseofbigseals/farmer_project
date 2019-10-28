@@ -67,6 +67,7 @@ class SBAWrapper(object):
             )
             echo = (ser.readline()).decode('utf-8')
             status = (ser.readline()).decode('utf-8')
+            # TODO remove it wtf really
             return echo+status
         except Exception as e:
             logger.error("SBAWrapper error while read answer from command: {}".format(e))

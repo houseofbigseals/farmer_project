@@ -182,7 +182,7 @@ class ControlSystem:
 
         # self.system_unit = getattr(self, 'system_unit')  # we already add it
         self.led_unit = getattr(self, 'led_unit')
-        self.co2_sensor_unit = getattr(self, 'co2_sensor_unit')
+        # self.co2_sensor_unit = getattr(self, 'co2_sensor_unit')
         self.gpio_unit = getattr(self, 'gpio_unit')
         self.weight_unit = getattr(self, 'weight_unit')
         self.k30_unit = getattr(self, 'k30_unit')
@@ -196,7 +196,7 @@ class ControlSystem:
         await self.gpio_unit.stop_draining()
         await self.led_unit.set_current(red=self.start_red, white=self.start_white)
         # do async init for some units
-        await self.co2_sensor_unit.init()  # for time
+        # await self.co2_sensor_unit.init()  # for time
         # we really dont need measures until search started
         # await self.worker.measure_task.stop()
 
@@ -217,7 +217,7 @@ class ControlSystem:
     async def do_calibration(self):
         res = ""
         res += await self.gpio_unit.start_calibration()
-        res += await self.co2_sensor_unit.do_calibration()
+        # res += await self.co2_sensor_unit.do_calibration()
         await asyncio.sleep(self.calibration_time)
         res += await self.gpio_unit.stop_calibration()
         return res
@@ -420,14 +420,14 @@ class ControlSystem:
         await self.worker.measure_task.stop()
         logger.info("self.gpio_unit.start_calibration")
         logger.info(await self.gpio_unit.start_calibration())
-        logger.info(await self.co2_sensor_unit.do_calibration())
+        # logger.info(await self.co2_sensor_unit.do_calibration())
         await asyncio.sleep(self.calibration_time)
         logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
         await asyncio.sleep(self.sleep_between_calibrations)
         await self.worker.measure_task.stop()
         logger.info(await self.gpio_unit.start_calibration())
-        logger.info(await self.co2_sensor_unit.do_calibration())
+        # logger.info(await self.co2_sensor_unit.do_calibration())
         await asyncio.sleep(self.calibration_time)
         logger.info(await self.gpio_unit.stop_calibration())
         await self.worker.measure_task.start()
@@ -457,8 +457,9 @@ class ControlSystem:
             logger.error("Error in temp and hum sensor connection, {}".format(e))
             raise
         try:
-            co2_raw = await self.co2_sensor_unit.do_measurement()
-            co2 = co2_raw.split(' ')[3]
+            # co2_raw = await self.co2_sensor_unit.do_measurement()
+            # co2 = co2_raw.split(' ')[3]
+            co2 = 0
 
         except Exception as e:
             logger.error("Error in SBA5 co2 sensor connection, {}".format(e))
