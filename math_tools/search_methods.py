@@ -1,5 +1,7 @@
 
 import logging
+import random
+from datetime import datetime
 
 
 class SearchPoint(object):
@@ -148,6 +150,82 @@ class StaticSearch(object):
         for p in self.search_table:
             p.result = 0
             p.raw_f = 0
+
+        return self.search_table[0].x1, self.search_table[0].x2
+
+
+class TimeTableSearch:
+    """
+    This object contains table with few points and real date -time criteries of it
+    to search with with predetermined coordinates
+    After search the worker must wait delay_after_search time
+    """
+    def __init__(
+            self
+    ):
+        # logger
+        self.logger = logging.getLogger("Worker.SearchMethods.TimeTableMethod")
+        self.logger2 = logging.getLogger("SearchLog.TimeTableMethod")
+        self.time_schedule = [
+            # day, ppfd
+            [datetime(2019, 11, 3), 200],
+            [datetime(2019, 11, 4), 215],
+            [datetime(2019, 11, 5), 230],
+            [datetime(2019, 11, 6), 245],
+            [datetime(2019, 11, 7), 260],
+            [datetime(2019, 11, 8), 275],
+            [datetime(2019, 11, 9), 290],
+            [datetime(2019, 11, 10), 305],
+            [datetime(2019, 11, 11), 320],
+            [datetime(2019, 11, 12), 335],
+            [datetime(2019, 11, 13), 350]
+        ]
+        self.schedule = [
+            [200, 1.5, 'current_point', 10]
+        ]
+        self.search_table = []
+        # lets reformat schedule table to SearchPoint
+        for i in self.schedule:
+            new_point = SearchPoint(
+                x1=i[0],
+                x2=i[1],
+                name=i[2],
+                time=i[3],
+                result=0,
+                raw_f=0
+            )
+            self.search_table.append(new_point)
+
+        self.logger.info("Method started")
+        self.logger2.info("Method started")
+
+    def do_search_step(self):
+        """
+        unlike real search methods, this method compares current date with table
+        and returns mode for that day
+        :return:
+        """
+        # default stub
+        current_full_ppfd = 300
+
+        # find current daytime
+        today = datetime.today()
+
+        # create random spectrum in values 0, 0.5, 1, 1.5
+        rand_spectrum = random.choice([0, 0.5, 1, 1.5])
+
+        # compare with table to find planned full ppfd
+        for mode in self.time_schedule:
+            if mode[0].date() == today.date():
+                current_full_ppfd = mode[1]
+                break
+
+        # then update that one point in self.search_table
+        p = self.search_table[0]
+        p.x1 = current_full_ppfd
+        p.x2 = rand_spectrum
+        p.result = 0
+        p.raw_f = 0
 
         return self.search_table[0].x1, self.search_table[0].x2
 
