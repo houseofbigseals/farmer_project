@@ -6,7 +6,8 @@ import localconfig
 import os
 from reports.config_handler import ConfigHandler
 from async_modules.tasks import SingleTask, LongSingleTask, PeriodicCoro, SingleCoro
-from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch, StaticSearch
+from math_tools.search_methods import StupidGradientMethod, SimpleGradientMethod, TableSearch,\
+    StaticSearch, TimeTableSearch
 from async_modules.data_handler import DataHandler
 from math_tools.adjustment import currents_from_newcoords, red_far_by_curr, white_far_by_curr
 from math_tools.math_methods import differentiate_one_point
@@ -90,7 +91,8 @@ class ControlSystem:
         # skwargs = dict(config.items("SimpleGradientMethod"))
         # self.search_method = SimpleGradientMethod(**skwargs)
         # self.search_method = TableSearch()
-        self.search_method = StaticSearch()
+        # self.search_method = StaticSearch()
+        self.search_method = TimeTableSearch()
 
         # load current search step
         self.current_search_step = config.get_value('control_system', 'search_start_step')
