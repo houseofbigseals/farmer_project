@@ -178,7 +178,9 @@ class TimeTableSearch:
             [datetime(2019, 11, 10), 305],
             [datetime(2019, 11, 11), 320],
             [datetime(2019, 11, 12), 335],
-            [datetime(2019, 11, 13), 350]
+            [datetime(2019, 11, 13), 350],
+            [datetime(2019, 11, 14), 365],
+            [datetime(2019, 11, 15), 380]
         ]
         self.schedule = [
             [200, 1.5, 'current_point', 10]
