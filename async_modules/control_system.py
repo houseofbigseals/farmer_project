@@ -187,7 +187,7 @@ class ControlSystem:
         # self.co2_sensor_unit = getattr(self, 'co2_sensor_unit')
         self.gpio_unit = getattr(self, 'gpio_unit')
         self.weight_unit = getattr(self, 'weight_unit')
-        self.k30_unit = getattr(self, 'k30_unit')
+        # self.k30_unit = getattr(self, 'k30_unit')
         self.temp_sensor_unit = getattr(self, 'temp_sensor_unit')
 
     async def start(self):
@@ -467,7 +467,8 @@ class ControlSystem:
             logger.error("Error in SBA5 co2 sensor connection, {}".format(e))
             raise
         try:
-            k30_co2 = await self.k30_unit.get_data()
+            # k30_co2 = await self.k30_unit.get_data()
+            k30_co2 = 0  # stupid stub because we dont care
         except Exception as e:
             logger.error("Error in K30 co2 sensor connection, {}".format(e))
             raise
