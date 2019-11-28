@@ -37,7 +37,7 @@ def Q_calculation():
     # x1_len = len(x1.index)
     # print(x1_sum, x1_len)
 
-    dM_12_22_exp = 197  # grams
+    dM_12_22_exp = 223  # grams
     dM_12_22_control = 197   # grams
     E_12_22_control = 500  # mkmoles/m2sec
     E_12_22_exp = 350  # mkmoles/m2sec

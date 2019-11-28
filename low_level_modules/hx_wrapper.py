@@ -78,5 +78,44 @@ def new_test():
     # weight = rw[1]
 
 
+def recalibration():
+    GPIO.setmode(GPIO.BCM)
+    # TARA = 608  # 642
+    # KOEFF = -1142.2754  # 1057.8985
+    hx = HX711(dout_pin=5, pd_sck_pin=6, gain_channel_A=64, select_channel='A')
+    print("set gain A 64")
+    hx.set_gain_A(gain=64)
+    print("set channel A")
+    hx.select_channel(channel='A')
+    print("some info:")
+    print("get_current_scale_ratio {}".format(hx.get_current_scale_ratio()))
+    print("get_current_offset {}".format(hx.get_current_offset()))
+    print("lets get some raw data")
+    data = hx.get_raw_data_mean(50)
+    print("raw data mean is {}".format(data))
+
+    if data == False:  # always check if you get correct value or only False
+        print('invalid raw data, exit')
+        GPIO.cleanup()
+        exit(1)
+
+    print("lets try commit zero operation ")
+    hx.zero()
+
+    print("some new info:")
+    print("get_current_scale_ratio {}".format(hx.get_current_scale_ratio()))
+    print("get_current_offset {}".format(hx.get_current_offset()))
+    print("lets get some raw data")
+    data = hx.get_raw_data_mean(50)
+    print("raw data mean is {}".format(data))
+
+    ws = list()
+    ws.append(hx.get_weight_mean(15))
+    ws.append(hx.get_weight_mean(15))
+    ws.append(hx.get_weight_mean(15))
+    print("mean (of 15 measures) weights are {}".format(ws))
+    print("mean meanweight  is {}".format(np.mean(ws)))
+
+
 if __name__ == "__main__":
     new_test()
