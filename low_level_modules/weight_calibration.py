@@ -70,11 +70,11 @@ def measure_test():
     # TARA = 608  # 642
     # KOEFF = -1142.2754  # 1057.8985
     hx = HX711(dout_pin=5, pd_sck_pin=6, gain_channel_A=64, select_channel='A')
-    result = hx.reset()  # Before we start, reset the hx711 ( not necessary)
-    if result:  # you can check if the reset was successful
-        print('Ready to use')
-    else:
-        print('Weight not ready')
+    # result = hx.reset()  # Before we start, reset the hx711 ( not necessary)
+    # if result:  # you can check if the reset was successful
+    #     print('Ready to use')
+    # else:
+    #     print('Weight not ready')
     hx.set_gain_A(gain=64)
     hx.select_channel(channel='A')
     # hx.set_debug_mode(True)
