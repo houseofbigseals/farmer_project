@@ -168,19 +168,19 @@ class TimeTableSearch:
         self.logger2 = logging.getLogger("SearchLog.TimeTableMethod")
         self.time_schedule = [
             # day, ppfd
-            [datetime(2019, 11, 27), 200],
-            [datetime(2019, 11, 28), 240],
-            [datetime(2019, 11, 29), 280],
-            [datetime(2019, 11, 30), 320],
-            [datetime(2019, 12, 1), 360],
-            [datetime(2019, 12, 2), 400],
-            [datetime(2019, 12, 3), 440],
-            [datetime(2019, 12, 4), 480],
-            [datetime(2019, 12, 5), 520],
-            [datetime(2019, 12, 6), 560],
-            [datetime(2019, 12, 7), 600],
-            [datetime(2019, 12, 8), 640],
-            [datetime(2019, 12, 9), 680]
+            [datetime(2019, 12, 8), 500],
+            [datetime(2019, 12, 9), 500],
+            [datetime(2019, 12, 10), 500],
+            [datetime(2019, 12, 11), 500],
+            [datetime(2019, 12, 12), 500],
+            [datetime(2019, 12, 13), 500],
+            [datetime(2019, 12, 14), 500],
+            [datetime(2019, 12, 15), 500],
+            [datetime(2019, 12, 16), 500],
+            [datetime(2019, 12, 17), 500],
+            [datetime(2019, 12, 18), 500],
+            [datetime(2019, 12, 19), 500],
+            [datetime(2019, 12, 20), 500]
         ]
         self.schedule = [
             [200, 1.5, 'current_point', 10]
